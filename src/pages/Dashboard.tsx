@@ -36,12 +36,9 @@ export default function Dashboard() {
   const handleQuickSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      if (!canSearch()) {
-        alert('Arama limitinize ulaştınız. Planınızı yükseltmeyi düşünün.');
-        return;
-      }
-      await incrementSearchCount();
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      // Simplified for minimal build - just show alert
+      alert(`Arama yapıldı: "${searchQuery}". Gelişmiş arama özelliği yakında aktif olacak.`);
+      setSearchQuery('');
     }
   };
 
@@ -187,16 +184,14 @@ export default function Dashboard() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="flex-1"
                   />
-                  <Button type="submit" disabled={!canSearch()}>
+                  <Button type="submit">
                     Ara
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </form>
-                {!canSearch() && (
-                  <p className="text-sm text-warning mt-2">
-                    Arama limitinize ulaştınız. Planınızı yükseltmeyi düşünün.
-                  </p>
-                )}
+                <p className="text-sm text-muted-foreground mt-2">
+                  Gelişmiş arama özelliği yakında aktif olacak.
+                </p>
               </CardContent>
             </Card>
 
@@ -217,8 +212,7 @@ export default function Dashboard() {
                     stats.recentSearches.map((search, index) => (
                       <div 
                         key={index}
-                        className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/search?q=${encodeURIComponent(search.query)}`)}
+                        className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
                       >
                         <div className="flex-1">
                           <p className="font-medium text-foreground">{search.query}</p>
@@ -271,7 +265,7 @@ export default function Dashboard() {
                   variant="outline" 
                   size="sm" 
                   className="w-full"
-                  onClick={() => navigate('/pricing')}
+                  onClick={() => alert('Plan yükseltme özelliği yakında aktif olacak')}
                 >
                   Planı Yükselt
                 </Button>
@@ -292,9 +286,8 @@ export default function Dashboard() {
                     stats.savedCases.map((savedCase, index) => (
                       <div 
                         key={index}
-                        className="p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => navigate('/saved-cases')}
-                      >
+                         className="p-3 bg-muted/30 rounded-lg"
+                       >
                         <p className="font-medium text-sm text-foreground line-clamp-2">
                           {savedCase.legal_cases?.title || 'Başlık bulunamadı'}
                         </p>
@@ -319,7 +312,7 @@ export default function Dashboard() {
                   variant="ghost" 
                   size="sm" 
                   className="w-full mt-4"
-                  onClick={() => navigate('/saved-cases')}
+                  onClick={() => alert('Kayıtlı kararlar özelliği yakında aktif olacak')}
                 >
                   Tümünü Görüntüle
                 </Button>
@@ -336,7 +329,7 @@ export default function Dashboard() {
                   variant="ghost" 
                   size="sm" 
                   className="w-full justify-start"
-                  onClick={() => navigate('/search')}
+                  onClick={() => alert('Gelişmiş arama özelliği yakında aktif olacak')}
                 >
                   <Search className="h-4 w-4 mr-2" />
                   Gelişmiş Arama
@@ -345,7 +338,7 @@ export default function Dashboard() {
                   variant="ghost" 
                   size="sm" 
                   className="w-full justify-start"
-                  onClick={() => navigate('/profile')}
+                  onClick={() => alert('Profil ayarları özelliği yakında aktif olacak')}
                 >
                   <Calendar className="h-4 w-4 mr-2" />
                   Profil Ayarları

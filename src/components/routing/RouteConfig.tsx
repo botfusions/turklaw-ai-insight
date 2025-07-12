@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { RouteProtectionLevel } from '@/types/routes';
 
-// Pages
+// Essential Pages Only
 import Landing from '@/pages/Landing';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -11,11 +11,8 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import EmailVerification from '@/pages/EmailVerification';
 import ResetPassword from '@/pages/ResetPassword';
 import Dashboard from '@/pages/Dashboard';
-import Profile from '@/pages/Profile';
-import SavedCases from '@/pages/SavedCases';
-import Search from '@/pages/Search';
-import Subscription from '@/pages/Subscription';
 import NotFound from '@/pages/NotFound';
+// Temporarily disabled: Profile, SavedCases, Search, Subscription
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -75,69 +72,19 @@ export const AppRoutes: React.FC = () => {
         } 
       />
 
-      {/* Authenticated Routes */}
+      {/* Essential Authenticated Routes Only */}
       <Route 
         path="/dashboard" 
         element={
           <ProtectedRoute 
             protection={RouteProtectionLevel.AUTHENTICATED}
-            requiresEmailVerification={true}
           >
             <Dashboard />
           </ProtectedRoute>
         } 
       />
 
-      <Route 
-        path="/profile" 
-        element={
-          <ProtectedRoute 
-            protection={RouteProtectionLevel.AUTHENTICATED}
-            requiresEmailVerification={true}
-          >
-            <Profile />
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/saved-cases" 
-        element={
-          <ProtectedRoute 
-            protection={RouteProtectionLevel.AUTHENTICATED}
-            requiresEmailVerification={true}
-          >
-            <SavedCases />
-          </ProtectedRoute>
-        } 
-      />
-
-      {/* Search with limit check */}
-      <Route 
-        path="/search" 
-        element={
-          <ProtectedRoute 
-            protection={RouteProtectionLevel.AUTHENTICATED}
-            requiresEmailVerification={true}
-            requiresSearchLimit={true}
-          >
-            <Search />
-          </ProtectedRoute>
-        } 
-      />
-
-      {/* Subscription management */}
-      <Route 
-        path="/subscription" 
-        element={
-          <ProtectedRoute 
-            protection={RouteProtectionLevel.AUTHENTICATED}
-            requiresEmailVerification={true}
-          >
-            <Subscription />
-          </ProtectedRoute>
-        } 
-      />
+{/* Advanced features temporarily disabled for minimal build */}
 
       {/* Catch-all route */}
       <Route path="*" element={<NotFound />} />

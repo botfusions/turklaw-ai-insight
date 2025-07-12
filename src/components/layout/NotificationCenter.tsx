@@ -1,5 +1,4 @@
-import { formatDistanceToNow } from 'date-fns';
-import { tr } from 'date-fns/locale';
+// Removed date-fns dependency for minimal build
 import { Bell, Check, X, ExternalLink, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -157,10 +156,7 @@ export function NotificationCenter({ trigger }: NotificationCenterProps) {
                         
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(notification.timestamp, {
-                              addSuffix: true,
-                              locale: tr,
-                            })}
+                            {new Date(notification.timestamp).toLocaleDateString('tr-TR')}
                           </span>
                           
                           {notification.actionLabel && (
