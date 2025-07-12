@@ -14,7 +14,194 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      legal_cases: {
+        Row: {
+          case_number: string
+          court: string
+          created_at: string | null
+          decision_date: string
+          department: string
+          full_text: string
+          id: string
+          keywords: string[]
+          summary: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          case_number: string
+          court: string
+          created_at?: string | null
+          decision_date: string
+          department: string
+          full_text: string
+          id?: string
+          keywords?: string[]
+          summary: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          case_number?: string
+          court?: string
+          created_at?: string | null
+          decision_date?: string
+          department?: string
+          full_text?: string
+          id?: string
+          keywords?: string[]
+          summary?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          last_search_reset: string | null
+          max_searches: number
+          monthly_search_count: number
+          plan: string
+          search_count: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          last_search_reset?: string | null
+          max_searches?: number
+          monthly_search_count?: number
+          plan?: string
+          search_count?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          last_search_reset?: string | null
+          max_searches?: number
+          monthly_search_count?: number
+          plan?: string
+          search_count?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      saved_cases: {
+        Row: {
+          case_id: string
+          id: string
+          notes: string | null
+          saved_at: string | null
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          id?: string
+          notes?: string | null
+          saved_at?: string | null
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          id?: string
+          notes?: string | null
+          saved_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_cases_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "legal_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_cases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string | null
+          currency: string
+          features: string[]
+          id: string
+          is_popular: boolean | null
+          max_searches: number
+          name: string
+          price: number
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string
+          features?: string[]
+          id: string
+          is_popular?: boolean | null
+          max_searches: number
+          name: string
+          price: number
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string
+          features?: string[]
+          id?: string
+          is_popular?: boolean | null
+          max_searches?: number
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
+      user_searches: {
+        Row: {
+          filters: Json | null
+          id: string
+          query: string
+          results_count: number | null
+          search_date: string | null
+          user_id: string
+        }
+        Insert: {
+          filters?: Json | null
+          id?: string
+          query: string
+          results_count?: number | null
+          search_date?: string | null
+          user_id: string
+        }
+        Update: {
+          filters?: Json | null
+          id?: string
+          query?: string
+          results_count?: number | null
+          search_date?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_searches_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
