@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -194,5 +195,4 @@ All colors MUST be HSL.
     transform: translateX(100%);
     transition: transform 300ms ease-in-out;
   }
-}
 }
