@@ -56,15 +56,15 @@ export function Footer() {
             <div className="space-y-2 text-sm">
               <div className="flex items-center space-x-2 text-primary-foreground/80">
                 <Mail className="h-4 w-4" />
-                <span>destek@turklaw.ai</span>
+                <span>destek@turklawai.com</span>
               </div>
               <div className="flex items-center space-x-2 text-primary-foreground/80">
                 <Phone className="h-4 w-4" />
-                <span>+90 212 555 0123</span>
+                <span>0532 611 14 79</span>
               </div>
               <div className="flex items-center space-x-2 text-primary-foreground/80">
-                <MapPin className="h-4 w-4" />
-                <span>İstanbul, Türkiye</span>
+                <MapPin className="h-4 w-4 flex-shrink-0" />
+                <span className="text-sm">Yukarı Dudullu Mah Kerem sok No:7a Kat:3 Ümraniye İstanbul</span>
               </div>
             </div>
           </div>
