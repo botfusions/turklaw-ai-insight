@@ -2,41 +2,73 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+/* TurkLaw AI Design System - Professional Legal Platform
+Primary: Professional Blue (#1e40af) - Trust and authority
+Secondary: Gold (#f59e0b) - Premium and quality
 All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Professional Legal Theme */
+    --background: 216 50% 98%; /* #f8fafc - Light professional gray */
+    --foreground: 220 39% 11%; /* #1f2937 - Dark readable text */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%; /* Pure white for content cards */
+    --card-foreground: 220 39% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 220 39% 11%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Professional Blue - Trust and Authority */
+    --primary: 223 84% 35%; /* #1e40af - Professional Blue */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 223 84% 45%; /* Lighter blue for effects */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Gold Accent - Premium Quality */
+    --secondary: 32 95% 44%; /* #f59e0b - Gold accent */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 216 50% 94%; /* Very light gray for backgrounds */
+    --muted-foreground: 220 9% 46%; /* Muted text */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 32 95% 44%; /* Gold accent matching secondary */
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Status Colors */
+    --success: 159 69% 38%; /* #059669 - Success green */
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 25 95% 43%; /* #d97706 - Warning orange */
+    --warning-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
+    /* UI Elements */
+    --border: 220 13% 91%; /* Light border */
+    --input: 0 0% 100%; /* White input backgrounds */
+    --ring: 223 84% 35%; /* Focus ring matches primary */
+
+    /* Design System */
     --radius: 0.5rem;
+    
+    /* Legal Platform Specific */
+    --case-card: 0 0% 100%; /* Case result cards */
+    --search-bar: 0 0% 100%; /* Search interface */
+    --nav-bg: 223 84% 35%; /* Navigation background */
+    
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(223 84% 35%), hsl(223 84% 45%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(216 50% 98%));
+    
+    /* Shadows */
+    --shadow-card: 0 4px 6px -1px hsl(220 39% 11% / 0.1);
+    --shadow-hover: 0 10px 25px -3px hsl(220 39% 11% / 0.1);
+    --shadow-premium: 0 20px 25px -5px hsl(32 95% 44% / 0.3);
+
+    /* Typography */
+    --font-legal: 'Courier New', monospace; /* For case numbers */
 
     --sidebar-background: 0 0% 98%;
 
