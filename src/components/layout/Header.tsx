@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Scale, User, Search, LogOut } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Scale, User, Search, LogOut, Menu } from 'lucide-react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -8,17 +9,18 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface HeaderProps {
-  isAuthenticated?: boolean;
-  userName?: string;
+  // Props are now optional since we get auth state from context
 }
 
-export function Header({ isAuthenticated = false, userName }: HeaderProps) {
+export function Header({}: HeaderProps) {
   const navigate = useNavigate();
+  const { user, profile, signOut, loading } = useAuth();
 
-  const handleLogout = () => {
-    // Handle logout logic
+  const handleLogout = async () => {
+    await signOut();
     navigate('/');
   };
 
@@ -51,31 +53,59 @@ export function Header({ isAuthenticated = false, userName }: HeaderProps) {
 
         {/* Auth Section */}
         <div className="flex items-center space-x-4">
-          {isAuthenticated ? (
+          {user ? (
             <>
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={() => navigate('/search')}
+                onClick={() => navigate('/dashboard')}
                 className="hidden md:flex items-center"
               >
                 <Search className="h-4 w-4 mr-2" />
                 Ara
               </Button>
               
+              {/* Search Count Badge */}
+              {profile && (
+                <div className="hidden md:flex items-center space-x-2">
+                  <Badge variant="outline" className="text-xs">
+                    {profile.monthly_search_count}/{profile.max_searches} arama
+                  </Badge>
+                </div>
+              )}
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="flex items-center">
                     <User className="h-4 w-4 mr-2" />
-                    {userName || 'Kullanıcı'}
+                    <span className="hidden md:inline">
+                      {profile?.full_name || user.email?.split('@')[0] || 'Kullanıcı'}
+                    </span>
+                    <span className="md:hidden">
+                      <Menu className="h-4 w-4" />
+                    </span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-card">
+                <DropdownMenuContent align="end" className="bg-card w-56">
+                  <div className="px-2 py-1.5 text-sm">
+                    <div className="font-medium">{profile?.full_name || 'Kullanıcı'}</div>
+                    <div className="text-xs text-muted-foreground">{user.email}</div>
+                    {profile && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Plan: {profile.plan} • {profile.monthly_search_count}/{profile.max_searches} arama
+                      </div>
+                    )}
+                  </div>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate('/dashboard')}>
                     Panel
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
-                    Profil
+                    Profil Ayarları
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/search')} className="md:hidden">
+                    <Search className="h-4 w-4 mr-2" />
+                    Arama Yap
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-destructive">

@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { CheckCircle, Scale } from 'lucide-react';
+import { CheckCircle, Scale, Eye, EyeOff, Loader2, AlertCircle, Shield, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -15,6 +17,16 @@ export default function Register() {
   const { toast } = useToast();
   const { signUp, user, loading } = useAuth();
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [validationErrors, setValidationErrors] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -30,15 +42,61 @@ export default function Register() {
     }
   }, [user, navigate]);
 
+  const calculatePasswordStrength = (password: string) => {
+    let strength = 0;
+    if (password.length >= 8) strength += 25;
+    if (/[a-z]/.test(password)) strength += 25;
+    if (/[A-Z]/.test(password)) strength += 25;
+    if (/[0-9]/.test(password)) strength += 25;
+    return strength;
+  };
+
+  const validateForm = () => {
+    const errors = { name: '', email: '', password: '', confirmPassword: '' };
+    let isValid = true;
+
+    // Name validation
+    if (!formData.name.trim()) {
+      errors.name = 'Ad Soyad gereklidir';
+      isValid = false;
+    } else if (formData.name.trim().length < 2) {
+      errors.name = 'Ad Soyad en az 2 karakter olmalıdır';
+      isValid = false;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email) {
+      errors.email = 'E-posta adresi gereklidir';
+      isValid = false;
+    } else if (!emailRegex.test(formData.email)) {
+      errors.email = 'Geçerli bir e-posta adresi girin';
+      isValid = false;
+    }
+
+    // Password validation
+    if (!formData.password) {
+      errors.password = 'Şifre gereklidir';
+      isValid = false;
+    } else if (formData.password.length < 8) {
+      errors.password = 'Şifre en az 8 karakter olmalıdır';
+      isValid = false;
+    }
+
+    // Confirm password validation
+    if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Şifreler eşleşmiyor';
+      isValid = false;
+    }
+
+    setValidationErrors(errors);
+    return isValid;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Hata",
-        description: "Şifreler eşleşmiyor",
-        variant: "destructive",
-      });
+    if (!validateForm()) {
       return;
     }
 
@@ -51,13 +109,15 @@ export default function Register() {
       return;
     }
 
+    setIsSubmitting(true);
+    
     const result = await signUp(formData.email, formData.password, formData.name);
     
     if (result.success) {
       setIsSuccess(true);
       toast({
         title: "Hesap Oluşturuldu!",
-        description: "E-posta adresinizi doğruladıktan sonra giriş yapabilirsiniz.",
+        description: "E-posta adresinize doğrulama bağlantısı gönderildi.",
       });
     } else {
       toast({
@@ -66,6 +126,8 @@ export default function Register() {
         variant: "destructive",
       });
     }
+    
+    setIsSubmitting(false);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,6 +136,19 @@ export default function Register() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+
+    // Real-time password strength calculation
+    if (name === 'password') {
+      setPasswordStrength(calculatePasswordStrength(value));
+    }
+
+    // Clear validation errors on input
+    if (validationErrors[name as keyof typeof validationErrors]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
 
   return (
@@ -95,89 +170,194 @@ export default function Register() {
               </CardHeader>
               
               <CardContent className="space-y-4">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Ad Soyad</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      type="text"
-                      placeholder="Mehmet Yılmaz"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required
-                    />
+                {isSuccess ? (
+                  <div className="text-center space-y-4">
+                    <div className="bg-success/10 p-6 rounded-lg border border-success/20">
+                      <CheckCircle className="h-12 w-12 text-success mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Hesabınız Oluşturuldu!</h3>
+                      <p className="text-muted-foreground mb-4">
+                        E-posta adresinize doğrulama bağlantısı gönderildi. 
+                        Hesabınızı aktifleştirmek için lütfen e-postanızı kontrol edin.
+                      </p>
+                      <div className="flex items-center justify-center text-sm text-muted-foreground mb-4">
+                        <Clock className="h-4 w-4 mr-2" />
+                        E-posta gelmezse spam klasörünü kontrol edin
+                      </div>
+                      <Button onClick={() => navigate('/login')} className="w-full">
+                        Giriş Sayfasına Dön
+                      </Button>
+                    </div>
                   </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Ad Soyad</Label>
+                      <div className="relative">
+                        <Input
+                          id="name"
+                          name="name"
+                          type="text"
+                          placeholder="Av. Mehmet Yılmaz"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          className={validationErrors.name ? 'border-destructive' : ''}
+                          required
+                        />
+                        {formData.name && !validationErrors.name && (
+                          <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-success" />
+                        )}
+                        {validationErrors.name && (
+                          <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive" />
+                        )}
+                      </div>
+                      {validationErrors.name && (
+                        <p className="text-sm text-destructive">{validationErrors.name}</p>
+                      )}
+                    </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-posta</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="avukat@example.com"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">E-posta</Label>
+                      <div className="relative">
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          placeholder="avukat@example.com"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          className={validationErrors.email ? 'border-destructive' : ''}
+                          required
+                        />
+                        {formData.email && !validationErrors.email && (
+                          <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-success" />
+                        )}
+                        {validationErrors.email && (
+                          <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive" />
+                        )}
+                      </div>
+                      {validationErrors.email && (
+                        <p className="text-sm text-destructive">{validationErrors.email}</p>
+                      )}
+                    </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Şifre</Label>
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      placeholder="En az 8 karakter"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      required
-                      minLength={8}
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Şifre</Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          name="password"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="En az 8 karakter, büyük-küçük harf ve rakam"
+                          value={formData.password}
+                          onChange={handleInputChange}
+                          className={validationErrors.password ? 'border-destructive' : ''}
+                          required
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                      </div>
+                      {formData.password && (
+                        <div className="space-y-2">
+                          <Progress value={passwordStrength} className="h-2" />
+                          <p className="text-xs text-muted-foreground">
+                            Şifre Güvenliği: {
+                              passwordStrength < 50 ? 'Zayıf' :
+                              passwordStrength < 75 ? 'Orta' : 'Güçlü'
+                            }
+                          </p>
+                        </div>
+                      )}
+                      {validationErrors.password && (
+                        <p className="text-sm text-destructive">{validationErrors.password}</p>
+                      )}
+                    </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Şifre Tekrar</Label>
-                    <Input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type="password"
-                      placeholder="Şifrenizi tekrar girin"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Şifre Tekrar</Label>
+                      <div className="relative">
+                        <Input
+                          id="confirmPassword"
+                          name="confirmPassword"
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          placeholder="Şifrenizi tekrar girin"
+                          value={formData.confirmPassword}
+                          onChange={handleInputChange}
+                          className={validationErrors.confirmPassword ? 'border-destructive' : ''}
+                          required
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                        {formData.confirmPassword && formData.password === formData.confirmPassword && (
+                          <CheckCircle className="absolute right-12 top-1/2 -translate-y-1/2 h-4 w-4 text-success" />
+                        )}
+                      </div>
+                      {validationErrors.confirmPassword && (
+                        <p className="text-sm text-destructive">{validationErrors.confirmPassword}</p>
+                      )}
+                    </div>
                   
-                  <div className="flex items-center space-x-2">
-                    <input
-                      id="terms"
-                      name="agreedToTerms"
-                      type="checkbox"
-                      checked={formData.agreedToTerms}
-                      onChange={handleInputChange}
-                      className="rounded border-border"
-                    />
-                    <Label htmlFor="terms" className="text-sm">
-                      <Link to="/terms" className="text-primary hover:underline">
-                        Kullanım Koşulları
-                      </Link>
-                      {' '}ve{' '}
-                      <Link to="/privacy" className="text-primary hover:underline">
-                        Gizlilik Politikası
-                      </Link>
-                      'nı kabul ediyorum
-                    </Label>
-                  </div>
+                    <div className="flex items-start space-x-2">
+                      <Checkbox
+                        id="terms"
+                        checked={formData.agreedToTerms}
+                        onCheckedChange={(checked) => 
+                          setFormData(prev => ({ ...prev, agreedToTerms: checked as boolean }))
+                        }
+                        className="mt-1"
+                      />
+                      <Label htmlFor="terms" className="text-sm leading-relaxed">
+                        <Link to="/terms" className="text-primary hover:underline">
+                          Kullanım Koşulları
+                        </Link>
+                        {' '}ve{' '}
+                        <Link to="/privacy" className="text-primary hover:underline">
+                          Gizlilik Politikası
+                        </Link>
+                        'nı okudum ve kabul ediyorum
+                      </Label>
+                    </div>
                   
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={loading || !formData.agreedToTerms}
-                  >
-                    {loading ? 'Hesap Oluşturuluyor...' : 'Hesap Oluştur'}
-                  </Button>
-                </form>
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={loading || isSubmitting || !formData.agreedToTerms || passwordStrength < 50}
+                    >
+                      {(loading || isSubmitting) ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Hesap Oluşturuluyor...
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="mr-2 h-4 w-4" />
+                          Güvenli Hesap Oluştur
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                )}
                 
                 <div className="space-y-3 pt-4 border-t">
                   <div className="flex items-center text-sm text-muted-foreground">

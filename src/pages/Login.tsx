@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { Scale } from 'lucide-react';
+import { Scale, Eye, EyeOff, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -14,6 +15,9 @@ export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, user, loading } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -27,8 +31,37 @@ export default function Login() {
     }
   }, [user, navigate]);
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      setEmailError('E-posta adresi gereklidir');
+      return false;
+    }
+    if (!emailRegex.test(email)) {
+      setEmailError('Geçerli bir e-posta adresi girin');
+      return false;
+    }
+    setEmailError('');
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateEmail(formData.email)) {
+      return;
+    }
+
+    if (!formData.password || formData.password.length < 6) {
+      toast({
+        title: "Hata",
+        description: "Şifre en az 6 karakter olmalıdır",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     
     const result = await signIn(formData.email, formData.password);
     
@@ -37,6 +70,10 @@ export default function Login() {
         title: "Giriş Başarılı!",
         description: "Dashboard'a yönlendiriliyorsunuz...",
       });
+      // Remember me functionality would be handled in AuthContext
+      if (formData.rememberMe) {
+        localStorage.setItem('turklaw_remember_user', 'true');
+      }
       navigate('/dashboard');
     } else {
       toast({
@@ -45,6 +82,8 @@ export default function Login() {
         variant: "destructive",
       });
     }
+    
+    setIsSubmitting(false);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,6 +92,11 @@ export default function Login() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    
+    // Real-time email validation
+    if (name === 'email' && value) {
+      validateEmail(value);
+    }
   };
 
   return (
@@ -77,39 +121,65 @@ export default function Login() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">E-posta</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="avukat@example.com"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="avukat@example.com"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className={emailError ? 'border-destructive' : ''}
+                        required
+                      />
+                      {formData.email && !emailError && (
+                        <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-success" />
+                      )}
+                      {emailError && (
+                        <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive" />
+                      )}
+                    </div>
+                    {emailError && (
+                      <p className="text-sm text-destructive">{emailError}</p>
+                    )}
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="password">Şifre</Label>
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      placeholder="Şifrenizi girin"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Şifrenizi girin"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <input
+                      <Checkbox
                         id="rememberMe"
-                        name="rememberMe"
-                        type="checkbox"
                         checked={formData.rememberMe}
-                        onChange={handleInputChange}
-                        className="rounded border-border"
+                        onCheckedChange={(checked) => 
+                          setFormData(prev => ({ ...prev, rememberMe: checked as boolean }))
+                        }
                       />
                       <Label htmlFor="rememberMe" className="text-sm">
                         Beni hatırla
@@ -124,9 +194,16 @@ export default function Login() {
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={loading}
+                    disabled={loading || isSubmitting || !!emailError}
                   >
-                    {loading ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
+                    {(loading || isSubmitting) ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Giriş Yapılıyor...
+                      </>
+                    ) : (
+                      'Giriş Yap'
+                    )}
                   </Button>
                 </form>
                 
