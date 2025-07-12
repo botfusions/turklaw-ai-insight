@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,11 +8,13 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { CheckCircle, Scale } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Register() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const { signUp, user, loading } = useAuth();
+  const [isSuccess, setIsSuccess] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -20,6 +22,13 @@ export default function Register() {
     confirmPassword: '',
     agreedToTerms: false
   });
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,21 +51,21 @@ export default function Register() {
       return;
     }
 
-    setIsLoading(true);
+    const result = await signUp(formData.email, formData.password, formData.name);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    if (result.success) {
+      setIsSuccess(true);
       toast({
-        title: "Başarılı!",
-        description: "Hesabınız oluşturuldu. Dashboard'a yönlendiriliyorsunuz...",
+        title: "Hesap Oluşturuldu!",
+        description: "E-posta adresinizi doğruladıktan sonra giriş yapabilirsiniz.",
       });
-      
-      // Redirect to dashboard after successful registration
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1500);
-    }, 2000);
+    } else {
+      toast({
+        title: "Kayıt Hatası",
+        description: result.error,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,9 +173,9 @@ export default function Register() {
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={isLoading}
+                    disabled={loading || !formData.agreedToTerms}
                   >
-                    {isLoading ? 'Hesap Oluşturuluyor...' : 'Hesap Oluştur'}
+                    {loading ? 'Hesap Oluşturuluyor...' : 'Hesap Oluştur'}
                   </Button>
                 </form>
                 
