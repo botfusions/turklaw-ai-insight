@@ -1,5 +1,6 @@
+
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useScrollEffect } from './useScrollEffect';
 
