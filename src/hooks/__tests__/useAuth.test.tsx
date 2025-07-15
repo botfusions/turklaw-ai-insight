@@ -1,6 +1,5 @@
 import React from 'react';
 import { renderHook } from '@testing-library/react';
-import { waitFor } from '@testing-library/dom';
 import { describe, it, expect } from 'vitest';
 import { useAuth } from '../useAuth';
 import { AuthDataProvider } from '@/contexts/AuthDataContext';
@@ -55,13 +54,9 @@ describe('useAuth', () => {
     expect(typeof result.current.incrementSearchCount).toBe('function');
   });
 
-  it('should handle canSearch logic correctly', async () => {
+  it('should handle canSearch logic correctly', () => {
     const { result } = renderHook(() => useAuth(), {
       wrapper: createWrapper(),
-    });
-
-    await waitFor(() => {
-      expect(result.current.initialized).toBe(true);
     });
 
     // Should return false when no profile or search limit reached

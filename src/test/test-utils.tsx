@@ -73,6 +73,5 @@ const customRender = (
 ) => render(ui, { wrapper: AllTheProviders, ...options });
 
 export * from '@testing-library/react';
-export { screen } from '@testing-library/react';
 export { customRender as render };
 export { createTestQueryClient };
