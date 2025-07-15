@@ -21,7 +21,7 @@ const DirectMCPTest = () => {
     try {
       console.log('📚 Testing Mevzuat MCP directly...');
       
-      const mevzuatResponse = await fetch('https://mevzuat-mcp-2z26.onrender.com', {
+      const mevzuatResponse = await fetch('https://mevzuat-mcp-2z26.onrender.com/mcp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -31,8 +31,7 @@ const DirectMCPTest = () => {
             name: "search_mevzuat",
             arguments: {
               query: query,
-              limit: 5,
-              detailed: true
+              limit: 5
             }
           },
           id: "mevzuat_test_1"
@@ -42,7 +41,7 @@ const DirectMCPTest = () => {
       testResults.mevzuat = {
         status: mevzuatResponse.status,
         statusText: mevzuatResponse.statusText,
-        url: 'https://mevzuat-mcp-2z26.onrender.com'
+        url: 'https://mevzuat-mcp-2z26.onrender.com/mcp'
       };
 
       if (mevzuatResponse.ok) {
@@ -67,7 +66,7 @@ const DirectMCPTest = () => {
     try {
       console.log('⚖️ Testing Yargı MCP directly...');
       
-      const yargiResponse = await fetch('https://yargi-mcp-of8a.onrender.com', {
+      const yargiResponse = await fetch('https://yargi-mcp-of8a.onrender.com/mcp', {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -77,8 +76,7 @@ const DirectMCPTest = () => {
             name: "search_yargitay",
             arguments: {
               query: query,
-              limit: 5,
-              detailed: true
+              limit: 5
             }
           },
           id: "yargi_test_1"
@@ -88,7 +86,7 @@ const DirectMCPTest = () => {
       testResults.yargi = {
         status: yargiResponse.status,
         statusText: yargiResponse.statusText,
-        url: 'https://yargi-mcp-of8a.onrender.com'
+        url: 'https://yargi-mcp-of8a.onrender.com/mcp'
       };
 
       if (yargiResponse.ok) {
@@ -203,8 +201,8 @@ ${results.yargi?.data ?
             </CardHeader>
             <CardContent>
               <ul className="text-sm space-y-1">
-                <li>📚 <strong>Mevzuat MCP:</strong> https://mevzuat-mcp-2z26.onrender.com</li>
-                <li>⚖️ <strong>Yargı MCP:</strong> https://yargi-mcp-of8a.onrender.com</li>
+                <li>📚 <strong>Mevzuat MCP:</strong> https://mevzuat-mcp-2z26.onrender.com/mcp</li>
+                <li>⚖️ <strong>Yargı MCP:</strong> https://yargi-mcp-of8a.onrender.com/mcp</li>
                 <li>🔍 <strong>Method:</strong> tools/call → search_mevzuat / search_yargitay</li>
               </ul>
             </CardContent>
