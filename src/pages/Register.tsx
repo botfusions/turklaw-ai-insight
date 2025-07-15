@@ -10,7 +10,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { CheckCircle, Scale, Eye, EyeOff, Loader2, AlertCircle, Shield, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Register() {
   const navigate = useNavigate();

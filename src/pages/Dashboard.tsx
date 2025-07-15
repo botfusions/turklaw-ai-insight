@@ -11,7 +11,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { AnalyticsChart } from '@/components/dashboard/AnalyticsChart';
 import { useDashboard } from '@/hooks/useDashboard';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   Search, 
   TrendingUp, 

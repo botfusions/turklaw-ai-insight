@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,42 +18,67 @@ import {
   Activity,
   FileText
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthData } from '@/contexts/AuthDataContext';
 
 export function DashboardPreview() {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile } = useAuthData();
   const [quickSearchQuery, setQuickSearchQuery] = useState('');
   
-  const usagePercentage = profile ? (profile.monthly_search_count / profile.max_searches) * 100 : 0;
-  const isPremiumUser = profile && !['free', 'basic'].includes(profile.plan);
+  // Memoized calculations for performance
+  const usagePercentage = useMemo(() => 
+    profile ? (profile.monthly_search_count / profile.max_searches) * 100 : 0, 
+    [profile?.monthly_search_count, profile?.max_searches]
+  );
   
-  const mockRecentSearches = [
+  const isPremiumUser = useMemo(() => 
+    profile && !['free', 'basic'].includes(profile.plan), 
+    [profile?.plan]
+  );
+  
+  const displayName = useMemo(() => 
+    profile?.full_name || user?.email?.split('@')[0], 
+    [profile?.full_name, user?.email]
+  );
+
+  const mockRecentSearches = useMemo(() => [
     { query: 'iş kazası tazminat', date: '2024-01-15', results: 24 },
     { query: 'boşanma nafaka', date: '2024-01-14', results: 18 },
     { query: 'sözleşme ihlali', date: '2024-01-13', results: 31 }
-  ];
+  ], []);
 
-  const mockStats = {
+  const mockStats = useMemo(() => ({
     monthlySearches: profile?.monthly_search_count || 0,
     savedCases: 12,
     totalCases: 100000,
     activeSearches: 3
-  };
+  }), [profile?.monthly_search_count]);
 
-  const handleQuickSearch = (e: React.FormEvent) => {
+  const handleQuickSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (quickSearchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(quickSearchQuery)}`);
     }
-  };
+  }, [quickSearchQuery, navigate]);
+
+  const handleSearchClick = useCallback((query: string) => {
+    navigate(`/search?q=${encodeURIComponent(query)}`);
+  }, [navigate]);
+
+  const handleDashboardClick = useCallback(() => {
+    navigate('/dashboard');
+  }, [navigate]);
+
+  const handleAdvancedSearchClick = useCallback(() => {
+    navigate('/search');
+  }, [navigate]);
 
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-foreground mb-2">
-          Hoş geldiniz, {profile?.full_name || user?.email?.split('@')[0]}!
+          Hoş geldiniz, {displayName}!
         </h2>
         <p className="text-muted-foreground">
           Hukuki araştırmalarınıza buradan hızlıca devam edebilirsiniz
@@ -170,7 +195,7 @@ export function DashboardPreview() {
               <div 
                 key={index}
                 className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => navigate(`/search?q=${encodeURIComponent(search.query)}`)}
+                onClick={() => handleSearchClick(search.query)}
               >
                 <div className="flex-1">
                   <p className="font-medium text-foreground">{search.query}</p>
@@ -189,7 +214,7 @@ export function DashboardPreview() {
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <Button 
           size="lg" 
-          onClick={() => navigate('/dashboard')}
+          onClick={handleDashboardClick}
           className="bg-primary hover:bg-primary/90 text-lg px-8 py-6"
         >
           <TrendingUp className="mr-2 h-5 w-5" />
@@ -199,7 +224,7 @@ export function DashboardPreview() {
         <Button 
           variant="outline" 
           size="lg"
-          onClick={() => navigate('/search')}
+          onClick={handleAdvancedSearchClick}
           className="text-lg px-8 py-6"
         >
           <Search className="mr-2 h-5 w-5" />

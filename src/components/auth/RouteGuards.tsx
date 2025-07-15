@@ -1,4 +1,4 @@
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { RouteGuardResult, PlanType } from '@/types/routes';
 
 export const useRouteGuards = () => {

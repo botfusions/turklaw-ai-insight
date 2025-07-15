@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useAuthData } from '@/contexts/AuthDataContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useApiState } from './useApiState';
 
 interface DashboardStats {
   totalCases: number;
@@ -12,8 +13,8 @@ interface DashboardStats {
 }
 
 export const useDashboard = () => {
-  const { user, profile } = useAuth();
-  const [stats, setStats] = useState<DashboardStats>({
+  const { user, profile } = useAuthData();
+  const apiState = useApiState<DashboardStats>({
     totalCases: 0,
     savedCasesCount: 0,
     recentSearches: [],
@@ -21,16 +22,11 @@ export const useDashboard = () => {
     monthlySearches: 0,
     searchTrends: []
   });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     if (!user) return;
 
-    try {
-      setLoading(true);
-      setError(null);
-
+    const fetchPromise = (async () => {
       // Fetch user searches
       const { data: searches, error: searchError } = await supabase
         .from('user_searches')
@@ -69,24 +65,20 @@ export const useDashboard = () => {
       // Generate search trends for the last 7 days
       const searchTrends = await generateSearchTrends(user.id);
 
-      setStats({
+      return {
         totalCases: totalCases || 0,
         savedCasesCount: savedCases?.length || 0,
         recentSearches: searches || [],
         savedCases: savedCases || [],
         monthlySearches: profile?.monthly_search_count || 0,
         searchTrends
-      });
+      };
+    })();
 
-    } catch (err) {
-      console.error('Dashboard data fetch error:', err);
-      setError('Dashboard verileri yüklenirken bir hata oluştu');
-    } finally {
-      setLoading(false);
-    }
-  };
+    return apiState.execute(fetchPromise);
+  }, [user, profile?.monthly_search_count, apiState]);
 
-  const generateSearchTrends = async (userId: string) => {
+  const generateSearchTrends = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('user_searches')
@@ -123,22 +115,32 @@ export const useDashboard = () => {
       console.error('Error generating search trends:', error);
       return [];
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (user) {
       fetchDashboardData();
     }
-  }, [user, profile]);
+  }, [user, fetchDashboardData]);
 
-  const refreshData = () => {
+  const refreshData = useCallback(() => {
     fetchDashboardData();
-  };
+  }, [fetchDashboardData]);
+
+  // Memoized stats with fallback
+  const stats = useMemo(() => apiState.data || {
+    totalCases: 0,
+    savedCasesCount: 0,
+    recentSearches: [],
+    savedCases: [],
+    monthlySearches: 0,
+    searchTrends: []
+  }, [apiState.data]);
 
   return {
     stats,
-    loading,
-    error,
+    loading: apiState.loading,
+    error: apiState.error,
     refreshData,
     user,
     profile

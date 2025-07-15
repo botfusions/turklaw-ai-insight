@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { UserAvatar } from './UserAvatar';
 import { ThemeToggle } from './ThemeToggle';
 import { NotificationCenter } from './NotificationCenter';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { cn } from '@/lib/utils';
 

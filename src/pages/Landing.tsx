@@ -21,7 +21,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { subscriptionPlans } from '@/lib/mockData';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Landing() {
   const navigate = useNavigate();
