@@ -10,8 +10,10 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { AnalyticsChart } from '@/components/dashboard/AnalyticsChart';
+import { DebugConsole } from '@/components/debug/DebugConsole';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useAuth } from '@/hooks/useAuth';
+import { useAPIStatus } from '@/hooks/useAPIStatus';
 import { 
   Search, 
   TrendingUp, 
@@ -45,6 +47,7 @@ export default function Dashboard() {
   const [searchProgress, setSearchProgress] = useState(0);
   const { canSearch, incrementSearchCount } = useAuth();
   const { stats, loading, error, user, profile } = useDashboard();
+  const { apiStatuses, isAnyAPIOnline, allAPIsOffline } = useAPIStatus();
   
   const usagePercentage = profile ? (profile.monthly_search_count / profile.max_searches) * 100 : 0;
 
@@ -112,6 +115,13 @@ export default function Dashboard() {
     setEnhancedError(null);
     setEnhancedResults(null);
     setSearchProgress(0);
+
+    // Check if APIs are available
+    if (allAPIsOffline) {
+      setEnhancedError('Tüm API\'ler şu anda çevrimdışı. Lütfen daha sonra tekrar deneyin.');
+      setEnhancedLoading(false);
+      return;
+    }
 
     try {
       // 1. İlk arama - kısa sonuçlar
@@ -254,8 +264,32 @@ ${result.legal_basis || 'İlgili kanun maddeleri ve içtihatlar doğrultusunda k
           </p>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            {/* API Status Alert */}
+            {allAPIsOffline && (
+              <Card className="bg-destructive/10 border-destructive/20 mb-6">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-destructive">
+                    <AlertCircle className="h-5 w-5" />
+                    <p className="font-medium">API Servisleri Çevrimdışı</p>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Harici API servisleri şu anda kullanılamıyor. Temel arama özellikleri mock veriler ile çalışıyor.
+                  </p>
+                  <Button
+                    onClick={() => navigate('/api-test')}
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                  >
+                    <Activity className="h-4 w-4 mr-2" />
+                    API Durumunu Kontrol Et
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="bg-card shadow-card">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -712,6 +746,7 @@ ${result.legal_basis || 'İlgili kanun maddeleri ve içtihatlar doğrultusunda k
       </main>
       
       <Footer />
+      <DebugConsole />
     </div>
   );
 }

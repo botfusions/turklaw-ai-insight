@@ -15,6 +15,7 @@ import Profile from '@/pages/Profile';
 import Search from '@/pages/Search';
 import SavedCases from '@/pages/SavedCases';
 import Subscription from '@/pages/Subscription';
+import APITest from '@/pages/APITest';
 import NotFound from '@/pages/NotFound';
 
 export const AppRoutes: React.FC = () => {
@@ -132,6 +133,18 @@ export const AppRoutes: React.FC = () => {
             protection={RouteProtectionLevel.AUTHENTICATED}
           >
             <Subscription />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* API Test Route */}
+      <Route 
+        path="/api-test" 
+        element={
+          <ProtectedRoute 
+            protection={RouteProtectionLevel.AUTHENTICATED}
+          >
+            <APITest />
           </ProtectedRoute>
         } 
       />
