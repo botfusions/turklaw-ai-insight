@@ -56,11 +56,11 @@ export const AppRoutes: React.FC = () => {
         } 
       />
 
-      {/* Email Verification - Authenticated but special case */}
+      {/* Email Verification - Public Route */}
       <Route 
-        path="/verify-email" 
+        path="/email-verification" 
         element={
-          <ProtectedRoute protection={RouteProtectionLevel.AUTHENTICATED}>
+          <ProtectedRoute protection={RouteProtectionLevel.PUBLIC}>
             <EmailVerification />
           </ProtectedRoute>
         } 

@@ -1,117 +1,120 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { Scale, CheckCircle, AlertCircle, Loader2, Mail, RefreshCw } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { CheckCircle, XCircle, Clock, Mail } from 'lucide-react';
 
 type VerificationStatus = 'loading' | 'success' | 'error' | 'expired';
 
 export default function EmailVerification() {
-  const navigate = useNavigate();
-  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<VerificationStatus>('loading');
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
   const [isResending, setIsResending] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const token = searchParams.get('token');
+  const type = searchParams.get('type');
 
   useEffect(() => {
-    const verifyEmail = async () => {
-      const token = searchParams.get('token');
-      const type = searchParams.get('type');
+    if (token && type) {
+      verifyEmail();
+    } else {
+      // No token, show manual verification form
+      setStatus('error');
+      setError('Doğrulama linki geçersiz');
+    }
+  }, [token, type]);
 
-      if (!token || type !== 'signup') {
-        setStatus('error');
-        setError('Geçersiz doğrulama bağlantısı');
-        return;
-      }
+  const verifyEmail = async () => {
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: token!,
+        type: 'email' as any
+      });
 
-      try {
-        const { error } = await supabase.auth.verifyOtp({
-          token_hash: token,
-          type: 'signup'
-        });
-
-        if (error) {
-          console.error('Verification error:', error);
-          if (error.message.includes('expired')) {
-            setStatus('expired');
-            setError('Doğrulama bağlantısının süresi dolmuş');
-          } else {
-            setStatus('error');
-            setError('Doğrulama başarısız oldu');
-          }
+      if (error) {
+        if (error.message.includes('expired')) {
+          setStatus('expired');
+          setError('Doğrulama linki süresi dolmuş');
         } else {
-          setStatus('success');
-          toast({
-            title: "E-posta Doğrulandı!",
-            description: "Hesabınız başarıyla aktifleştirildi.",
-          });
+          setStatus('error');
+          setError(error.message || 'Doğrulama başarısız');
         }
-      } catch (err) {
-        console.error('Unexpected error:', err);
-        setStatus('error');
-        setError('Beklenmeyen bir hata oluştu');
+      } else {
+        setStatus('success');
+        toast({
+          title: 'Başarılı!',
+          description: 'E-posta adresiniz başarıyla doğrulandı.',
+        });
+        
+        // Redirect to login after 2 seconds
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
       }
-    };
-
-    verifyEmail();
-  }, [searchParams, toast]);
+    } catch (err: any) {
+      setStatus('error');
+      setError(err.message || 'Beklenmeyen bir hata oluştu');
+    }
+  };
 
   const handleResendVerification = async () => {
-    const email = localStorage.getItem('turklaw_pending_email');
-    
     if (!email) {
       toast({
-        title: "Hata",
-        description: "E-posta adresi bulunamadı. Lütfen tekrar kayıt olun.",
-        variant: "destructive",
+        variant: 'destructive',
+        title: 'Hata',
+        description: 'Lütfen e-posta adresinizi girin.',
       });
-      navigate('/register');
       return;
     }
 
     setIsResending(true);
-
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/email-verification`
+        }
       });
 
       if (error) {
         toast({
-          title: "Hata",
-          description: "E-posta gönderilemedi. Lütfen tekrar deneyin.",
-          variant: "destructive",
+          variant: 'destructive',
+          title: 'Hata',
+          description: error.message || 'E-posta gönderilemedi',
         });
       } else {
         toast({
-          title: "E-posta Gönderildi",
-          description: "Yeni doğrulama e-postası gönderildi.",
+          title: 'Başarılı!',
+          description: 'Doğrulama e-postası tekrar gönderildi.',
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       toast({
-        title: "Hata",
-        description: "Beklenmeyen bir hata oluştu.",
-        variant: "destructive",
+        variant: 'destructive',
+        title: 'Hata',
+        description: 'Beklenmeyen bir hata oluştu',
       });
+    } finally {
+      setIsResending(false);
     }
-
-    setIsResending(false);
   };
 
   const renderContent = () => {
     switch (status) {
       case 'loading':
         return (
-          <div className="text-center space-y-4">
-            <Loader2 className="h-12 w-12 text-primary mx-auto animate-spin" />
-            <h3 className="text-lg font-semibold">E-posta Doğrulanıyor...</h3>
+          <div className="text-center">
+            <Clock className="mx-auto h-12 w-12 text-blue-500 animate-spin mb-4" />
+            <h2 className="text-xl font-semibold mb-2">E-posta Doğrulanıyor...</h2>
             <p className="text-muted-foreground">
               Lütfen bekleyin, e-posta adresiniz doğrulanıyor.
             </p>
@@ -120,129 +123,120 @@ export default function EmailVerification() {
 
       case 'success':
         return (
-          <div className="text-center space-y-4">
-            <div className="bg-success/10 p-6 rounded-lg border border-success/20">
-              <CheckCircle className="h-12 w-12 text-success mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">E-posta Doğrulandı!</h3>
-              <p className="text-muted-foreground mb-4">
-                Hesabınız başarıyla aktifleştirildi. Artık TurkLaw AI'yi kullanmaya başlayabilirsiniz.
-              </p>
-              <Button onClick={() => navigate('/login')} className="w-full">
-                Giriş Yapın
-              </Button>
-            </div>
+          <div className="text-center">
+            <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
+            <h2 className="text-xl font-semibold mb-2">E-posta Doğrulandı!</h2>
+            <p className="text-muted-foreground mb-4">
+              E-posta adresiniz başarıyla doğrulandı. Artık giriş yapabilirsiniz.
+            </p>
+            <Button asChild>
+              <Link to="/login">Giriş Yap</Link>
+            </Button>
           </div>
         );
 
       case 'expired':
         return (
-          <div className="text-center space-y-4">
-            <div className="bg-warning/10 p-6 rounded-lg border border-warning/20">
-              <AlertCircle className="h-12 w-12 text-warning mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Bağlantının Süresi Dolmuş</h3>
-              <p className="text-muted-foreground mb-4">
-                Doğrulama bağlantısının süresi dolmuş. Yeni bir doğrulama e-postası göndermek için aşağıdaki butona tıklayın.
-              </p>
-              <div className="space-y-2">
-                <Button 
-                  onClick={handleResendVerification} 
-                  disabled={isResending}
-                  className="w-full"
-                >
-                  {isResending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Gönderiliyor...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      Yeni Doğrulama E-postası Gönder
-                    </>
-                  )}
-                </Button>
-                <Button variant="outline" onClick={() => navigate('/register')} className="w-full">
-                  Tekrar Kayıt Ol
-                </Button>
+          <div className="text-center">
+            <XCircle className="mx-auto h-12 w-12 text-orange-500 mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Link Süresi Doldu</h2>
+            <p className="text-muted-foreground mb-4">
+              Doğrulama linkinin süresi dolmuş. Yeni bir doğrulama e-postası göndermek için 
+              e-posta adresinizi girin.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="email">E-posta Adresi</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="E-posta adresinizi girin"
+                />
               </div>
+              <Button 
+                onClick={handleResendVerification} 
+                disabled={isResending}
+                className="w-full"
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                {isResending ? 'Gönderiliyor...' : 'Doğrulama E-postası Gönder'}
+              </Button>
             </div>
           </div>
         );
 
       case 'error':
-      default:
         return (
-          <div className="text-center space-y-4">
-            <div className="bg-destructive/10 p-6 rounded-lg border border-destructive/20">
-              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Doğrulama Başarısız</h3>
-              <p className="text-muted-foreground mb-4">
-                {error || 'E-posta doğrulama sırasında bir hata oluştu.'}
-              </p>
-              <div className="space-y-2">
-                <Button 
-                  onClick={handleResendVerification} 
-                  disabled={isResending}
-                  className="w-full"
-                >
-                  {isResending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Gönderiliyor...
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Yeni Doğrulama E-postası Gönder
-                    </>
-                  )}
-                </Button>
-                <Button variant="outline" onClick={() => navigate('/register')} className="w-full">
-                  Tekrar Kayıt Ol
-                </Button>
+          <div className="text-center">
+            <XCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Doğrulama Başarısız</h2>
+            <p className="text-muted-foreground mb-4">
+              {error || 'E-posta doğrulama işlemi başarısız oldu.'}
+            </p>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="email">E-posta Adresi</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="E-posta adresinizi girin"
+                />
               </div>
+              <Button 
+                onClick={handleResendVerification} 
+                disabled={isResending}
+                className="w-full"
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                {isResending ? 'Gönderiliyor...' : 'Doğrulama E-postası Gönder'}
+              </Button>
+              <Button variant="outline" asChild className="w-full">
+                <Link to="/register">Yeniden Kayıt Ol</Link>
+              </Button>
             </div>
           </div>
         );
+
+      default:
+        return null;
     }
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-md mx-auto">
-            <Card className="bg-card shadow-card">
-              <CardHeader className="text-center">
-                <div className="bg-gradient-hero p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <Scale className="h-8 w-8 text-white" />
-                </div>
-                <CardTitle className="text-2xl">E-posta Doğrulama</CardTitle>
-                <CardDescription>
-                  Hesabınızı aktifleştirmek için e-posta doğrulaması
-                </CardDescription>
-              </CardHeader>
-              
-              <CardContent>
-                {renderContent()}
-                
-                <div className="text-center mt-6">
-                  <Link 
-                    to="/" 
-                    className="text-sm text-primary hover:underline"
-                  >
-                    Ana sayfaya dön
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-100">
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Link to="/" className="text-2xl font-bold text-primary">
+            Legal AI
+          </Link>
         </div>
-      </section>
-      
-      <Footer />
+      </header>
+
+      <main className="flex-1 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>E-posta Doğrulama</CardTitle>
+            <CardDescription>
+              E-posta adresinizi doğrulayın
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {renderContent()}
+          </CardContent>
+        </Card>
+      </main>
+
+      <footer className="bg-white border-t py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-muted-foreground">
+          <Link to="/" className="hover:text-primary">
+            Ana Sayfaya Dön
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 }

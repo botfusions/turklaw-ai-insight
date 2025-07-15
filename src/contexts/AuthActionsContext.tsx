@@ -12,6 +12,7 @@ interface AuthActionsContextType {
   updateProfile: (updates: Partial<Profile>) => Promise<AuthResult>;
   canSearch: () => boolean;
   incrementSearchCount: () => Promise<void>;
+  resendConfirmation: (email: string) => Promise<AuthResult>;
 }
 
 const AuthActionsContext = createContext<AuthActionsContextType | undefined>(undefined);
@@ -20,27 +21,53 @@ interface AuthActionsProviderProps {
   children: ReactNode;
 }
 
-const getErrorMessage = (error: any): string => {
-  const errorMessages: Record<string, string> = {
-    'Invalid login credentials': 'E-posta veya şifre hatalı',
-    'User already registered': 'Bu e-posta adresi zaten kayıtlı',
-    'Email not confirmed': 'E-posta adresinizi doğrulamanız gerekiyor',
-    'Password should be at least 6 characters': 'Şifre en az 6 karakter olmalıdır',
-    'Email rate limit exceeded': 'Çok fazla e-posta gönderildi. Lütfen bekleyin',
-    'Signup requires email verification': 'Kayıt için e-posta doğrulaması gerekiyor',
-    'Invalid email format': 'Geçersiz e-posta formatı',
-    'Weak password': 'Şifre çok zayıf',
-    'User not found': 'Kullanıcı bulunamadı',
-    'Email already exists': 'Bu e-posta adresi zaten kullanılıyor'
-  };
-  
-  const message = error?.message || error;
-  return errorMessages[message] || 'Bir hata oluştu. Lütfen tekrar deneyin.';
-};
-
 export const AuthActionsProvider: React.FC<AuthActionsProviderProps> = ({ children }) => {
   const { user, profile, refreshProfile } = useAuthData();
   const [loading, setLoading] = useState(false);
+
+  const getErrorMessage = (error: any): string => {
+    if (!error?.message) return 'Bilinmeyen bir hata oluştu';
+    
+    const message = error.message.toLowerCase();
+    
+    if (message.includes('email not confirmed')) {
+      return 'E-posta adresiniz doğrulanmamış. Lütfen e-postanızı kontrol edin.';
+    }
+    if (message.includes('invalid login credentials')) {
+      return 'Geçersiz e-posta veya şifre.';
+    }
+    if (message.includes('user already registered')) {
+      return 'Bu e-posta adresi zaten kayıtlı.';
+    }
+    if (message.includes('password')) {
+      return 'Şifre en az 6 karakter olmalıdır.';
+    }
+    
+    return error.message;
+  };
+
+  const resendConfirmation = useCallback(async (email: string): Promise<AuthResult> => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/email-verification`
+        }
+      });
+
+      if (error) {
+        return { success: false, error: getErrorMessage(error) };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: getErrorMessage(error) };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const signUp = useCallback(async (email: string, password: string, fullName?: string): Promise<AuthResult> => {
     try {
@@ -185,6 +212,7 @@ export const AuthActionsProvider: React.FC<AuthActionsProviderProps> = ({ childr
     updateProfile,
     canSearch,
     incrementSearchCount,
+    resendConfirmation,
   };
 
   return <AuthActionsContext.Provider value={value}>{children}</AuthActionsContext.Provider>;

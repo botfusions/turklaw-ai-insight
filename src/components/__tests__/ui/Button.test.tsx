@@ -1,4 +1,4 @@
-import { render } from '@/test/test-utils';
+import { render } from '@testing-library/react';
 import { screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Button } from '@/components/ui/button';

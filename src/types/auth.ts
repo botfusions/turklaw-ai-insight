@@ -28,6 +28,7 @@ export interface AuthActions {
   updateProfile: (updates: Partial<Profile>) => Promise<AuthResult>;
   canSearch: () => boolean;
   incrementSearchCount: () => Promise<void>;
+  resendConfirmation: (email: string) => Promise<AuthResult>;
 }
 
 export interface AuthResult {

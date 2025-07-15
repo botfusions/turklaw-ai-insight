@@ -5,19 +5,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { Scale, Eye, EyeOff, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Scale, Eye, EyeOff, Loader2, AlertCircle, CheckCircle, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn, user, loading } = useAuth();
+  const { signIn, user, loading, resendConfirmation } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [showEmailNotConfirmed, setShowEmailNotConfirmed] = useState(false);
+  const [lastAttemptedEmail, setLastAttemptedEmail] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -76,6 +79,12 @@ export default function Login() {
       }
       navigate('/dashboard');
     } else {
+      const errorMessage = result.error || '';
+      if (errorMessage.includes('E-posta adresiniz doğrulanmamış')) {
+        setShowEmailNotConfirmed(true);
+        setLastAttemptedEmail(formData.email);
+      }
+      
       toast({
         title: "Giriş Hatası",
         description: result.error,
@@ -99,6 +108,29 @@ export default function Login() {
     }
   };
 
+  const handleResendVerification = async () => {
+    if (!lastAttemptedEmail) return;
+    
+    setIsSubmitting(true);
+    const result = await resendConfirmation(lastAttemptedEmail);
+    
+    if (result.success) {
+      toast({
+        title: "E-posta Gönderildi!",
+        description: "Doğrulama e-postası tekrar gönderildi. Lütfen e-postanızı kontrol edin.",
+      });
+      setShowEmailNotConfirmed(false);
+    } else {
+      toast({
+        title: "Hata",
+        description: result.error,
+        variant: "destructive",
+      });
+    }
+    
+    setIsSubmitting(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -118,6 +150,35 @@ export default function Login() {
               </CardHeader>
               
               <CardContent className="space-y-4">
+                {showEmailNotConfirmed && (
+                  <Alert className="border-orange-200 bg-orange-50">
+                    <Mail className="h-4 w-4 text-orange-600" />
+                    <AlertDescription className="text-orange-800">
+                      E-posta adresiniz doğrulanmamış. Giriş yapabilmek için e-postanızı doğrulamanız gerekir.
+                      <div className="mt-2 flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleResendVerification}
+                          disabled={isSubmitting}
+                          className="text-orange-700 border-orange-300 hover:bg-orange-100"
+                        >
+                          <Mail className="mr-1 h-3 w-3" />
+                          {isSubmitting ? 'Gönderiliyor...' : 'Tekrar Gönder'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setShowEmailNotConfirmed(false)}
+                          className="text-orange-700 hover:bg-orange-100"
+                        >
+                          Kapat
+                        </Button>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">E-posta</Label>
