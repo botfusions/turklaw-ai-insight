@@ -13,7 +13,7 @@ export const useAPIStatus = () => {
   const [apiStatuses, setApiStatuses] = useState<APIStatus[]>([
     {
       name: 'Mevzuat API',
-      url: 'https://n8n.botfusions.com/webhook/mevzuat-demo',
+      url: 'https://n8n.botfusions.com/webhook/mevzuat-query',
       status: 'unknown'
     },
     {

@@ -19,7 +19,7 @@ const APITestComponent = () => {
     // Test Mevzuat API
     try {
       console.log('Testing Mevzuat API...');
-      const mevzuatResponse = await fetch('https://n8n.botfusions.com/webhook/mevzuat-demo', {
+      const mevzuatResponse = await fetch('https://n8n.botfusions.com/webhook/mevzuat-query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: "iş kanunu 2024" })
