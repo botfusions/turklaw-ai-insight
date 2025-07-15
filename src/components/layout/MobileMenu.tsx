@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { X, Search, User, Settings, LogOut, Scale, Bell } from 'lucide-react';
+import { X, Search, User, Settings, LogOut, Scale, Bell, TrendingUp, Bookmark, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -137,7 +137,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                     className="w-full justify-start"
                     onClick={() => handleNavigation('/dashboard')}
                   >
-                    <User className="h-4 w-4 mr-3" />
+                    <TrendingUp className="h-4 w-4 mr-3" />
                     Kontrol Paneli
                   </Button>
 
@@ -146,7 +146,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                     className="w-full justify-start"
                     onClick={() => handleNavigation('/saved-cases')}
                   >
-                    <Settings className="h-4 w-4 mr-3" />
+                    <Bookmark className="h-4 w-4 mr-3" />
                     Kayıtlı Kararlar
                   </Button>
 
@@ -157,7 +157,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                     className="w-full justify-start"
                     onClick={() => handleNavigation('/profile')}
                   >
-                    <Settings className="h-4 w-4 mr-3" />
+                    <User className="h-4 w-4 mr-3" />
                     Profil Ayarları
                   </Button>
 
@@ -166,7 +166,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                     className="w-full justify-start"
                     onClick={() => handleNavigation('/subscription')}
                   >
-                    <Settings className="h-4 w-4 mr-3" />
+                    <Crown className="h-4 w-4 mr-3" />
                     Abonelik
                   </Button>
                 </>

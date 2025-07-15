@@ -7,7 +7,8 @@ import {
   User, 
   Settings,
   Crown,
-  TrendingUp 
+  TrendingUp,
+  BookmarkCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -235,7 +236,7 @@ export function Header({}: HeaderProps) {
                     </DropdownMenuItem>
                     
                     <DropdownMenuItem onClick={() => navigate('/profile')}>
-                      <Settings className="h-4 w-4 mr-3" />
+                      <User className="h-4 w-4 mr-3" />
                       Profil Ayarları
                     </DropdownMenuItem>
                     
@@ -247,6 +248,16 @@ export function Header({}: HeaderProps) {
                           Limit Doldu
                         </Badge>
                       )}
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem onClick={() => navigate('/saved-cases')}>
+                      <BookmarkCheck className="h-4 w-4 mr-3" />
+                      Kayıtlı Kararlar
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem onClick={() => navigate('/subscription')}>
+                      <Crown className="h-4 w-4 mr-3" />
+                      Abonelik
                     </DropdownMenuItem>
                     
                     <DropdownMenuSeparator />

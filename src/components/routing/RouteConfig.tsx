@@ -11,8 +11,11 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import EmailVerification from '@/pages/EmailVerification';
 import ResetPassword from '@/pages/ResetPassword';
 import Dashboard from '@/pages/Dashboard';
+import Profile from '@/pages/Profile';
+import Search from '@/pages/Search';
+import SavedCases from '@/pages/SavedCases';
+import Subscription from '@/pages/Subscription';
 import NotFound from '@/pages/NotFound';
-// Temporarily disabled: Profile, SavedCases, Search, Subscription
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -84,7 +87,54 @@ export const AppRoutes: React.FC = () => {
         } 
       />
 
-{/* Advanced features temporarily disabled for minimal build */}
+      {/* Profile Route */}
+      <Route 
+        path="/profile" 
+        element={
+          <ProtectedRoute 
+            protection={RouteProtectionLevel.AUTHENTICATED}
+          >
+            <Profile />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Search Route */}
+      <Route 
+        path="/search" 
+        element={
+          <ProtectedRoute 
+            protection={RouteProtectionLevel.AUTHENTICATED}
+            requiresSearchLimit={true}
+          >
+            <Search />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Saved Cases Route */}
+      <Route 
+        path="/saved-cases" 
+        element={
+          <ProtectedRoute 
+            protection={RouteProtectionLevel.AUTHENTICATED}
+          >
+            <SavedCases />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Subscription Route */}
+      <Route 
+        path="/subscription" 
+        element={
+          <ProtectedRoute 
+            protection={RouteProtectionLevel.AUTHENTICATED}
+          >
+            <Subscription />
+          </ProtectedRoute>
+        } 
+      />
 
       {/* Catch-all route */}
       <Route path="*" element={<NotFound />} />
