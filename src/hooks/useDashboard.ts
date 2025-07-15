@@ -23,70 +23,19 @@ export const useDashboard = () => {
     searchTrends: []
   });
 
-  const fetchDashboardData = useCallback(async () => {
-    if (!user) return;
-
-    const fetchPromise = (async () => {
-      // Fetch user searches
-      const { data: searches, error: searchError } = await supabase
-        .from('user_searches')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('search_date', { ascending: false })
-        .limit(5);
-
-      if (searchError) throw searchError;
-
-      // Fetch saved cases
-      const { data: savedCases, error: savedError } = await supabase
-        .from('saved_cases')
-        .select(`
-          *,
-          legal_cases (
-            title,
-            court,
-            decision_date,
-            case_number
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('saved_at', { ascending: false })
-        .limit(3);
-
-      if (savedError) throw savedError;
-
-      // Fetch total legal cases count
-      const { count: totalCases, error: countError } = await supabase
-        .from('legal_cases')
-        .select('*', { count: 'exact', head: true });
-
-      if (countError) throw countError;
-
-      // Generate search trends for the last 7 days
-      const searchTrends = await generateSearchTrends(user.id);
-
-      return {
-        totalCases: totalCases || 0,
-        savedCasesCount: savedCases?.length || 0,
-        recentSearches: searches || [],
-        savedCases: savedCases || [],
-        monthlySearches: profile?.monthly_search_count || 0,
-        searchTrends
-      };
-    })();
-
-    return apiState.execute(fetchPromise);
-  }, [user, profile?.monthly_search_count, apiState]);
-
   const generateSearchTrends = useCallback(async (userId: string) => {
     try {
+      console.log('useDashboard: Generating search trends for user:', userId);
       const { data, error } = await supabase
         .from('user_searches')
         .select('search_date')
         .eq('user_id', userId)
         .gte('search_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
-      if (error) throw error;
+      if (error) {
+        console.error('useDashboard: Error generating search trends:', error);
+        throw error;
+      }
 
       // Group by date and count
       const trendsMap = new Map();
@@ -107,18 +56,99 @@ export const useDashboard = () => {
         }
       });
 
-      return Array.from(trendsMap.entries()).map(([date, count]) => ({
+      const result = Array.from(trendsMap.entries()).map(([date, count]) => ({
         date,
         searches: count
       }));
+
+      console.log('useDashboard: Search trends generated:', result);
+      return result;
     } catch (error) {
       console.error('Error generating search trends:', error);
       return [];
     }
   }, []);
 
+  const fetchDashboardData = useCallback(async () => {
+    if (!user) {
+      console.log('useDashboard: No user found, skipping fetch');
+      return;
+    }
+
+    console.log('useDashboard: Starting to fetch dashboard data for user:', user.id);
+
+    const fetchPromise = (async () => {
+      console.log('useDashboard: Fetching user searches...');
+      // Fetch user searches
+      const { data: searches, error: searchError } = await supabase
+        .from('user_searches')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('search_date', { ascending: false })
+        .limit(5);
+
+      if (searchError) {
+        console.error('useDashboard: Error fetching searches:', searchError);
+        throw searchError;
+      }
+
+      console.log('useDashboard: Fetching saved cases...');
+      // Fetch saved cases
+      const { data: savedCases, error: savedError } = await supabase
+        .from('saved_cases')
+        .select(`
+          *,
+          legal_cases (
+            title,
+            court,
+            decision_date,
+            case_number
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('saved_at', { ascending: false })
+        .limit(3);
+
+      if (savedError) {
+        console.error('useDashboard: Error fetching saved cases:', savedError);
+        throw savedError;
+      }
+
+      console.log('useDashboard: Fetching total legal cases count...');
+      // Fetch total legal cases count
+      const { count: totalCases, error: countError } = await supabase
+        .from('legal_cases')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) {
+        console.error('useDashboard: Error fetching total cases:', countError);
+        throw countError;
+      }
+
+      console.log('useDashboard: Generating search trends...');
+      // Generate search trends for the last 7 days
+      const searchTrends = await generateSearchTrends(user.id);
+
+      const result = {
+        totalCases: totalCases || 0,
+        savedCasesCount: savedCases?.length || 0,
+        recentSearches: searches || [],
+        savedCases: savedCases || [],
+        monthlySearches: profile?.monthly_search_count || 0,
+        searchTrends
+      };
+
+      console.log('useDashboard: Dashboard data fetched successfully:', result);
+      return result;
+    })();
+
+    return apiState.execute(fetchPromise);
+  }, [user, profile?.monthly_search_count, generateSearchTrends]);
+
   useEffect(() => {
+    console.log('useDashboard: useEffect triggered - user:', user?.id, 'user exists:', !!user);
     if (user) {
+      console.log('useDashboard: Calling fetchDashboardData...');
       fetchDashboardData();
     }
   }, [user, fetchDashboardData]);

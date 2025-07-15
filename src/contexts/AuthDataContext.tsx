@@ -23,16 +23,22 @@ export const AuthDataProvider: React.FC<AuthDataProviderProps> = ({ children }) 
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log('AuthDataContext: Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('AuthDataContext: Error fetching profile:', error);
+        throw error;
+      }
+      
+      console.log('AuthDataContext: Profile fetched successfully:', data);
       setProfile(data as Profile);
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('AuthDataContext: Error fetching profile:', error);
       setProfile(null);
     }
   };
