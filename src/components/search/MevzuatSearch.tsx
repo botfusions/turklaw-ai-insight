@@ -119,8 +119,8 @@ export const MevzuatSearch = ({
               )}
               {showHistory && (
                 <SearchHistory
-                  searchHistory={searchHistory}
-                  onSelectQuery={setQuery}
+                  history={searchHistory}
+                  onSelectHistory={(item) => setQuery(item.query)}
                   onRemoveItem={(id) => {
                     // Remove item logic handled by useSearchHistory
                   }}

@@ -26,7 +26,6 @@ import {
   History
 } from 'lucide-react';
 
-
 const mockResults: SearchResult[] = [
   {
     id: '1',
