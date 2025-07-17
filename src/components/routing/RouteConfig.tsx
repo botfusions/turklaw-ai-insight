@@ -16,6 +16,7 @@ import Search from '@/pages/Search';
 import SavedCases from '@/pages/SavedCases';
 import Subscription from '@/pages/Subscription';
 import APITest from '@/pages/APITest';
+import MevzuatExample from '@/pages/MevzuatExample';
 import NotFound from '@/pages/NotFound';
 
 export const AppRoutes: React.FC = () => {
@@ -145,6 +146,18 @@ export const AppRoutes: React.FC = () => {
             protection={RouteProtectionLevel.AUTHENTICATED}
           >
             <APITest />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Mevzuat Example Route */}
+      <Route 
+        path="/mevzuat-example" 
+        element={
+          <ProtectedRoute 
+            protection={RouteProtectionLevel.PUBLIC}
+          >
+            <MevzuatExample />
           </ProtectedRoute>
         } 
       />
