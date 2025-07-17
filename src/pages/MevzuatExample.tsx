@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { MevzuatSearch } from '@/components/search';
+import { MevzuatSearch, MevzuatSearchHybrid } from '@/components/search';
 
 const MevzuatExample = () => {
   return (
@@ -12,10 +12,31 @@ const MevzuatExample = () => {
         </p>
       </div>
 
+      {/* Yeni Hibrit Sistem */}
+      <Card>
+        <CardHeader>
+          <CardTitle>1. Hibrit Mevzuat Arama Sistemi (Yeni)</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Stats cards, search history pills, page size selector ve auto-search ile gelişmiş sistem
+          </p>
+        </CardHeader>
+        <CardContent>
+          <MevzuatSearchHybrid
+            autoSearch={true}
+            autoSearchQuery="güncel mevzuat"
+            showStats={true}
+            showHistory={true}
+            showPerformanceInfo={false}
+          />
+        </CardContent>
+      </Card>
+
+      <Separator />
+
       {/* Temel Kullanım */}
       <Card>
         <CardHeader>
-          <CardTitle>1. Temel Kullanım</CardTitle>
+          <CardTitle>2. Temel Kullanım</CardTitle>
           <p className="text-sm text-muted-foreground">
             En basit haliyle MevzuatSearch komponenti
           </p>
@@ -30,7 +51,7 @@ const MevzuatExample = () => {
       {/* Kompakt Kullanım */}
       <Card>
         <CardHeader>
-          <CardTitle>2. Kompakt Kullanım</CardTitle>
+          <CardTitle>3. Kompakt Kullanım</CardTitle>
           <p className="text-sm text-muted-foreground">
             Daha az yer kaplayan, embedding için ideal versiyon
           </p>
@@ -49,7 +70,7 @@ const MevzuatExample = () => {
       {/* Özelleştirilmiş Kullanım */}
       <Card>
         <CardHeader>
-          <CardTitle>3. Özelleştirilmiş Kullanım</CardTitle>
+          <CardTitle>4. Özelleştirilmiş Kullanım</CardTitle>
           <p className="text-sm text-muted-foreground">
             Callback'ler ve özel ayarlarla kullanım
           </p>
@@ -71,7 +92,7 @@ const MevzuatExample = () => {
       {/* Kullanım Kodu Örnekleri */}
       <Card>
         <CardHeader>
-          <CardTitle>4. Kod Örnekleri</CardTitle>
+          <CardTitle>5. Kod Örnekleri</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>

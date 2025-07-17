@@ -3,13 +3,13 @@ import { CacheEntry, MevzuatResult, DataSource } from '../types';
 const CACHE_KEY_PREFIX = 'mevzuat_cache_';
 const CACHE_TTL = 30 * 60 * 1000; // 30 dakika
 
-export const getCacheKey = (query: string): string => {
-  return `${CACHE_KEY_PREFIX}${query.trim().toLowerCase()}`;
+export const getCacheKey = (query: string, pageSize: number = 10): string => {
+  return `${CACHE_KEY_PREFIX}${query.trim().toLowerCase()}_${pageSize}`;
 };
 
-export const getCacheEntry = (query: string): CacheEntry | null => {
+export const getCacheEntry = (query: string, pageSize: number = 10): CacheEntry | null => {
   try {
-    const key = getCacheKey(query);
+    const key = getCacheKey(query, pageSize);
     const cached = localStorage.getItem(key);
     
     if (!cached) return null;
@@ -29,9 +29,9 @@ export const getCacheEntry = (query: string): CacheEntry | null => {
   }
 };
 
-export const setCacheEntry = (query: string, results: MevzuatResult[], dataSource: DataSource): void => {
+export const setCacheEntry = (query: string, results: MevzuatResult[], dataSource: DataSource, pageSize: number = 10): void => {
   try {
-    const key = getCacheKey(query);
+    const key = getCacheKey(query, pageSize);
     const entry: CacheEntry = {
       query: query.trim(),
       results,

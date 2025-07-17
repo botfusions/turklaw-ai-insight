@@ -57,7 +57,7 @@ export const useHybridMevzuatSearch = (options: {
     try {
       // 1. Cache kontrolü (eğer cache-first veya cache enabled ise)
       if (cacheEnabled && (cacheFirst || !navigator.onLine)) {
-        const cached = getCacheEntry(query);
+        const cached = getCacheEntry(query, maxResults);
         if (cached) {
           finalResults = cached.results.slice(0, maxResults);
           finalDataSource = 'cache';
@@ -92,13 +92,13 @@ export const useHybridMevzuatSearch = (options: {
       // 2. Primary API'yi dene
       try {
         apiAttempts++;
-        const primaryResults = await fetchPrimaryAPI(query, primaryTimeout);
+        const primaryResults = await fetchPrimaryAPI(query, primaryTimeout, maxResults);
         finalResults = primaryResults.slice(0, maxResults);
         finalDataSource = 'primary';
         
         // Başarılı sonucu cache'e kaydet
         if (cacheEnabled && finalResults.length > 0) {
-          setCacheEntry(query, finalResults, finalDataSource);
+          setCacheEntry(query, finalResults, finalDataSource, maxResults);
         }
         
       } catch (primaryError) {
@@ -114,7 +114,7 @@ export const useHybridMevzuatSearch = (options: {
             
             // Fallback sonucunu da cache'e kaydet
             if (cacheEnabled && finalResults.length > 0) {
-              setCacheEntry(query, finalResults, finalDataSource);
+              setCacheEntry(query, finalResults, finalDataSource, maxResults);
             }
             
           } catch (fallbackError) {
@@ -122,7 +122,7 @@ export const useHybridMevzuatSearch = (options: {
             
             // 4. Son çare olarak cache'deki eski veriyi kullan
             if (cacheEnabled && !cacheHit) {
-              const cached = getCacheEntry(query);
+              const cached = getCacheEntry(query, maxResults);
               if (cached) {
                 finalResults = cached.results.slice(0, maxResults);
                 finalDataSource = 'cache';

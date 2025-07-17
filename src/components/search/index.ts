@@ -1,5 +1,6 @@
 export { MevzuatSearch as default } from './MevzuatSearch';
 export { MevzuatSearch } from './MevzuatSearch';
+export { MevzuatSearchHybrid } from './MevzuatSearchHybrid';
 export { SearchInput } from './SearchInput';
 export { SearchResults } from './SearchResults';
 export { useMevzuatSearch } from './hooks/useMevzuatSearch';
@@ -9,6 +10,9 @@ export { DataSourceIndicator } from './components/DataSourceIndicator';
 export { SearchHistory } from './components/SearchHistory';
 export { CacheControls } from './components/CacheControls';
 export { PerformanceInfo } from './components/PerformanceInfo';
+export { StatsCards } from './components/StatsCards';
+export { SearchHistoryPills } from './components/SearchHistoryPills';
+export { PageSizeSelector } from './components/PageSizeSelector';
 export type { 
   MevzuatSearchProps, 
   MevzuatResult, 

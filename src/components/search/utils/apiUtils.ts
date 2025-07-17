@@ -3,7 +3,7 @@ import { MevzuatResult } from '../types';
 export const PRIMARY_API_URL = 'https://mevzuat-mcp-2z26.onrender.com/webhook/search';
 export const FALLBACK_JSON_URL = 'https://raw.githubusercontent.com/botfusions/mevzuat-mcp/main/public/mevzuat-data.json';
 
-export const fetchPrimaryAPI = async (query: string, timeout: number = 5000): Promise<MevzuatResult[]> => {
+export const fetchPrimaryAPI = async (query: string, timeout: number = 5000, pageSize: number = 10): Promise<MevzuatResult[]> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   
@@ -13,7 +13,10 @@ export const fetchPrimaryAPI = async (query: string, timeout: number = 5000): Pr
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ query: query.trim() }),
+      body: JSON.stringify({ 
+        query: query.trim(),
+        page_size: pageSize
+      }),
       signal: controller.signal
     });
     
