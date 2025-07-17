@@ -123,47 +123,35 @@ Sonuç: Kıdem ve ihbar tazminatının ödenmesine karar verilmiştir.`,
 
 export const subscriptionPlans: SubscriptionPlan[] = [
   {
-    id: 'free',
-    name: 'Ücretsiz Plan',
-    price: 0,
+    id: 'basic',
+    name: 'Basic Plan',
+    price: 49,
     currency: 'TL',
-    maxSearches: 5,
+    maxSearches: 50,
     features: [
-      '5 arama/gün',
-      'Temel sonuçlar',
-      'Sınırlı görüntüleme',
-      'Email desteği'
+      '50 arama/ay',
+      'Temel karar özeti',
+      'PDF indirme',
+      'E-posta desteği',
+      'Basit filtreleme'
     ]
   },
   {
-    id: 'pro',
-    name: 'Pro Plan',
-    price: 850,
+    id: 'premium',
+    name: 'Premium Plan',
+    price: 99,
     currency: 'TL',
-    maxSearches: 500,
+    maxSearches: 250,
     popular: true,
     features: [
-      '500 arama/ay',
+      '250 arama/ay',
       'Tüm mahkemeler',
-      'PDF export',
-      'Karar kaydetme',
-      'E-posta desteği',
-      'Gelişmiş filtreler'
-    ]
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 2900,
-    currency: 'TL',
-    maxSearches: 999999,
-    features: [
-      'Sınırsız arama',
-      'API erişimi',
+      'Gelişmiş filtreleme',
+      'Tam metin erişimi',
+      'Benzer karar önerileri',
+      'Özel notlar',
       'Öncelikli destek',
-      'Özel raporlar',
-      'Team özellikleri',
-      'Özel entegrasyon'
+      'İstatistikler ve analiz'
     ]
   }
 ];
@@ -172,8 +160,8 @@ export const mockUser = {
   id: '1',
   email: 'avukat@example.com',
   name: 'Mehmet Yılmaz',
-  plan: 'pro' as const,
+  plan: 'premium' as const,
   searchCount: 45,
-  maxSearches: 500,
+  maxSearches: 250,
   createdAt: new Date('2024-01-15')
 };

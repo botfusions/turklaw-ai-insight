@@ -246,15 +246,15 @@ export default function Landing() {
                 <div className="flex items-center justify-center space-x-8 mt-12 text-sm text-muted-foreground">
                   <div className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-success mr-2" />
-                    Kredi kartı gerektirmez
-                  </div>
-                  <div className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-success mr-2" />
                     7 gün ücretsiz deneme
                   </div>
                   <div className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-success mr-2" />
                     Anında aktivasyon
+                  </div>
+                  <div className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-success mr-2" />
+                    İptal etmek istediğinizde
                   </div>
                 </div>
               </div>
@@ -305,7 +305,7 @@ export default function Landing() {
                 </p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                 {subscriptionPlans.map((plan) => (
                   <Card 
                     key={plan.id} 

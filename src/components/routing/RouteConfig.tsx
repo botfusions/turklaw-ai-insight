@@ -17,6 +17,9 @@ import SavedCases from '@/pages/SavedCases';
 import Subscription from '@/pages/Subscription';
 import APITest from '@/pages/APITest';
 import MevzuatExample from '@/pages/MevzuatExample';
+import About from '@/pages/About';
+import Contact from '@/pages/Contact';
+import Pricing from '@/pages/Pricing';
 import NotFound from '@/pages/NotFound';
 
 export const AppRoutes: React.FC = () => {
@@ -154,10 +157,38 @@ export const AppRoutes: React.FC = () => {
       <Route 
         path="/mevzuat-example" 
         element={
-          <ProtectedRoute 
-            protection={RouteProtectionLevel.PUBLIC}
-          >
+          <ProtectedRoute protection={RouteProtectionLevel.PUBLIC}>
             <MevzuatExample />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* About Route */}
+      <Route 
+        path="/about" 
+        element={
+          <ProtectedRoute protection={RouteProtectionLevel.PUBLIC}>
+            <About />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Contact Route */}
+      <Route 
+        path="/contact" 
+        element={
+          <ProtectedRoute protection={RouteProtectionLevel.PUBLIC}>
+            <Contact />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Pricing Route */}
+      <Route 
+        path="/pricing" 
+        element={
+          <ProtectedRoute protection={RouteProtectionLevel.PUBLIC}>
+            <Pricing />
           </ProtectedRoute>
         } 
       />

@@ -76,8 +76,8 @@ export function DashboardPreview() {
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-foreground mb-2">
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
           Hoş geldiniz, {displayName}!
         </h2>
         <p className="text-muted-foreground">
@@ -85,80 +85,8 @@ export function DashboardPreview() {
         </p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-card shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Bu Ay</p>
-                <p className="text-xl font-bold text-foreground">{mockStats.monthlySearches}</p>
-              </div>
-              <Search className="h-6 w-6 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Kayıtlı</p>
-                <p className="text-xl font-bold text-foreground">{mockStats.savedCases}</p>
-              </div>
-              <BookOpen className="h-6 w-6 text-secondary" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Toplam</p>
-                <p className="text-xl font-bold text-foreground">{mockStats.totalCases.toLocaleString()}</p>
-              </div>
-              <Database className="h-6 w-6 text-success" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Plan</p>
-                <div className="flex items-center gap-1">
-                  <p className="text-lg font-semibold text-foreground capitalize">{profile?.plan}</p>
-                  {isPremiumUser && <Crown className="h-4 w-4 text-secondary" />}
-                </div>
-              </div>
-              <TrendingUp className="h-6 w-6 text-accent" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Usage Progress */}
-      <Card className="bg-card shadow-card">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Aylık Kullanım</span>
-            <Badge variant={usagePercentage > 80 ? "destructive" : "outline"}>
-              {profile?.monthly_search_count || 0}/{profile?.max_searches || 0}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Progress value={usagePercentage} className="h-2" />
-          <p className="text-sm text-muted-foreground mt-2">
-            {Math.round(usagePercentage)}% kullanıldı
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Quick Search */}
-      <Card className="bg-card shadow-card">
+      {/* Quick Search - Moved to top */}
+      <Card className="bg-card shadow-card mb-6">
         <CardHeader>
           <CardTitle className="flex items-center">
             <Search className="h-5 w-5 mr-2 text-primary" />
@@ -181,25 +109,97 @@ export function DashboardPreview() {
         </CardContent>
       </Card>
 
-      {/* Recent Searches */}
+      {/* Quick Stats - Smaller */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <Card className="bg-card shadow-card">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Bu Ay</p>
+                <p className="text-lg font-bold text-foreground">{mockStats.monthlySearches}</p>
+              </div>
+              <Search className="h-5 w-5 text-primary" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-card shadow-card">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Kayıtlı</p>
+                <p className="text-lg font-bold text-foreground">{mockStats.savedCases}</p>
+              </div>
+              <BookOpen className="h-5 w-5 text-secondary" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-card shadow-card">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Toplam</p>
+                <p className="text-lg font-bold text-foreground">{mockStats.totalCases.toLocaleString()}</p>
+              </div>
+              <Database className="h-5 w-5 text-success" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-card shadow-card">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Plan</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-sm font-semibold text-foreground capitalize">{profile?.plan}</p>
+                  {isPremiumUser && <Crown className="h-3 w-3 text-secondary" />}
+                </div>
+              </div>
+              <TrendingUp className="h-5 w-5 text-accent" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Usage Progress */}
       <Card className="bg-card shadow-card">
-        <CardHeader>
-          <CardTitle className="flex items-center">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between text-lg">
+            <span>Aylık Kullanım</span>
+            <Badge variant={usagePercentage > 80 ? "destructive" : "outline"}>
+              {profile?.monthly_search_count || 0}/{profile?.max_searches || 0}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Progress value={usagePercentage} className="h-2" />
+          <p className="text-sm text-muted-foreground mt-2">
+            {Math.round(usagePercentage)}% kullanıldı
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Recent Searches - Compact */}
+      <Card className="bg-card shadow-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center text-lg">
             <Activity className="h-5 w-5 mr-2" />
             Son Aramalar
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {mockRecentSearches.map((search, index) => (
               <div 
                 key={index}
-                className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                className="flex items-center justify-between p-2 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                 onClick={() => handleSearchClick(search.query)}
               >
                 <div className="flex-1">
-                  <p className="font-medium text-foreground">{search.query}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm font-medium text-foreground">{search.query}</p>
+                  <p className="text-xs text-muted-foreground">
                     {search.results} sonuç • {new Date(search.date).toLocaleDateString('tr-TR')}
                   </p>
                 </div>
