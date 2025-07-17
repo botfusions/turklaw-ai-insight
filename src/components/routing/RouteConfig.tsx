@@ -12,7 +12,7 @@ import EmailVerification from '@/pages/EmailVerification';
 import ResetPassword from '@/pages/ResetPassword';
 import Dashboard from '@/pages/Dashboard';
 import Profile from '@/pages/Profile';
-import Search from '@/pages/Search';
+import SearchPage from '@/pages/SearchPage';
 import SavedCases from '@/pages/SavedCases';
 import Subscription from '@/pages/Subscription';
 import APITest from '@/pages/APITest';
@@ -112,7 +112,7 @@ export const AppRoutes: React.FC = () => {
             protection={RouteProtectionLevel.AUTHENTICATED}
             requiresSearchLimit={true}
           >
-            <Search />
+            <SearchPage />
           </ProtectedRoute>
         } 
       />

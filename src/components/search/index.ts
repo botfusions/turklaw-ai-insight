@@ -3,6 +3,8 @@ export { MevzuatSearch } from './MevzuatSearch';
 export { MevzuatSearchHybrid } from './MevzuatSearchHybrid';
 export { SearchInput } from './SearchInput';
 export { SearchResults } from './SearchResults';
+export { CategorySidebar } from './CategorySidebar';
+export { SearchContent } from './SearchContent';
 export { useMevzuatSearch } from './hooks/useMevzuatSearch';
 export { useHybridMevzuatSearch } from './hooks/useHybridMevzuatSearch';
 export { useSearchHistory } from './hooks/useSearchHistory';
