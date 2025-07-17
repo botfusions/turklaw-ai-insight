@@ -1,13 +1,35 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Scale, Building, BookOpen, History, Bookmark } from "lucide-react";
+import { Scale, Building, BookOpen, History, Bookmark, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export function DashboardSidebar() {
+interface DashboardSidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+  isMobile?: boolean;
+}
+
+export function DashboardSidebar({ isOpen = true, onClose, isMobile = false }: DashboardSidebarProps) {
   return (
-    <aside className="w-64 bg-muted/30 border-r border-border p-4 space-y-6">
-      {/* Arama Kategorileri */}
-      <Card>
+    <aside className={cn(
+      "dashboard-sidebar",
+      isMobile && "dashboard-sidebar-mobile",
+      isMobile && isOpen && "dashboard-sidebar-open"
+    )}>
+      {/* Mobile close button */}
+      {isMobile && (
+        <div className="flex justify-between items-center p-4 border-b border-border">
+          <h2 className="font-semibold text-lg">Menü</h2>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+      
+      <div className="p-4 space-y-6">
+        {/* Arama Kategorileri */}
+        <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium">Arama Kategorileri</CardTitle>
         </CardHeader>
@@ -94,6 +116,7 @@ export function DashboardSidebar() {
           </Button>
         </CardContent>
       </Card>
+      </div>
     </aside>
   );
 }

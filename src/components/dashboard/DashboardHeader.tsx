@@ -7,10 +7,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, User, Bell, Search, Sparkles } from "lucide-react";
+import { LogOut, Settings, User, Bell, Search, Sparkles, Menu } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  onMenuClick?: () => void;
+  showMenuButton?: boolean;
+}
+
+export function DashboardHeader({ onMenuClick, showMenuButton = false }: DashboardHeaderProps) {
   const { user, profile, signOut } = useAuth();
   
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Kullanıcı';
@@ -25,6 +30,18 @@ export function DashboardHeader() {
         <div className="flex items-center justify-between">
           {/* Sol: Enhanced Logo + Dashboard */}
           <div className="flex items-center gap-3 sm:gap-6">
+            {/* Mobile Menu Button */}
+            {showMenuButton && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onMenuClick}
+                className="lg:hidden text-foreground hover:bg-accent/10 p-2"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            )}
+            
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Sparkles className="h-8 w-8 text-primary" />

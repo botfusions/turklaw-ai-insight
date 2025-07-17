@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { SearchCard } from "@/components/dashboard/SearchCard";
@@ -10,12 +11,14 @@ import { SearchResults } from "@/components/dashboard/SearchResults";
 const Dashboard = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // State management
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isSearching, setIsSearching] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Mock search results generator
   const generateMockResults = (query: string, count: number = 8) => {
@@ -90,25 +93,42 @@ const Dashboard = () => {
   const currentResults = searchResults.slice(startIndex, startIndex + resultsPerPage);
 
   return (
-    <div className="min-h-screen bg-muted/10">
-      <DashboardHeader />
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-muted/40">
+      <DashboardHeader 
+        onMenuClick={() => setSidebarOpen(!sidebarOpen)} 
+        showMenuButton={isMobile} 
+      />
       
-      <div className="flex">
-        <DashboardSidebar />
+      <div className="dashboard-layout">
+        <DashboardSidebar 
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          isMobile={isMobile}
+        />
         
-        <main className="flex-1 p-6 space-y-6">
-          {/* Büyük Arama Kartı */}
-          <SearchCard onSearch={handleSearch} />
-          
-          {/* Arama Sonuçları */}
-          <SearchResults
-            results={currentResults}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
+        <main className="dashboard-main">
+          <div className="dashboard-content">
+            {/* Search Card */}
+            <SearchCard onSearch={handleSearch} />
+            
+            {/* Search Results */}
+            <SearchResults
+              results={currentResults}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
         </main>
       </div>
+      
+      {/* Mobile overlay */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
     </div>
   );
 };
