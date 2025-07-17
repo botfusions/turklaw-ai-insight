@@ -101,9 +101,10 @@ const Dashboard = () => {
       
       <div className="dashboard-layout">
         <DashboardSidebar 
-          isOpen={sidebarOpen}
+          isOpen={sidebarOpen} 
           onClose={() => setSidebarOpen(false)}
           isMobile={isMobile}
+          onSearch={(query) => handleSearch(query, {})}
         />
         
         <main className="dashboard-main">
