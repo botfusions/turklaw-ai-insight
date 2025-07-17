@@ -33,10 +33,6 @@ export const mockProfile: Profile = {
   email: 'test@example.com',
   full_name: 'Test User',
   plan: 'basic',
-  search_count: 0,
-  max_searches: 5,
-  monthly_search_count: 0,
-  last_search_reset: new Date().toISOString(),
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

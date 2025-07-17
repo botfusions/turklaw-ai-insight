@@ -31,12 +31,6 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
     onClose();
   };
 
-  const searchStats = profile ? {
-    used: profile.monthly_search_count,
-    total: profile.max_searches,
-    percentage: Math.round((profile.monthly_search_count / profile.max_searches) * 100),
-    isLimitReached: profile.monthly_search_count >= profile.max_searches,
-  } : null;
 
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Kullanıcı';
 
@@ -98,14 +92,6 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                     <Badge variant="outline" className="text-xs">
                       {profile.plan}
                     </Badge>
-                    {searchStats && (
-                      <Badge 
-                        variant={searchStats.isLimitReached ? "destructive" : "secondary"}
-                        className="text-xs"
-                      >
-                        {searchStats.used}/{searchStats.total}
-                      </Badge>
-                    )}
                   </div>
                 </div>
               </div>
@@ -125,11 +111,6 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   >
                     <Search className="h-4 w-4 mr-3" />
                     Arama Yap
-                    {searchStats?.isLimitReached && (
-                      <Badge variant="destructive" className="ml-auto text-xs">
-                        Limit Doldu
-                      </Badge>
-                    )}
                   </Button>
 
                   <Button

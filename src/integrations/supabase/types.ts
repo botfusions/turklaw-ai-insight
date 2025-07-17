@@ -62,11 +62,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
-          last_search_reset: string | null
-          max_searches: number
-          monthly_search_count: number
           plan: string
-          search_count: number
           updated_at: string | null
         }
         Insert: {
@@ -74,11 +70,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
-          last_search_reset?: string | null
-          max_searches?: number
-          monthly_search_count?: number
           plan?: string
-          search_count?: number
           updated_at?: string | null
         }
         Update: {
@@ -86,11 +78,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
-          last_search_reset?: string | null
-          max_searches?: number
-          monthly_search_count?: number
           plan?: string
-          search_count?: number
           updated_at?: string | null
         }
         Relationships: []

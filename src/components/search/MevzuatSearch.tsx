@@ -36,7 +36,7 @@ export const MevzuatSearch = ({
   showCacheControls = false,
   debugMode = false
 }: MevzuatSearchProps) => {
-  const { user, profile, canSearch } = useAuth();
+  const { user, profile } = useAuth();
   const {
     query,
     results,
@@ -63,8 +63,7 @@ export const MevzuatSearch = ({
 
   // Auth kontrolü
   const shouldRequireAuth = requireAuth && !user;
-  const canPerformSearch = !requireAuth || canSearch();
-  const remainingSearches = profile ? profile.max_searches - profile.search_count : 0;
+  const canPerformSearch = !requireAuth || true;
 
   const handleSearch = async (searchQuery: string) => {
     if (!canPerformSearch) return;
@@ -130,7 +129,7 @@ export const MevzuatSearch = ({
               )}
               {showLimitWarning && user && (
                 <Badge variant="outline" className="text-xs">
-                  {remainingSearches} arama hakkı kaldı
+                  Sınırsız arama
                 </Badge>
               )}
             </div>

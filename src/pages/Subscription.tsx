@@ -100,7 +100,7 @@ export default function Subscription() {
                     <div className="text-right">
                       <p className="text-sm text-muted-foreground">Bu Ay Kullanılan</p>
                       <p className="font-semibold">
-                        {profile.monthly_search_count}/{profile.max_searches} arama
+                        Sınırsız arama
                       </p>
                     </div>
                   </div>

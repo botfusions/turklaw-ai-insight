@@ -10,8 +10,6 @@ interface AuthActionsContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<AuthResult>;
   updateProfile: (updates: Partial<Profile>) => Promise<AuthResult>;
-  canSearch: () => boolean;
-  incrementSearchCount: () => Promise<void>;
   resendConfirmation: (email: string) => Promise<AuthResult>;
 }
 
@@ -179,29 +177,6 @@ export const AuthActionsProvider: React.FC<AuthActionsProviderProps> = ({ childr
     }
   }, [user, refreshProfile]);
 
-  const canSearch = useCallback((): boolean => {
-    if (!profile) return false;
-    return profile.monthly_search_count < profile.max_searches;
-  }, [profile]);
-
-  const incrementSearchCount = useCallback(async (): Promise<void> => {
-    if (!user || !profile) return;
-
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          search_count: profile.search_count + 1,
-          monthly_search_count: profile.monthly_search_count + 1
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
-      await refreshProfile();
-    } catch (error) {
-      console.error('Error incrementing search count:', error);
-    }
-  }, [user, profile, refreshProfile]);
 
   const value: AuthActionsContextType = {
     loading,
@@ -210,8 +185,6 @@ export const AuthActionsProvider: React.FC<AuthActionsProviderProps> = ({ childr
     signOut,
     resetPassword,
     updateProfile,
-    canSearch,
-    incrementSearchCount,
     resendConfirmation,
   };
 

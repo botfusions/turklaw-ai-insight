@@ -70,7 +70,7 @@ export function SearchContent({ selectedCategory, selectedSubcategory, className
   const [loading, setLoading] = useState(false);
   const [savedCases, setSavedCases] = useState<Set<string>>(new Set());
   const { toast } = useToast();
-  const { profile, canSearch, incrementSearchCount } = useAuth();
+  const { } = useAuth();
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,20 +93,8 @@ export function SearchContent({ selectedCategory, selectedSubcategory, className
       return;
     }
 
-    if (!canSearch()) {
-      toast({
-        title: "Arama Limiti Aşıldı",
-        description: "Bu ay için arama limitinize ulaştınız. Premium plana geçerek daha fazla arama yapabilirsiniz.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
       setLoading(true);
-      
-      // Increment search count
-      await incrementSearchCount();
       
       // Filter results based on selected category and subcategory
       let filteredResults = mockResults.filter(result => {

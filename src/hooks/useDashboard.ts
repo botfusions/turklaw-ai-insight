@@ -134,7 +134,7 @@ export const useDashboard = () => {
         savedCasesCount: savedCases?.length || 0,
         recentSearches: searches || [],
         savedCases: savedCases || [],
-        monthlySearches: profile?.monthly_search_count || 0,
+        monthlySearches: 0,
         searchTrends
       };
 
@@ -143,7 +143,7 @@ export const useDashboard = () => {
     })();
 
     return apiState.execute(fetchPromise);
-  }, [user, profile?.monthly_search_count, generateSearchTrends]);
+  }, [user, generateSearchTrends]);
 
   useEffect(() => {
     console.log('useDashboard: useEffect triggered - user:', user?.id, 'user exists:', !!user);

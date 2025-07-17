@@ -41,7 +41,7 @@ export function Header({}: HeaderProps) {
     loading,
     displayName,
     userInitials,
-    searchStats,
+    
     unreadCount,
     mobileMenuOpen,
     toggleMobileMenu,
@@ -131,29 +131,12 @@ export function Header({}: HeaderProps) {
                   size="sm"
                   onClick={() => navigate('/search')}
                   className="hidden md:flex items-center hover:bg-primary hover:text-primary-foreground transition-colors"
-                  disabled={searchStats?.isLimitReached}
+                  disabled={false}
                 >
                   <Search className="h-4 w-4 mr-2" />
-                  {searchStats?.isLimitReached ? 'Limit Doldu' : 'Ara'}
+                  Ara
                 </Button>
                 
-                {/* Search Stats Badge */}
-                {searchStats && (
-                  <div className="hidden lg:flex items-center space-x-2">
-                    <div className="flex flex-col items-end">
-                      <Badge 
-                        variant={searchStats.isLimitReached ? "destructive" : "outline"} 
-                        className="text-xs mb-1"
-                      >
-                        {searchStats.used}/{searchStats.total}
-                      </Badge>
-                      <Progress 
-                        value={searchStats.percentage} 
-                        className="w-16 h-1.5"
-                      />
-                    </div>
-                  </div>
-                )}
 
                 {/* Theme Toggle */}
                 <ThemeToggle />
@@ -210,21 +193,6 @@ export function Header({}: HeaderProps) {
                         </div>
                       </div>
                       
-                      {/* Search Progress */}
-                      {searchStats && (
-                        <div className="mt-3 p-2 bg-muted rounded-lg">
-                          <div className="flex justify-between text-xs mb-1">
-                            <span className="text-muted-foreground">Aylık Arama</span>
-                            <span className="font-medium">
-                              {searchStats.used}/{searchStats.total}
-                            </span>
-                          </div>
-                          <Progress 
-                            value={searchStats.percentage} 
-                            className="h-2 search-progress"
-                          />
-                        </div>
-                      )}
                     </DropdownMenuLabel>
                     
                     <DropdownMenuSeparator />
@@ -243,11 +211,6 @@ export function Header({}: HeaderProps) {
                     <DropdownMenuItem onClick={() => navigate('/search')} className="md:hidden">
                       <Search className="h-4 w-4 mr-3" />
                       Arama Yap
-                      {searchStats?.isLimitReached && (
-                        <Badge variant="destructive" className="ml-auto text-xs">
-                          Limit Doldu
-                        </Badge>
-                      )}
                     </DropdownMenuItem>
                     
                     <DropdownMenuItem onClick={() => navigate('/saved-cases')}>

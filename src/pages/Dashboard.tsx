@@ -45,7 +45,7 @@ export default function Dashboard() {
   const [enhancedResults, setEnhancedResults] = useState<string | null>(null);
   const [enhancedError, setEnhancedError] = useState<string | null>(null);
   const [searchProgress, setSearchProgress] = useState(0);
-  const { canSearch, incrementSearchCount } = useAuth();
+  const { } = useAuth();
   const { stats, loading, error, user, profile } = useDashboard();
   const { apiStatuses, isAnyAPIOnline, allAPIsOffline } = useAPIStatus();
   

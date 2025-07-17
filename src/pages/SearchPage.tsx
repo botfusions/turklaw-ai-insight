@@ -5,15 +5,12 @@ import { SearchContent } from '@/components/search/SearchContent';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { Badge } from '@/components/ui/badge';
-import { AlertCircle } from 'lucide-react';
 
 export default function SearchPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>();
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { profile } = useAuth();
+  
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -26,32 +23,11 @@ export default function SearchPage() {
     setSidebarOpen(false); // Close mobile sidebar after selection
   };
 
-  const remainingSearches = profile ? profile.max_searches - profile.monthly_search_count : 0;
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-green-50">
       <Header />
-      
-      {/* Search Limit Banner */}
-      <div className="bg-white/70 backdrop-blur-sm border-b border-white/20 shadow-sm">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium text-foreground">
-                Bu ay kalan arama hakkınız: {remainingSearches}
-              </span>
-            </div>
-            {remainingSearches <= 3 && (
-              <Button size="sm" variant="outline" className="bg-white/70 border-white/20 hover:bg-white/90">
-                Plan Yükselt
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
 
-      <div className="flex h-[calc(100vh-120px)]">
+      <div className="flex h-[calc(100vh-80px)]">
         {/* Mobile Sidebar */}
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetTrigger asChild>

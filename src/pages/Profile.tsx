@@ -158,18 +158,18 @@ export default function Profile() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-4 border rounded-lg">
                   <div className="text-2xl font-bold text-primary">
-                    {profile?.monthly_search_count || 0}
+                    ∞
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Bu Ay Yapılan Arama
+                    Arama Hakkı
                   </div>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
                   <div className="text-2xl font-bold text-primary">
-                    {profile?.max_searches || 0}
+                    {profile?.plan === 'premium' ? 'Premium' : 'Temel'}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Maksimum Arama
+                    Mevcut Plan
                   </div>
                 </div>
               </div>

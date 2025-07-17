@@ -35,13 +35,6 @@ export function useHeader() {
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Kullanıcı';
   const userInitials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
-  // Arama istatistikleri
-  const searchStats = profile ? {
-    used: profile.monthly_search_count,
-    total: profile.max_searches,
-    percentage: Math.round((profile.monthly_search_count / profile.max_searches) * 100),
-    isLimitReached: profile.monthly_search_count >= profile.max_searches,
-  } : null;
 
   return {
     // Auth state
@@ -52,8 +45,6 @@ export function useHeader() {
     displayName,
     userInitials,
     
-    // Search stats
-    searchStats,
     
     // Notifications
     notifications,

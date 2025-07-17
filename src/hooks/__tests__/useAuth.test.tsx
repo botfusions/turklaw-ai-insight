@@ -50,16 +50,6 @@ describe('useAuth', () => {
     expect(typeof result.current.signOut).toBe('function');
     expect(typeof result.current.resetPassword).toBe('function');
     expect(typeof result.current.updateProfile).toBe('function');
-    expect(typeof result.current.canSearch).toBe('function');
-    expect(typeof result.current.incrementSearchCount).toBe('function');
   });
 
-  it('should handle canSearch logic correctly', () => {
-    const { result } = renderHook(() => useAuth(), {
-      wrapper: createWrapper(),
-    });
-
-    // Should return false when no profile or search limit reached
-    expect(result.current.canSearch()).toBe(false);
-  });
 });
