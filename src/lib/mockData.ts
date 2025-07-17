@@ -140,8 +140,8 @@ export const subscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'premium',
     name: 'Premium Plan',
-    price: 5500,
-    originalPrice: 11000,
+    price: 2750,
+    originalPrice: 5500,
     currency: 'TL',
     maxSearches: 250,
     popular: true,
