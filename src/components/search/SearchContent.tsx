@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { SearchHistory, SearchHistoryItem } from '@/components/search/SearchHistory';
+import { useSearchHistoryDB } from '@/components/search/hooks/useSearchHistoryDB';
+import { SearchHistoryPanel } from '@/components/search/components/SearchHistoryPanel';
+import { SearchHistoryDropdown } from '@/components/search/components/SearchHistoryDropdown';
 import { searchService, SearchResult } from '@/components/search/HybridSearchService';
 import { 
   Search as SearchIcon, 
@@ -18,7 +20,8 @@ import {
   BookmarkCheck,
   Download,
   ExternalLink,
-  Star
+  Star,
+  History
 } from 'lucide-react';
 
 
@@ -61,53 +64,13 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [savedCases, setSavedCases] = useState<Set<string>>(new Set());
-  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const { toast } = useToast();
-  const { } = useAuth();
+  const { user } = useAuth();
+  const { addToHistory } = useSearchHistoryDB();
 
-  // Load search history on mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('searchHistory');
-      if (saved) {
-        setSearchHistory(JSON.parse(saved));
-      }
-    } catch (error) {
-      console.error('Error loading search history:', error);
-    }
-  }, []);
-
-  // Save search history
-  const saveSearchHistory = (query: string, resultCount: number, source: string) => {
-    const historyItem: SearchHistoryItem = {
-      id: Date.now().toString(),
-      query,
-      category: selectedCategory || '',
-      subcategory: selectedSubcategory || '',
-      timestamp: new Date().toISOString(),
-      resultCount,
-      dataSource: source
-    };
-
-    const newHistory = [historyItem, ...searchHistory.slice(0, 4)];
-    setSearchHistory(newHistory);
-    localStorage.setItem('searchHistory', JSON.stringify(newHistory));
-  };
-
-  const handleHistorySelect = (item: SearchHistoryItem) => {
-    setSearchQuery(item.query);
-    // Note: Category and subcategory would need to be set by parent component
-  };
-
-  const handleClearHistory = () => {
-    setSearchHistory([]);
-    localStorage.removeItem('searchHistory');
-  };
-
-  const handleRemoveHistoryItem = (id: string) => {
-    const newHistory = searchHistory.filter(item => item.id !== id);
-    setSearchHistory(newHistory);
-    localStorage.setItem('searchHistory', JSON.stringify(newHistory));
+  const handleHistorySelect = (query: string) => {
+    setSearchQuery(query);
   };
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -139,7 +102,17 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
       setResults(response.data.results);
       onDataSourceChange?.(response.source);
       
-      saveSearchHistory(searchQuery, response.data.results.length, response.source);
+      // Save to database-integrated history
+      await addToHistory(
+        searchQuery, 
+        response.data.results.length, 
+        response.source as any,
+        response.responseTime,
+        {
+          category: selectedCategory,
+          subcategory: selectedSubcategory
+        }
+      );
       
       toast({
         title: "Arama Tamamlandı",
@@ -201,6 +174,12 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
                 />
                 <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               </div>
+              
+              <SearchHistoryDropdown 
+                onSelectQuery={handleHistorySelect}
+                className="hidden md:block"
+              />
+              
               <Button 
                 type="submit" 
                 disabled={loading}
@@ -233,6 +212,16 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
                 <Building2 className="h-4 w-4 mr-2" />
                 Mahkeme
               </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                className="bg-white border-gray-200 hover:bg-gray-50 md:hidden"
+                onClick={() => setShowHistoryPanel(!showHistoryPanel)}
+              >
+                <History className="h-4 w-4 mr-2" />
+                Geçmiş
+              </Button>
             </div>
           </form>
         </div>
@@ -240,18 +229,22 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
         {/* Search Results */}
         <div className="flex-1 overflow-y-auto">
           <div className="flex gap-6 p-6">
-            {/* Search History Sidebar */}
-            <div className="w-80 space-y-4">
-              <SearchHistory
-                history={searchHistory}
-                onSelectHistory={handleHistorySelect}
-                onClearHistory={handleClearHistory}
-                onRemoveItem={handleRemoveHistoryItem}
-              />
+            {/* Search History Sidebar - Desktop */}
+            <div className="hidden xl:block w-80 space-y-4">
+              <SearchHistoryPanel onSelectQuery={handleHistorySelect} />
             </div>
+            
+            {/* Mobile Search History Panel */}
+            {showHistoryPanel && (
+              <div className="md:hidden fixed inset-0 bg-black/50 z-50" onClick={() => setShowHistoryPanel(false)}>
+                <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-xl p-4" onClick={(e) => e.stopPropagation()}>
+                  <SearchHistoryPanel onSelectQuery={handleHistorySelect} />
+                </div>
+              </div>
+            )}
 
             {/* Main Results Area */}
-            <div className="flex-1 space-y-4">
+            <div className="flex-1 space-y-4 xl:max-w-[calc(100%-320px)]">
               {results.length > 0 ? (
                 <>
                   <div className="flex items-center justify-between mb-4">
