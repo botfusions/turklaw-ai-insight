@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Header } from '@/components/layout/Header';
+import { SearchHeader } from '@/components/search/SearchHeader';
 import { CategorySidebar } from '@/components/search/CategorySidebar';
 import { SearchContent } from '@/components/search/SearchContent';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ export default function SearchPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>();
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dataSource, setDataSource] = useState<'cache' | 'api' | 'static' | 'error'>('cache');
   
 
   const handleCategorySelect = (categoryId: string) => {
@@ -24,8 +25,8 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-green-50">
-      <Header />
+    <div className="min-h-screen bg-gray-50">
+      <SearchHeader dataSource={dataSource} />
 
       <div className="flex h-[calc(100vh-80px)]">
         {/* Mobile Sidebar */}
@@ -34,12 +35,12 @@ export default function SearchPage() {
             <Button
               variant="outline"
               size="icon"
-              className="md:hidden fixed top-20 left-4 z-50 bg-white/70 backdrop-blur-sm border-white/20 shadow-lg hover:bg-white/90 rounded-full"
+              className="md:hidden fixed top-20 left-4 z-50 bg-white shadow-lg hover:bg-gray-50 rounded-full"
             >
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-80 bg-white/70 backdrop-blur-sm border-white/20">
+          <SheetContent side="left" className="p-0 w-80 bg-white">
             <CategorySidebar
               selectedCategory={selectedCategory}
               selectedSubcategory={selectedSubcategory}
@@ -63,6 +64,7 @@ export default function SearchPage() {
         <SearchContent 
           selectedCategory={selectedCategory}
           selectedSubcategory={selectedSubcategory}
+          onDataSourceChange={setDataSource}
           className="flex-1"
         />
       </div>

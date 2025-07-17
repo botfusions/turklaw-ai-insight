@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { SearchHistory, SearchHistoryItem } from '@/components/search/SearchHistory';
+import { searchService, SearchResult } from '@/components/search/HybridSearchService';
 import { 
   Search as SearchIcon, 
   Filter,
@@ -15,21 +17,10 @@ import {
   Bookmark,
   BookmarkCheck,
   Download,
-  ExternalLink
+  ExternalLink,
+  Star
 } from 'lucide-react';
 
-interface SearchResult {
-  id: string;
-  title: string;
-  case_number: string;
-  court: string;
-  department: string;
-  decision_date: string;
-  summary: string;
-  keywords: string[];
-  category: string;
-  subcategory: string;
-}
 
 const mockResults: SearchResult[] = [
   {
@@ -61,16 +52,63 @@ const mockResults: SearchResult[] = [
 interface SearchContentProps {
   selectedCategory?: string;
   selectedSubcategory?: string;
+  onDataSourceChange?: (source: 'cache' | 'api' | 'static' | 'error') => void;
   className?: string;
 }
 
-export function SearchContent({ selectedCategory, selectedSubcategory, className }: SearchContentProps) {
+export function SearchContent({ selectedCategory, selectedSubcategory, onDataSourceChange, className }: SearchContentProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [savedCases, setSavedCases] = useState<Set<string>>(new Set());
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const { toast } = useToast();
   const { } = useAuth();
+
+  // Load search history on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('searchHistory');
+      if (saved) {
+        setSearchHistory(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Error loading search history:', error);
+    }
+  }, []);
+
+  // Save search history
+  const saveSearchHistory = (query: string, resultCount: number, source: string) => {
+    const historyItem: SearchHistoryItem = {
+      id: Date.now().toString(),
+      query,
+      category: selectedCategory || '',
+      subcategory: selectedSubcategory || '',
+      timestamp: new Date().toISOString(),
+      resultCount,
+      dataSource: source
+    };
+
+    const newHistory = [historyItem, ...searchHistory.slice(0, 4)];
+    setSearchHistory(newHistory);
+    localStorage.setItem('searchHistory', JSON.stringify(newHistory));
+  };
+
+  const handleHistorySelect = (item: SearchHistoryItem) => {
+    setSearchQuery(item.query);
+    // Note: Category and subcategory would need to be set by parent component
+  };
+
+  const handleClearHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem('searchHistory');
+  };
+
+  const handleRemoveHistoryItem = (id: string) => {
+    const newHistory = searchHistory.filter(item => item.id !== id);
+    setSearchHistory(newHistory);
+    localStorage.setItem('searchHistory', JSON.stringify(newHistory));
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,10 +122,10 @@ export function SearchContent({ selectedCategory, selectedSubcategory, className
       return;
     }
 
-    if (!selectedCategory) {
+    if (!selectedCategory || !selectedSubcategory) {
       toast({
         title: "Uyarı",
-        description: "Lütfen bir kategori seçin.",
+        description: "Lütfen bir kategori ve alt kategori seçin.",
         variant: "destructive",
       });
       return;
@@ -96,23 +134,17 @@ export function SearchContent({ selectedCategory, selectedSubcategory, className
     try {
       setLoading(true);
       
-      // Filter results based on selected category and subcategory
-      let filteredResults = mockResults.filter(result => {
-        if (selectedCategory && result.category !== selectedCategory) return false;
-        if (selectedSubcategory && result.subcategory !== selectedSubcategory) return false;
-        return true;
-      });
+      const response = await searchService.search(selectedCategory, selectedSubcategory, searchQuery);
       
-      // Simulate API call
-      setTimeout(() => {
-        setResults(filteredResults);
-        setLoading(false);
-        
-        toast({
-          title: "Arama Tamamlandı",
-          description: `${filteredResults.length} sonuç bulundu.`,
-        });
-      }, 1000);
+      setResults(response.data.results);
+      onDataSourceChange?.(response.source);
+      
+      saveSearchHistory(searchQuery, response.data.results.length, response.source);
+      
+      toast({
+        title: "Arama Tamamlandı",
+        description: `${response.data.results.length} sonuç bulundu (${response.responseTime}ms).`,
+      });
       
     } catch (error) {
       console.error('Search error:', error);
@@ -121,6 +153,8 @@ export function SearchContent({ selectedCategory, selectedSubcategory, className
         description: "Arama yapılırken bir hata oluştu.",
         variant: "destructive",
       });
+      onDataSourceChange?.('error');
+    } finally {
       setLoading(false);
     }
   };
@@ -143,11 +177,19 @@ export function SearchContent({ selectedCategory, selectedSubcategory, className
     setSavedCases(newSavedCases);
   };
 
+  const downloadPDF = (result: SearchResult) => {
+    toast({
+      title: "🔐 Premium Özellik",
+      description: "PDF indirme için premium hesaba yükseltme gerekiyor!",
+      variant: "destructive",
+    });
+  };
+
   return (
     <div className={cn("flex-1 h-full overflow-hidden", className)}>
       <div className="h-full flex flex-col">
         {/* Search Header */}
-        <div className="p-6 bg-white/70 backdrop-blur-sm border-b border-white/20 shadow-sm">
+        <div className="p-6 bg-white border-b border-gray-200 shadow-sm">
           <form onSubmit={handleSearch} className="space-y-4">
             <div className="flex gap-3">
               <div className="flex-1 relative">
@@ -155,14 +197,14 @@ export function SearchContent({ selectedCategory, selectedSubcategory, className
                   placeholder="Arama teriminizi girin... (örn: iş sözleşmesi feshi)"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-12 pl-12 pr-4 bg-white/90 border-white/20 shadow-sm rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30"
+                  className="w-full h-12 pl-12 pr-4 bg-white border-gray-200 shadow-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary/30"
                 />
                 <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               </div>
               <Button 
                 type="submit" 
                 disabled={loading}
-                className="h-12 px-8 bg-gradient-to-r from-primary to-primary-glow hover:from-primary/90 hover:to-primary-glow/90 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                className="h-12 px-8 bg-primary hover:bg-primary/90 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 {loading ? (
                   <>
@@ -179,15 +221,15 @@ export function SearchContent({ selectedCategory, selectedSubcategory, className
             </div>
             
             <div className="flex gap-2">
-              <Button type="button" variant="outline" size="sm" className="bg-white/70 border-white/20 hover:bg-white/90">
+              <Button type="button" variant="outline" size="sm" className="bg-white border-gray-200 hover:bg-gray-50">
                 <Filter className="h-4 w-4 mr-2" />
                 Gelişmiş Filtreler
               </Button>
-              <Button type="button" variant="outline" size="sm" className="bg-white/70 border-white/20 hover:bg-white/90">
+              <Button type="button" variant="outline" size="sm" className="bg-white border-gray-200 hover:bg-gray-50">
                 <Calendar className="h-4 w-4 mr-2" />
                 Tarih Aralığı
               </Button>
-              <Button type="button" variant="outline" size="sm" className="bg-white/70 border-white/20 hover:bg-white/90">
+              <Button type="button" variant="outline" size="sm" className="bg-white border-gray-200 hover:bg-gray-50">
                 <Building2 className="h-4 w-4 mr-2" />
                 Mahkeme
               </Button>
@@ -196,21 +238,34 @@ export function SearchContent({ selectedCategory, selectedSubcategory, className
         </div>
 
         {/* Search Results */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {results.length > 0 ? (
-            <>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-foreground">
-                  Arama Sonuçları ({results.length})
-                </h2>
-                <Button variant="outline" size="sm" className="bg-white/70 border-white/20 hover:bg-white/90">
-                  <Download className="h-4 w-4 mr-2" />
-                  Sonuçları Dışa Aktar
-                </Button>
-              </div>
+        <div className="flex-1 overflow-y-auto">
+          <div className="flex gap-6 p-6">
+            {/* Search History Sidebar */}
+            <div className="w-80 space-y-4">
+              <SearchHistory
+                history={searchHistory}
+                onSelectHistory={handleHistorySelect}
+                onClearHistory={handleClearHistory}
+                onRemoveItem={handleRemoveHistoryItem}
+              />
+            </div>
 
-              {results.map((result) => (
-                <Card key={result.id} className="bg-white/80 backdrop-blur-sm border-white/20 shadow-lg hover:shadow-xl transition-all duration-200 hover:bg-white/90 rounded-xl">
+            {/* Main Results Area */}
+            <div className="flex-1 space-y-4">
+              {results.length > 0 ? (
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      Arama Sonuçları ({results.length})
+                    </h2>
+                    <Button variant="outline" size="sm" className="bg-white border-gray-200 hover:bg-gray-50">
+                      <Download className="h-4 w-4 mr-2" />
+                      Sonuçları Dışa Aktar
+                    </Button>
+                  </div>
+
+                  {results.map((result) => (
+                    <Card key={result.id} className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:bg-gray-50 rounded-lg">
                   <CardHeader className="pb-3">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
@@ -235,7 +290,7 @@ export function SearchContent({ selectedCategory, selectedSubcategory, className
                         size="sm"
                         variant="outline"
                         onClick={() => toggleSaveCase(result.id)}
-                        className="bg-white/70 border-white/20 hover:bg-white/90"
+                        className="bg-white border-gray-200 hover:bg-gray-50"
                       >
                         {savedCases.has(result.id) ? (
                           <BookmarkCheck className="h-4 w-4 text-primary" />
@@ -261,7 +316,7 @@ export function SearchContent({ selectedCategory, selectedSubcategory, className
                       <h4 className="font-medium text-sm mb-2 text-foreground">Anahtar Kelimeler</h4>
                       <div className="flex flex-wrap gap-1">
                         {result.keywords.map((keyword: string, index: number) => (
-                          <Badge key={index} variant="outline" className="text-xs bg-white/70 border-white/20">
+                          <Badge key={index} variant="outline" className="text-xs bg-white border-gray-200">
                             {keyword}
                           </Badge>
                         ))}
@@ -269,25 +324,31 @@ export function SearchContent({ selectedCategory, selectedSubcategory, className
                     </div>
 
                     <div className="flex gap-2 pt-2">
-                      <Button size="sm" className="bg-gradient-to-r from-primary to-primary-glow hover:from-primary/90 hover:to-primary-glow/90 text-white">
+                      <Button size="sm" className="bg-primary hover:bg-primary/90 text-white">
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Tam Metni Görüntüle
                       </Button>
-                      <Button size="sm" variant="outline" className="bg-white/70 border-white/20 hover:bg-white/90">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 border-none"
+                        onClick={() => downloadPDF(result)}
+                      >
                         <Download className="h-4 w-4 mr-2" />
                         PDF İndir
+                        <Star className="h-3 w-3 ml-1" />
                       </Button>
-                      <Button size="sm" variant="outline" className="bg-white/70 border-white/20 hover:bg-white/90">
+                      <Button size="sm" variant="outline" className="bg-white border-gray-200 hover:bg-gray-50">
                         Benzer Kararlar
                       </Button>
                     </div>
                   </CardContent>
-                </Card>
-              ))}
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <Card className="text-center py-12 bg-white/80 backdrop-blur-sm border-white/20 shadow-lg rounded-xl max-w-md">
+                    </Card>
+                  ))}
+                </>
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <Card className="text-center py-12 bg-white border-gray-200 shadow-sm rounded-lg max-w-md">
                 <CardContent>
                   <SearchIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2 text-foreground">
@@ -299,10 +360,12 @@ export function SearchContent({ selectedCategory, selectedSubcategory, className
                       : 'Sol menüden bir kategori seçin ve arama teriminizi girin'
                     }
                   </p>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                  </Card>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

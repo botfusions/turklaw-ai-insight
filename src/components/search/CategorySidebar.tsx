@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Scale, Building, BookOpen, ChevronRight, ChevronDown } from 'lucide-react';
 
 export interface Category {
   id: string;
   name: string;
   icon: React.ComponentType<any>;
-  gradient: string;
+  description: string;
   subcategories: Subcategory[];
 }
 
 export interface Subcategory {
   id: string;
   name: string;
-  count?: number;
+  description: string;
+  details?: string[];
 }
 
 const categories: Category[] = [
@@ -23,36 +23,96 @@ const categories: Category[] = [
     id: 'yargi',
     name: 'Yargı Kararları',
     icon: Scale,
-    gradient: 'from-blue-500 to-blue-600',
+    description: 'Türk Mahkeme Sistemi Kararları',
     subcategories: [
-      { id: 'yargitay', name: 'Yargıtay (52 Daire)', count: 450000 },
-      { id: 'danistay', name: 'Danıştay (27 Daire)', count: 280000 },
-      { id: 'emsal', name: 'Emsal Kararlar', count: 35000 },
-      { id: 'anayasa', name: 'Anayasa Mahkemesi', count: 12000 },
+      { 
+        id: 'yargitay', 
+        name: 'Yargıtay', 
+        description: '52 Daire - Hukuk ve Ceza',
+        details: ['Hukuk Daireleri (1-21)', 'Ceza Daireleri (1-16)', 'Hukuk Genel Kurulu', 'Ceza Genel Kurulu']
+      },
+      { 
+        id: 'danistay', 
+        name: 'Danıştay', 
+        description: '27 Daire - İdari ve Vergi',
+        details: ['İdari Daireler (1-15)', 'Vergi Daireleri (4)', 'İdari Dava Daireleri', 'Danıştay Genel Kurulu']
+      },
+      { 
+        id: 'emsal', 
+        name: 'Emsal Kararlar', 
+        description: 'UYAP Emsal Kararlar',
+        details: ['Yerel Mahkemeler', 'Bölge Adliye Mahkemeleri', 'İstinaf Mahkemeleri']
+      },
+      { 
+        id: 'anayasa', 
+        name: 'Anayasa Mahkemesi', 
+        description: 'Norm Denetimi ve Bireysel Başvuru',
+        details: ['Norm Denetimi', 'Bireysel Başvuru', 'Siyasi Parti Kapatma']
+      },
     ]
   },
   {
     id: 'kurumsal',
     name: 'Kurumsal Kararlar',
     icon: Building,
-    gradient: 'from-green-500 to-green-600',
+    description: 'Kamu Kurumu Kararları',
     subcategories: [
-      { id: 'rekabet', name: 'Rekabet Kurumu', count: 8500 },
-      { id: 'sayistay', name: 'Sayıştay', count: 15000 },
-      { id: 'ihale', name: 'Kamu İhale Kurumu', count: 12000 },
-      { id: 'uyusmazlik', name: 'Uyuşmazlık Mahkemesi', count: 3200 },
+      { 
+        id: 'rekabet', 
+        name: 'Rekabet Kurumu', 
+        description: 'Rekabet İhlalleri ve Yoğunlaşma',
+        details: ['Anlaşma İhlalleri', 'Hâkim Durum İhlalleri', 'Yoğunlaşma İşlemleri']
+      },
+      { 
+        id: 'sayistay', 
+        name: 'Sayıştay', 
+        description: 'Mali Denetim Kararları',
+        details: ['Denetim Raporları', 'Mali Sorumluluk', 'Kesin Hesap']
+      },
+      { 
+        id: 'ihale', 
+        name: 'Kamu İhale Kurumu', 
+        description: 'İhale İtirazları ve Kararları',
+        details: ['İtiraz Kararları', 'İdari Para Cezaları', 'Yasaklama Kararları']
+      },
+      { 
+        id: 'uyusmazlik', 
+        name: 'Uyuşmazlık Mahkemesi', 
+        description: 'Görev Uyuşmazlıkları',
+        details: ['Olumlu Uyuşmazlık', 'Olumsuz Uyuşmazlık', 'İhlal İddiaları']
+      },
     ]
   },
   {
     id: 'mevzuat',
     name: 'Mevzuat',
     icon: BookOpen,
-    gradient: 'from-purple-500 to-purple-600',
+    description: 'Türk Hukuk Mevzuatı',
     subcategories: [
-      { id: 'kanun', name: 'Kanunlar', count: 2400 },
-      { id: 'yonetmelik', name: 'Yönetmelikler', count: 8900 },
-      { id: 'teblig', name: 'Tebliğler', count: 15600 },
-      { id: 'genelge', name: 'Genelgeler', count: 4200 },
+      { 
+        id: 'kanun', 
+        name: 'Kanunlar', 
+        description: 'TBMM Tarafından Çıkarılan Kanunlar',
+        details: ['Anayasa', 'Temel Kanunlar', 'Özel Kanunlar']
+      },
+      { 
+        id: 'yonetmelik', 
+        name: 'Yönetmelikler', 
+        description: 'İcrai Düzenlemeler',
+        details: ['Cumhurbaşkanlığı', 'Bakanlık', 'Kurum']
+      },
+      { 
+        id: 'teblig', 
+        name: 'Tebliğler', 
+        description: 'Uygulama Esasları',
+        details: ['Vergi Tebliğleri', 'Gümrük Tebliğleri', 'Mali Tebliğler']
+      },
+      { 
+        id: 'genelge', 
+        name: 'Genelgeler', 
+        description: 'Kamu Kurumu Genelgeleri',
+        details: ['İdari Genelgeler', 'Mali Genelgeler', 'Hukuki Genelgeler']
+      },
     ]
   }
 ];
@@ -89,14 +149,14 @@ export function CategorySidebar({
 
   return (
     <div className={cn(
-      "w-full h-full bg-white/70 backdrop-blur-sm border-r border-white/20 shadow-lg",
+      "w-full h-full bg-white shadow-sm border-r border-gray-200",
       className
     )}>
-      <div className="p-6 border-b border-white/20">
-        <h2 className="text-lg font-semibold text-foreground mb-1">
+      <div className="p-6 border-b border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">
           Araştırma Kategorileri
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-gray-600">
           Arama yapmak için bir kategori seçin
         </p>
       </div>
@@ -113,9 +173,10 @@ export function CategorySidebar({
               <Button
                 variant="ghost"
                 className={cn(
-                  "w-full p-4 h-auto justify-start rounded-xl border border-white/20 transition-all duration-200 hover:scale-[1.02]",
-                  `bg-gradient-to-r ${category.gradient} text-white shadow-lg hover:shadow-xl`,
-                  isSelected && "ring-2 ring-primary/50"
+                  "w-full p-4 h-auto justify-start rounded-lg border transition-all duration-200",
+                  isSelected 
+                    ? "bg-primary/10 border-primary text-primary hover:bg-primary/20" 
+                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                 )}
                 onClick={() => handleCategoryClick(category.id)}
               >
@@ -124,8 +185,8 @@ export function CategorySidebar({
                     <Icon className="h-5 w-5" />
                     <div className="text-left">
                       <div className="font-medium text-sm">{category.name}</div>
-                      <div className="text-xs text-white/80">
-                        {formatNumber(category.subcategories.reduce((acc, sub) => acc + (sub.count || 0), 0))} kayıt
+                      <div className="text-xs text-gray-500">
+                        {category.description}
                       </div>
                     </div>
                   </div>
@@ -145,18 +206,18 @@ export function CategorySidebar({
                       key={subcategory.id}
                       variant="ghost"
                       className={cn(
-                        "w-full justify-start p-3 h-auto rounded-lg border border-white/10 bg-white/50 hover:bg-white/70 transition-all duration-200",
-                        selectedSubcategory === subcategory.id && "bg-primary/10 border-primary/20 text-primary"
+                        "w-full justify-start p-3 h-auto rounded-lg border transition-all duration-200",
+                        selectedSubcategory === subcategory.id 
+                          ? "bg-primary/10 border-primary/20 text-primary hover:bg-primary/20" 
+                          : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
                       )}
                       onClick={() => onSubcategorySelect(subcategory.id)}
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <span className="text-sm font-medium">{subcategory.name}</span>
-                        {subcategory.count && (
-                          <Badge variant="secondary" className="text-xs">
-                            {formatNumber(subcategory.count)}
-                          </Badge>
-                        )}
+                      <div className="text-left w-full">
+                        <div className="font-medium text-sm">{subcategory.name}</div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {subcategory.description}
+                        </div>
                       </div>
                     </Button>
                   ))}
