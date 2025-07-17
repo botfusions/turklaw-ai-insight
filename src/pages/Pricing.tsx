@@ -99,10 +99,15 @@ export default function Pricing() {
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
               Size Uygun Planı Seçin
             </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Hukuki araştırma ihtiyaçlarınıza göre tasarlanmış esnek fiyatlandırma seçenekleri. 
-              7 gün ücretsiz deneme ile hemen başlayın.
-            </p>
+            <div className="space-y-4">
+              <Badge variant="destructive" className="text-lg px-4 py-2">
+                🔥 %50 Özel İndirim - Kısa Süreliğine!
+              </Badge>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                Hukuki araştırma ihtiyaçlarınıza göre tasarlanmış esnek fiyatlandırma seçenekleri. 
+                7 gün ücretsiz deneme ile hemen başlayın.
+              </p>
+            </div>
           </div>
 
           {/* Current Plan Status */}
@@ -160,9 +165,24 @@ export default function Pricing() {
                       )}
                     </div>
                     <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                    <div className="text-4xl font-bold text-primary">
-                      {plan.price}₺
-                      <span className="text-lg font-normal text-muted-foreground">/ay</span>
+                    
+                    {/* Discount Badge */}
+                    <div className="mb-2">
+                      <Badge variant="destructive" className="text-sm">
+                        %50 Özel İndirim - Kısa Süreliğine!
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      {plan.originalPrice && (
+                        <div className="text-lg text-muted-foreground line-through">
+                          {plan.originalPrice}₺/ay
+                        </div>
+                      )}
+                      <div className="text-4xl font-bold text-primary">
+                        {plan.price}₺
+                        <span className="text-lg font-normal text-muted-foreground">/ay</span>
+                      </div>
                     </div>
                     <p className="text-muted-foreground">
                       {plan.id === 'basic' ? 'Başlangıç seviyesi kullanım' : 'Profesyonel hukuk pratiği'}

@@ -26,9 +26,8 @@ export const useRouteGuards = () => {
     }
 
     const planHierarchy: Record<PlanType, number> = {
-      free: 0,
-      pro: 1,
-      enterprise: 2
+      basic: 0,
+      premium: 1
     };
 
     const userPlanLevel = planHierarchy[profile.plan as PlanType] || 0;
@@ -45,19 +44,9 @@ export const useRouteGuards = () => {
     return { allowed: true };
   };
 
+  // Removed searchLimitGuard as credit system is removed
   const searchLimitGuard = (): RouteGuardResult => {
-    if (!profile) {
-      return { allowed: false, redirectTo: '/login', reason: 'no_profile' };
-    }
-
-    if (profile.monthly_search_count >= profile.max_searches) {
-      return { 
-        allowed: false, 
-        redirectTo: '/subscription', 
-        reason: 'search_limit_exceeded' 
-      };
-    }
-
+    // No search limits anymore - always allow
     return { allowed: true };
   };
 
@@ -68,7 +57,7 @@ export const useRouteGuards = () => {
 
     // For now, admin is determined by plan type
     // In a real app, you'd have a separate admin role system
-    if (profile.plan !== 'enterprise') {
+    if (profile.plan !== 'premium') {
       return { 
         allowed: false, 
         redirectTo: '/dashboard', 

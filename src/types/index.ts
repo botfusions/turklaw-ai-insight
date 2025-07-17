@@ -2,9 +2,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  plan: 'free' | 'pro' | 'enterprise';
-  searchCount: number;
-  maxSearches: number;
+  plan: 'basic' | 'premium';
   createdAt: Date;
 }
 
@@ -32,6 +30,7 @@ export interface SubscriptionPlan {
   id: string;
   name: string;
   price: number;
+  originalPrice?: number;
   currency: string;
   features: string[];
   maxSearches: number;

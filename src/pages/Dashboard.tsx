@@ -49,7 +49,7 @@ export default function Dashboard() {
   const { stats, loading, error, user, profile } = useDashboard();
   const { apiStatuses, isAnyAPIOnline, allAPIsOffline } = useAPIStatus();
   
-  const usagePercentage = profile ? (profile.monthly_search_count / profile.max_searches) * 100 : 0;
+  // Removed usage percentage calculation since credit system is removed
 
   const handleMockSearch = async (type: 'quick' | 'mevzuat' | 'yargi', query: string) => {
     if (!query.trim()) {
@@ -255,7 +255,7 @@ ${result.legal_basis || 'İlgili kanun maddeleri ve içtihatlar doğrultusunda k
       
       <main className="container mx-auto px-4 py-8">
         {/* Welcome Section */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">
             Hoş geldiniz, {profile.full_name || user.email?.split('@')[0]}
           </h1>
@@ -264,79 +264,200 @@ ${result.legal_basis || 'İlgili kanun maddeleri ve içtihatlar doğrultusunda k
           </p>
         </div>
 
-            {/* API Status Alert */}
-            {allAPIsOffline && (
-              <Card className="bg-destructive/10 border-destructive/20 mb-6">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 text-destructive">
-                    <AlertCircle className="h-5 w-5" />
-                    <p className="font-medium">API Servisleri Çevrimdışı</p>
+        {/* Search Center - Moved to top */}
+        <Card className="bg-card shadow-card mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Search className="h-5 w-5 mr-2 text-primary" />
+              Arama Merkezi
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="quick" className="flex items-center gap-2">
+                  <Search className="h-4 w-4" />
+                  Hızlı Arama
+                </TabsTrigger>
+                <TabsTrigger value="mevzuat" className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Mevzuat
+                </TabsTrigger>
+                <TabsTrigger value="yargi" className="flex items-center gap-2">
+                  <Scale className="h-4 w-4" />
+                  Yargı
+                </TabsTrigger>
+                <TabsTrigger value="history" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Geçmiş
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="quick" className="space-y-4">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    🚀 Hızlı Arama - Mevzuat & Yargı
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">Her ikisinde de arayın</p>
+                  <form onSubmit={handleQuickSearch} className="flex gap-2">
+                    <Input
+                      placeholder="Örn: iş kazası, boşanma, sözleşme ihlali..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button type="submit" disabled={searchLoading}>
+                      {searchLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                      Ara
+                    </Button>
+                  </form>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="mevzuat" className="space-y-4">
+                <div className="bg-white rounded-lg border p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <BookOpen className="h-6 w-6 text-blue-600" />
+                    <h3 className="text-lg font-semibold">Mevzuat Arama</h3>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Harici API servisleri şu anda kullanılamıyor. Temel arama özellikleri mock veriler ile çalışıyor.
-                  </p>
-                  <Button
-                    onClick={() => navigate('/api-test')}
-                    variant="outline"
-                    size="sm"
-                    className="mt-3"
-                  >
-                    <Activity className="h-4 w-4 mr-2" />
-                    API Durumunu Kontrol Et
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Kanun, yönetmelik, tebliğ arayın..."
+                      value={mevzuatQuery}
+                      onChange={(e) => setMevzuatQuery(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={() => handleMockSearch('mevzuat', mevzuatQuery)}
+                      disabled={searchLoading}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {searchLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
+                      Mevzuat Ara
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="yargi" className="space-y-4">
+                <div className="bg-white rounded-lg border p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Scale className="h-6 w-6 text-purple-600" />
+                    <h3 className="text-lg font-semibold">Yargı Arama</h3>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Yargıtay, Danıştay kararları arayın..."
+                        value={yargiQuery}
+                        onChange={(e) => setYargiQuery(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button 
+                        onClick={() => handleMockSearch('yargi', yargiQuery)}
+                        disabled={searchLoading}
+                        className="bg-purple-600 hover:bg-purple-700"
+                      >
+                        {searchLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Scale className="h-4 w-4" />}
+                        Yargı Ara
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="history" className="space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Son Aramalar</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between bg-white p-3 rounded border">
+                      <span className="text-sm">iş kazası tazminat</span>
+                      <span className="text-xs text-gray-500">24 sonuç</span>
+                    </div>
+                    <div className="flex items-center justify-between bg-white p-3 rounded border">
+                      <span className="text-sm">boşanma nafaka</span>
+                      <span className="text-xs text-gray-500">18 sonuç</span>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* API Status Alert */}
+        {allAPIsOffline && (
+          <Card className="bg-destructive/10 border-destructive/20 mb-6">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-destructive">
+                <AlertCircle className="h-5 w-5" />
+                <p className="font-medium">API Servisleri Çevrimdışı</p>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Harici API servisleri şu anda kullanılamıyor. Temel arama özellikleri mock veriler ile çalışıyor.
+              </p>
+              <Button
+                onClick={() => navigate('/api-test')}
+                variant="outline"
+                size="sm"
+                className="mt-3"
+              >
+                <Activity className="h-4 w-4 mr-2" />
+                API Durumunu Kontrol Et
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Quick Stats - Smaller and moved down */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Card className="bg-card shadow-card">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Bu Ay Yapılan Arama</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.monthlySearches}</p>
+                  <p className="text-xs text-muted-foreground">Bu Ay</p>
+                  <p className="text-lg font-bold text-foreground">{stats.monthlySearches}</p>
                 </div>
-                <Search className="h-8 w-8 text-primary" />
+                <Search className="h-5 w-5 text-primary" />
               </div>
             </CardContent>
           </Card>
           
           <Card className="bg-card shadow-card">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Kayıtlı Kararlar</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.savedCasesCount}</p>
+                  <p className="text-xs text-muted-foreground">Kayıtlı</p>
+                  <p className="text-lg font-bold text-foreground">{stats.savedCasesCount}</p>
                 </div>
-                <BookOpen className="h-8 w-8 text-secondary" />
+                <BookOpen className="h-5 w-5 text-secondary" />
               </div>
             </CardContent>
           </Card>
           
           <Card className="bg-card shadow-card">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Toplam Karar</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.totalCases.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">Toplam</p>
+                  <p className="text-lg font-bold text-foreground">{stats.totalCases.toLocaleString()}</p>
                 </div>
-                <Database className="h-8 w-8 text-success" />
+                <Database className="h-5 w-5 text-success" />
               </div>
             </CardContent>
           </Card>
           
           <Card className="bg-card shadow-card">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Aktif Plan</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-lg font-semibold text-foreground capitalize">{profile.plan}</p>
-                    {profile.plan === 'pro' && <Crown className="h-4 w-4 text-secondary" />}
+                  <p className="text-xs text-muted-foreground">Plan</p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-sm font-semibold text-foreground capitalize">{profile.plan}</p>
+                    {profile.plan === 'premium' && <Crown className="h-3 w-3 text-secondary" />}
                   </div>
                 </div>
-                <TrendingUp className="h-8 w-8 text-accent" />
+                <TrendingUp className="h-5 w-5 text-accent" />
               </div>
             </CardContent>
           </Card>
@@ -632,38 +753,32 @@ ${result.legal_basis || 'İlgili kanun maddeleri ve içtihatlar doğrultusunda k
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Usage Stats */}
+            {/* Plan Info */}
             <Card className="bg-card shadow-card">
               <CardHeader>
-                <CardTitle>Kullanım İstatistikleri</CardTitle>
+                <CardTitle>Mevcut Planınız</CardTitle>
                 <CardDescription>
-                  Bu ayki arama limitiniz
+                  Plan özellikleri ve yükseltme seçenekleri
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span>Yapılan Arama</span>
-                    <span>{profile.monthly_search_count}/{profile.max_searches}</span>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Crown className="h-5 w-5 text-primary" />
+                    <span className="text-lg font-semibold capitalize">{profile.plan} Plan</span>
                   </div>
-                  <Progress value={usagePercentage} className="h-2" />
+                  <p className="text-sm text-muted-foreground">
+                    {profile.plan === 'premium' ? 'Premium özelliklerin keyfini çıkarın' : 'Temel plan özelliklerini kullanabilirsiniz'}
+                  </p>
                 </div>
-                
-                {usagePercentage > 80 && (
-                  <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
-                    <p className="text-sm text-warning-foreground">
-                      Arama limitinizin %{Math.round(usagePercentage)}'ine ulaştınız
-                    </p>
-                  </div>
-                )}
                 
                 <Button 
                   variant="outline" 
                   size="sm" 
                   className="w-full"
-                  onClick={() => alert('Plan yükseltme özelliği yakında aktif olacak')}
+                  onClick={() => navigate('/pricing')}
                 >
-                  Planı Yükselt
+                  Plan Detayları
                 </Button>
               </CardContent>
             </Card>

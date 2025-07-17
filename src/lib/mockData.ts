@@ -125,11 +125,12 @@ export const subscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'basic',
     name: 'Basic Plan',
-    price: 49,
+    price: 850,
+    originalPrice: 1700,
     currency: 'TL',
     maxSearches: 50,
     features: [
-      '50 arama/ay',
+      'Sınırsız arama',
       'Temel karar özeti',
       'PDF indirme',
       'E-posta desteği',
@@ -139,19 +140,22 @@ export const subscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'premium',
     name: 'Premium Plan',
-    price: 99,
+    price: 5500,
+    originalPrice: 11000,
     currency: 'TL',
     maxSearches: 250,
     popular: true,
     features: [
-      '250 arama/ay',
+      'Sınırsız arama',
       'Tüm mahkemeler',
       'Gelişmiş filtreleme',
       'Tam metin erişimi',
       'Benzer karar önerileri',
       'Özel notlar',
       'Öncelikli destek',
-      'İstatistikler ve analiz'
+      'İstatistikler ve analiz',
+      'AI destekli analiz',
+      'Özel raporlama'
     ]
   }
 ];
@@ -161,7 +165,5 @@ export const mockUser = {
   email: 'avukat@example.com',
   name: 'Mehmet Yılmaz',
   plan: 'premium' as const,
-  searchCount: 45,
-  maxSearches: 250,
   createdAt: new Date('2024-01-15')
 };

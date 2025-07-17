@@ -26,13 +26,8 @@ export function DashboardPreview() {
   const [quickSearchQuery, setQuickSearchQuery] = useState('');
   
   // Memoized calculations for performance
-  const usagePercentage = useMemo(() => 
-    profile ? (profile.monthly_search_count / profile.max_searches) * 100 : 0, 
-    [profile?.monthly_search_count, profile?.max_searches]
-  );
-  
   const isPremiumUser = useMemo(() => 
-    profile && !['free', 'basic'].includes(profile.plan), 
+    profile && profile.plan === 'premium', 
     [profile?.plan]
   );
   
@@ -48,11 +43,11 @@ export function DashboardPreview() {
   ], []);
 
   const mockStats = useMemo(() => ({
-    monthlySearches: profile?.monthly_search_count || 0,
+    monthlySearches: 42,
     savedCases: 12,
     totalCases: 100000,
     activeSearches: 3
-  }), [profile?.monthly_search_count]);
+  }), []);
 
   const handleQuickSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -163,21 +158,28 @@ export function DashboardPreview() {
         </Card>
       </div>
 
-      {/* Usage Progress */}
+      {/* Plan Info */}
       <Card className="bg-card shadow-card">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between text-lg">
-            <span>Aylık Kullanım</span>
-            <Badge variant={usagePercentage > 80 ? "destructive" : "outline"}>
-              {profile?.monthly_search_count || 0}/{profile?.max_searches || 0}
+            <span>Mevcut Planınız</span>
+            <Badge variant="outline" className="capitalize">
+              {profile?.plan || 'Basic'} Plan
             </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Progress value={usagePercentage} className="h-2" />
-          <p className="text-sm text-muted-foreground mt-2">
-            {Math.round(usagePercentage)}% kullanıldı
-          </p>
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Crown className="h-5 w-5 text-primary" />
+              <span className="font-semibold">
+                {profile?.plan === 'premium' ? 'Premium Özellikler Aktif' : 'Temel Plan Özelliklerini Kullanabilirsiniz'}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Sınırsız arama ile araştırmalarınızı yapın
+            </p>
+          </div>
         </CardContent>
       </Card>
 
