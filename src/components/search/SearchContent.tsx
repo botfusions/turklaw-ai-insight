@@ -6,8 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { SearchHistory, SearchHistoryItem } from '@/components/search/SearchHistory';
+import { SearchHistory } from '@/components/search/components/SearchHistory';
+import { SearchHistoryPanel } from '@/components/search/components/SearchHistoryPanel';
+import { SearchHistoryMobileDrawer } from '@/components/search/components/SearchHistoryMobileDrawer';
 import { searchService, SearchResult } from '@/components/search/HybridSearchService';
+import { useSearchHistoryDB } from './hooks/useSearchHistoryDB';
+import { SearchHistoryItem } from './types';
 import { 
   Search as SearchIcon, 
   Filter,
@@ -18,7 +22,8 @@ import {
   BookmarkCheck,
   Download,
   ExternalLink,
-  Star
+  Star,
+  History
 } from 'lucide-react';
 
 
@@ -61,38 +66,15 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [savedCases, setSavedCases] = useState<Set<string>>(new Set());
-  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const { toast } = useToast();
-  const { } = useAuth();
-
-  // Load search history on mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('searchHistory');
-      if (saved) {
-        setSearchHistory(JSON.parse(saved));
-      }
-    } catch (error) {
-      console.error('Error loading search history:', error);
-    }
-  }, []);
-
-  // Save search history
-  const saveSearchHistory = (query: string, resultCount: number, source: string) => {
-    const historyItem: SearchHistoryItem = {
-      id: Date.now().toString(),
-      query,
-      category: selectedCategory || '',
-      subcategory: selectedSubcategory || '',
-      timestamp: new Date().toISOString(),
-      resultCount,
-      dataSource: source
-    };
-
-    const newHistory = [historyItem, ...searchHistory.slice(0, 4)];
-    setSearchHistory(newHistory);
-    localStorage.setItem('searchHistory', JSON.stringify(newHistory));
-  };
+  const { user } = useAuth();
+  const { 
+    history: searchHistory, 
+    loading: historyLoading, 
+    saveSearch,
+    clearHistory,
+    removeSearch
+  } = useSearchHistoryDB();
 
   const handleHistorySelect = (item: SearchHistoryItem) => {
     setSearchQuery(item.query);
@@ -100,14 +82,11 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
   };
 
   const handleClearHistory = () => {
-    setSearchHistory([]);
-    localStorage.removeItem('searchHistory');
+    clearHistory();
   };
 
   const handleRemoveHistoryItem = (id: string) => {
-    const newHistory = searchHistory.filter(item => item.id !== id);
-    setSearchHistory(newHistory);
-    localStorage.setItem('searchHistory', JSON.stringify(newHistory));
+    removeSearch(id);
   };
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -139,7 +118,13 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
       setResults(response.data.results);
       onDataSourceChange?.(response.source);
       
-      saveSearchHistory(searchQuery, response.data.results.length, response.source);
+      // Save search to history
+      saveSearch(
+        searchQuery, 
+        response.data.results.length, 
+        response.source as any, 
+        response.responseTime || 0
+      );
       
       toast({
         title: "Arama Tamamlandı",
@@ -239,11 +224,26 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
 
         {/* Search Results */}
         <div className="flex-1 overflow-y-auto">
-          <div className="flex gap-6 p-6">
-            {/* Search History Sidebar */}
-            <div className="w-80 space-y-4">
-              <SearchHistory
+          <div className="flex flex-col md:flex-row gap-6 p-6">
+            {/* Mobile Search History Drawer (visible on mobile only) */}
+            <div className="flex justify-between items-center mb-4 md:hidden">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {results.length > 0 ? `Arama Sonuçları (${results.length})` : 'Arama Sonuçları'}
+              </h2>
+              <SearchHistoryMobileDrawer
                 history={searchHistory}
+                loading={historyLoading}
+                onSelectHistory={handleHistorySelect}
+                onClearHistory={handleClearHistory}
+                onRemoveItem={handleRemoveHistoryItem}
+              />
+            </div>
+            
+            {/* Desktop Search History Sidebar (hidden on mobile) */}
+            <div className="hidden md:block w-80 space-y-4">
+              <SearchHistoryPanel
+                history={searchHistory}
+                loading={historyLoading}
                 onSelectHistory={handleHistorySelect}
                 onClearHistory={handleClearHistory}
                 onRemoveItem={handleRemoveHistoryItem}
