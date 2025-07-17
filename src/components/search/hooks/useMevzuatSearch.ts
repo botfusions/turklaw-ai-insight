@@ -7,7 +7,15 @@ export const useMevzuatSearch = () => {
     results: [],
     loading: false,
     error: null,
-    hasSearched: false
+    hasSearched: false,
+    dataSource: 'primary',
+    searchHistory: [],
+    performanceInfo: {
+      responseTime: 0,
+      cacheHit: false,
+      apiAttempts: 0,
+      dataSource: 'primary'
+    }
   });
 
   const searchMevzuat = useCallback(async (query: string, maxResults: number = 10) => {

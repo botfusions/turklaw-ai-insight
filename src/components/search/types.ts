@@ -17,6 +17,17 @@ export interface MevzuatSearchProps {
   // Auth kontrolü
   requireAuth?: boolean;
   showLimitWarning?: boolean;
+  
+  // Hibrit özellikler
+  showDataSource?: boolean;
+  showHistory?: boolean;
+  cacheEnabled?: boolean;
+  primaryTimeout?: number;
+  fallbackEnabled?: boolean;
+  cacheFirst?: boolean;
+  showPerformanceInfo?: boolean;
+  showCacheControls?: boolean;
+  debugMode?: boolean;
 }
 
 export interface MevzuatResult {
@@ -35,6 +46,9 @@ export interface MevzuatSearchState {
   loading: boolean;
   error: string | null;
   hasSearched: boolean;
+  dataSource: DataSource;
+  searchHistory: SearchHistoryItem[];
+  performanceInfo: PerformanceInfo;
 }
 
 export interface SearchFilters {
@@ -42,4 +56,36 @@ export interface SearchFilters {
   dateFrom: Date | null;
   dateTo: Date | null;
   category: string;
+}
+
+export type DataSource = 'primary' | 'fallback' | 'cache' | 'error';
+
+export interface SearchHistoryItem {
+  id: string;
+  query: string;
+  timestamp: number;
+  resultCount: number;
+  dataSource: DataSource;
+  responseTime: number;
+}
+
+export interface CacheEntry {
+  query: string;
+  results: MevzuatResult[];
+  timestamp: number;
+  dataSource: DataSource;
+  expiresAt: number;
+}
+
+export interface PerformanceInfo {
+  responseTime: number;
+  cacheHit: boolean;
+  apiAttempts: number;
+  dataSource: DataSource;
+}
+
+export interface HybridSearchState extends MevzuatSearchState {
+  cacheSize: number;
+  historySize: number;
+  lastCacheCleared: number | null;
 }

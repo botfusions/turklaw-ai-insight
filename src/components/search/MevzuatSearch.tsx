@@ -6,7 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { InfoIcon } from 'lucide-react';
 import { SearchInput } from './SearchInput';
 import { SearchResults } from './SearchResults';
-import { useMevzuatSearch } from './hooks/useMevzuatSearch';
+import { useHybridMevzuatSearch } from './hooks/useHybridMevzuatSearch';
+import { DataSourceIndicator } from './components/DataSourceIndicator';
+import { SearchHistory } from './components/SearchHistory';
+import { CacheControls } from './components/CacheControls';
+import { PerformanceInfo } from './components/PerformanceInfo';
 import { MevzuatSearchProps } from './types';
 import { cn } from '@/lib/utils';
 
@@ -21,7 +25,16 @@ export const MevzuatSearch = ({
   onSearchComplete,
   onError,
   requireAuth = false,
-  showLimitWarning = true
+  showLimitWarning = true,
+  showDataSource = true,
+  showHistory = true,
+  cacheEnabled = true,
+  primaryTimeout = 5000,
+  fallbackEnabled = true,
+  cacheFirst = false,
+  showPerformanceInfo = false,
+  showCacheControls = false,
+  debugMode = false
 }: MevzuatSearchProps) => {
   const { user, profile, canSearch } = useAuth();
   const {
@@ -30,10 +43,23 @@ export const MevzuatSearch = ({
     loading,
     error,
     hasSearched,
+    dataSource,
+    searchHistory,
+    performanceInfo,
+    cacheSize,
+    historySize,
+    lastCacheCleared,
     searchMevzuat,
     setQuery,
-    clearError
-  } = useMevzuatSearch();
+    clearError,
+    clearSearchCache,
+    clearSearchHistory
+  } = useHybridMevzuatSearch({
+    cacheEnabled,
+    primaryTimeout,
+    fallbackEnabled,
+    cacheFirst
+  });
 
   // Auth kontrolü
   const shouldRequireAuth = requireAuth && !user;
@@ -85,11 +111,29 @@ export const MevzuatSearch = ({
         <CardHeader className="px-0 pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">Mevzuat Arama</CardTitle>
-            {showLimitWarning && user && (
-              <Badge variant="outline" className="text-xs">
-                {remainingSearches} arama hakkı kaldı
-              </Badge>
-            )}
+            <div className="flex items-center gap-2">
+              {showDataSource && hasSearched && (
+                <DataSourceIndicator 
+                  dataSource={dataSource} 
+                  performanceInfo={performanceInfo}
+                />
+              )}
+              {showHistory && (
+                <SearchHistory
+                  searchHistory={searchHistory}
+                  onSelectQuery={setQuery}
+                  onRemoveItem={(id) => {
+                    // Remove item logic handled by useSearchHistory
+                  }}
+                  onClearHistory={clearSearchHistory}
+                />
+              )}
+              {showLimitWarning && user && (
+                <Badge variant="outline" className="text-xs">
+                  {remainingSearches} arama hakkı kaldı
+                </Badge>
+              )}
+            </div>
           </div>
         </CardHeader>
       )}
@@ -132,6 +176,25 @@ export const MevzuatSearch = ({
         hasSearched={hasSearched}
         compact={compact}
       />
+      
+      {/* Debug/Admin Controls */}
+      {debugMode && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          {showCacheControls && (
+            <CacheControls
+              cacheSize={cacheSize}
+              historySize={historySize}
+              lastCacheCleared={lastCacheCleared}
+              onClearCache={clearSearchCache}
+              onClearHistory={clearSearchHistory}
+            />
+          )}
+          
+          {showPerformanceInfo && hasSearched && (
+            <PerformanceInfo performanceInfo={performanceInfo} />
+          )}
+        </div>
+      )}
     </div>
   );
 };
