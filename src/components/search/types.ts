@@ -69,25 +69,6 @@ export interface SearchHistoryItem {
   responseTime: number;
 }
 
-// Enhanced search history item matching database schema
-export interface EnhancedSearchHistoryItem {
-  id: string;
-  user_id: string;
-  query: string;
-  filters: {
-    category?: string;
-    subcategory?: string;
-    dateFrom?: string;
-    dateTo?: string;
-  };
-  results_count: number;
-  search_date: string;
-  response_time?: number;
-  data_source: 'primary' | 'fallback' | 'cache' | 'error';
-  is_bookmarked?: boolean;
-  tags?: string[];
-}
-
 export interface CacheEntry {
   query: string;
   results: MevzuatResult[];

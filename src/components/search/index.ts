@@ -8,11 +8,8 @@ export { SearchContent } from './SearchContent';
 export { useMevzuatSearch } from './hooks/useMevzuatSearch';
 export { useHybridMevzuatSearch } from './hooks/useHybridMevzuatSearch';
 export { useSearchHistory } from './hooks/useSearchHistory';
-export { useSearchHistoryDB } from './hooks/useSearchHistoryDB';
 export { DataSourceIndicator } from './components/DataSourceIndicator';
 export { SearchHistory } from './components/SearchHistory';
-export { SearchHistoryPanel } from './components/SearchHistoryPanel';
-export { SearchHistoryDropdown } from './components/SearchHistoryDropdown';
 export { CacheControls } from './components/CacheControls';
 export { PerformanceInfo } from './components/PerformanceInfo';
 export { StatsCards } from './components/StatsCards';
@@ -25,7 +22,6 @@ export type {
   SearchFilters,
   DataSource,
   SearchHistoryItem,
-  EnhancedSearchHistoryItem,
   CacheEntry,
   PerformanceInfo as PerfInfo,
   HybridSearchState

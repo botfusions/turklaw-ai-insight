@@ -1,7 +1,6 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Scale, Building, BookOpen, ChevronRight, ChevronDown } from 'lucide-react';
 
 export interface Category {
@@ -126,172 +125,108 @@ interface CategorySidebarProps {
   className?: string;
 }
 
-export const CategorySidebar = React.memo(({ 
+export function CategorySidebar({ 
   selectedCategory, 
   selectedSubcategory, 
   onCategorySelect, 
   onSubcategorySelect,
   className 
-}: CategorySidebarProps) => {
+}: CategorySidebarProps) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(selectedCategory || null);
 
-  const handleCategoryClick = useCallback((categoryId: string) => {
+  const handleCategoryClick = (categoryId: string) => {
     if (expandedCategory === categoryId) {
       setExpandedCategory(null);
     } else {
       setExpandedCategory(categoryId);
       onCategorySelect(categoryId);
     }
-  }, [expandedCategory, onCategorySelect]);
+  };
 
-  const handleSubcategoryClick = useCallback((subcategoryId: string) => {
-    onSubcategorySelect(subcategoryId);
-  }, [onSubcategorySelect]);
-
-  const memoizedCategories = useMemo(() => categories, []);
-
-  const extractDaireCount = (description: string) => {
-    const match = description.match(/(\d+)\s+Daire/);
-    return match ? match[1] : null;
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('tr-TR').format(num);
   };
 
   return (
-    <nav 
-      className={cn(
-        "w-full h-full bg-background border-r border-border",
-        className
-      )}
-      role="navigation"
-      aria-label="Araştırma kategorileri"
-    >
-      <div className="p-6 border-b border-border">
-        <h2 className="text-lg font-semibold text-foreground mb-1">
+    <div className={cn(
+      "w-full h-full bg-white shadow-sm border-r border-gray-200",
+      className
+    )}>
+      <div className="p-6 border-b border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">
           Araştırma Kategorileri
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-gray-600">
           Arama yapmak için bir kategori seçin
         </p>
       </div>
 
-      <div className="p-4 space-y-2">
-        {memoizedCategories.map((category) => {
+      <div className="p-4 space-y-3">
+        {categories.map((category) => {
           const Icon = category.icon;
           const isSelected = selectedCategory === category.id;
           const isExpanded = expandedCategory === category.id;
 
           return (
-            <div key={category.id} className="space-y-1">
+            <div key={category.id} className="space-y-2">
               {/* Main Category Button */}
               <Button
                 variant="ghost"
                 className={cn(
-                  "w-full p-4 h-auto justify-start rounded-lg transition-all duration-200",
+                  "w-full p-4 h-auto justify-start rounded-lg border transition-all duration-200",
                   isSelected 
-                    ? "bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15" 
-                    : "border border-transparent hover:border-border hover:bg-muted/50"
+                    ? "bg-primary/10 border-primary text-primary hover:bg-primary/20" 
+                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                 )}
                 onClick={() => handleCategoryClick(category.id)}
-                aria-expanded={isExpanded}
-                aria-controls={`category-${category.id}`}
-                tabIndex={0}
               >
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-3">
-                    <Icon className={cn(
-                      "h-6 w-6 transition-colors",
-                      isSelected ? "text-primary" : "text-muted-foreground"
-                    )} />
+                    <Icon className="h-5 w-5" />
                     <div className="text-left">
-                      <div className="font-semibold text-base leading-tight">
-                        {category.name}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
+                      <div className="font-medium text-sm">{category.name}</div>
+                      <div className="text-xs text-gray-500">
                         {category.description}
                       </div>
                     </div>
                   </div>
                   {isExpanded ? (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    <ChevronDown className="h-4 w-4" />
                   ) : (
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    <ChevronRight className="h-4 w-4" />
                   )}
                 </div>
               </Button>
 
               {/* Subcategories */}
               {isExpanded && (
-                <div 
-                  id={`category-${category.id}`}
-                  className="ml-4 space-y-1 animate-in slide-in-from-top-2 duration-300"
-                  role="group"
-                  aria-labelledby={`category-${category.id}-label`}
-                >
-                  {category.subcategories.map((subcategory) => {
-                    const isSubSelected = selectedSubcategory === subcategory.id;
-                    const daireCount = extractDaireCount(subcategory.description);
-                    
-                    return (
-                      <Button
-                        key={subcategory.id}
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-start p-3 h-auto rounded-lg transition-all duration-200",
-                          isSubSelected 
-                            ? "bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15" 
-                            : "border border-transparent hover:border-border hover:bg-muted/50"
-                        )}
-                        onClick={() => handleSubcategoryClick(subcategory.id)}
-                        tabIndex={0}
-                        aria-pressed={isSubSelected}
-                      >
-                        <div className="text-left w-full">
-                          <div className="flex items-center justify-between w-full">
-                            <div className="font-medium text-sm">
-                              {subcategory.name}
-                            </div>
-                            {daireCount && (
-                              <Badge 
-                                variant="secondary"
-                                className="text-xs px-2 py-0.5 bg-muted text-muted-foreground"
-                              >
-                                {daireCount} Daire
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                            {subcategory.description}
-                          </div>
-                          {subcategory.details && subcategory.details.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              {subcategory.details.slice(0, 2).map((detail, index) => (
-                                <Badge 
-                                  key={index}
-                                  variant="outline"
-                                  className="text-[10px] px-1.5 py-0.5 bg-background/50 text-muted-foreground border-border/50"
-                                >
-                                  {detail}
-                                </Badge>
-                              ))}
-                              {subcategory.details.length > 2 && (
-                                <Badge 
-                                  variant="outline"
-                                  className="text-[10px] px-1.5 py-0.5 bg-background/50 text-muted-foreground border-border/50"
-                                >
-                                  +{subcategory.details.length - 2}
-                                </Badge>
-                              )}
-                            </div>
-                          )}
+                <div className="ml-4 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                  {category.subcategories.map((subcategory) => (
+                    <Button
+                      key={subcategory.id}
+                      variant="ghost"
+                      className={cn(
+                        "w-full justify-start p-3 h-auto rounded-lg border transition-all duration-200",
+                        selectedSubcategory === subcategory.id 
+                          ? "bg-primary/10 border-primary/20 text-primary hover:bg-primary/20" 
+                          : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+                      )}
+                      onClick={() => onSubcategorySelect(subcategory.id)}
+                    >
+                      <div className="text-left w-full">
+                        <div className="font-medium text-sm">{subcategory.name}</div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {subcategory.description}
                         </div>
-                      </Button>
-                    );
-                  })}
+                      </div>
+                    </Button>
+                  ))}
                 </div>
               )}
             </div>
           );
         })}
       </div>
-    </nav>
+    </div>
   );
-});
+}
