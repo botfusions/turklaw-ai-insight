@@ -216,7 +216,7 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
                 type="button" 
                 variant="outline" 
                 size="sm" 
-                className="bg-white border-gray-200 hover:bg-gray-50 md:hidden"
+                className="bg-white border-gray-200 hover:bg-gray-50 lg:hidden"
                 onClick={() => setShowHistoryPanel(!showHistoryPanel)}
               >
                 <History className="h-4 w-4 mr-2" />
@@ -230,21 +230,24 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
         <div className="flex-1 overflow-y-auto">
           <div className="flex gap-6 p-6">
             {/* Search History Sidebar - Desktop */}
-            <div className="hidden xl:block w-80 space-y-4">
+            <div className="hidden lg:block w-80 space-y-4">
               <SearchHistoryPanel onSelectQuery={handleHistorySelect} />
             </div>
             
             {/* Mobile Search History Panel */}
             {showHistoryPanel && (
-              <div className="md:hidden fixed inset-0 bg-black/50 z-50" onClick={() => setShowHistoryPanel(false)}>
+              <div className="lg:hidden fixed inset-0 bg-black/50 z-50" onClick={() => setShowHistoryPanel(false)}>
                 <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-xl p-4" onClick={(e) => e.stopPropagation()}>
-                  <SearchHistoryPanel onSelectQuery={handleHistorySelect} />
+                  <SearchHistoryPanel onSelectQuery={(query) => {
+                    handleHistorySelect(query);
+                    setShowHistoryPanel(false);
+                  }} />
                 </div>
               </div>
             )}
 
             {/* Main Results Area */}
-            <div className="flex-1 space-y-4 xl:max-w-[calc(100%-320px)]">
+            <div className="flex-1 space-y-4 lg:max-w-[calc(100%-320px)]">
               {results.length > 0 ? (
                 <>
                   <div className="flex items-center justify-between mb-4">

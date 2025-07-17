@@ -37,7 +37,8 @@ import {
   Wifi,
   WifiOff
 } from 'lucide-react';
-import { useSearchHistoryDB, EnhancedSearchHistoryItem } from '../hooks/useSearchHistoryDB';
+import { useSearchHistoryDB } from '../hooks/useSearchHistoryDB';
+import { EnhancedSearchHistoryItem } from '../types';
 import { cn } from '@/lib/utils';
 import { DataSourceIndicator } from './DataSourceIndicator';
 
