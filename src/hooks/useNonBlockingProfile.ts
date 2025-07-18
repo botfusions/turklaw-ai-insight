@@ -1,9 +1,13 @@
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Profile } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useProfileCache } from './useProfileCache';
 import { useSmartLoading } from '@/contexts/SmartLoadingContext';
+import { useMemorySafeTimer } from './useMemorySafeTimer';
+import { useMemorySafeRequest } from './useMemorySafeRequest';
+import { useMemoryMonitor } from './useMemoryMonitor';
 
 interface ProfileError {
   type: 'network' | 'auth' | 'server' | 'unknown';
@@ -22,14 +26,24 @@ export const useNonBlockingProfile = () => {
     getCacheInfo
   } = useProfileCache();
 
+  // Memory-safe utilities
+  const { createTimeout, createInterval } = useMemorySafeTimer();
+  const { createRequest } = useMemorySafeRequest();
+  const { logComponentRender, getMemoryReport } = useMemoryMonitor('NonBlockingProfile');
+
   const [profile, setProfile] = useState<Profile | null>(cachedProfile);
   const [error, setError] = useState<ProfileError | null>(null);
   const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
   const [lastFetchAttempt, setLastFetchAttempt] = useState<number>(0);
 
-  // Request deduplication
-  const fetchRequestRef = useRef<Promise<Profile | null> | null>(null);
-  const backgroundRefreshRef = useRef<NodeJS.Timeout | null>(null);
+  // Memory-safe refs
+  const backgroundRefreshHandleRef = useRef<{ clear: () => void } | null>(null);
+  const currentRequestRef = useRef<{ cancel: () => void } | null>(null);
+
+  // Log component renders for memory monitoring
+  useEffect(() => {
+    logComponentRender();
+  });
 
   // Enhanced error classification
   const classifyError = useCallback((error: any): ProfileError => {
@@ -37,6 +51,14 @@ export const useNonBlockingProfile = () => {
       return {
         type: 'auth',
         message: 'Kimlik doğrulama gerekli',
+        retryable: false
+      };
+    }
+    
+    if (error?.name === 'AbortError') {
+      return {
+        type: 'network',
+        message: 'İstek iptal edildi',
         retryable: false
       };
     }
@@ -74,16 +96,16 @@ export const useNonBlockingProfile = () => {
     return delay + Math.random() * 1000;
   }, []);
 
-  // Main profile fetch function with deduplication
+  // Memory-safe profile fetch function
   const fetchProfile = useCallback(async (isBackground = false): Promise<Profile | null> => {
     if (!user?.id) return null;
 
-    // Prevent multiple concurrent requests
-    if (fetchRequestRef.current && !isBackground) {
-      return fetchRequestRef.current;
+    // Cancel any existing request
+    if (currentRequestRef.current) {
+      currentRequestRef.current.cancel();
     }
 
-    const fetchPromise = (async (): Promise<Profile | null> => {
+    const requestHandle = createRequest(async (signal: AbortSignal): Promise<Profile | null> => {
       try {
         if (!isBackground) {
           setLoading('profile', true, 'Profil bilgileri güncelleniyor...');
@@ -100,7 +122,8 @@ export const useNonBlockingProfile = () => {
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .maybeSingle();
+          .maybeSingle()
+          .abortSignal(signal);
 
         if (error) throw error;
 
@@ -122,6 +145,11 @@ export const useNonBlockingProfile = () => {
         
         return newProfile;
       } catch (error) {
+        if (signal.aborted) {
+          console.log('NonBlockingProfile: Request was cancelled');
+          return null;
+        }
+
         const classifiedError = classifyError(error);
         console.error('NonBlockingProfile: Fetch error', { error, classified: classifiedError });
         
@@ -137,11 +165,11 @@ export const useNonBlockingProfile = () => {
             delay 
           });
           
-          setTimeout(() => {
+          createTimeout(() => {
             if (user?.id) {
               fetchProfile(isBackground);
             }
-          }, delay);
+          }, delay, `profile_retry_${state.retryCount}`);
         }
         
         return null;
@@ -149,15 +177,12 @@ export const useNonBlockingProfile = () => {
         if (!isBackground) {
           setLoading('profile', false);
         }
-        fetchRequestRef.current = null;
+        currentRequestRef.current = null;
       }
-    })();
+    }, `profile_fetch_${Date.now()}`);
 
-    if (!isBackground) {
-      fetchRequestRef.current = fetchPromise;
-    }
-
-    return fetchPromise;
+    currentRequestRef.current = requestHandle;
+    return requestHandle.promise;
   }, [
     user?.id,
     setLoading,
@@ -166,15 +191,22 @@ export const useNonBlockingProfile = () => {
     resetRetry,
     incrementRetry,
     classifyError,
-    getRetryDelay
+    getRetryDelay,
+    createRequest,
+    createTimeout
   ]);
 
-  // Background refresh function
+  // Memory-safe background refresh function
   const startBackgroundRefresh = useCallback(() => {
-    if (!user?.id || backgroundRefreshRef.current) return;
+    if (!user?.id) return;
+
+    // Clear existing background refresh
+    if (backgroundRefreshHandleRef.current) {
+      backgroundRefreshHandleRef.current.clear();
+    }
 
     const scheduleRefresh = () => {
-      backgroundRefreshRef.current = setTimeout(async () => {
+      const intervalHandle = createInterval(async () => {
         if (shouldBackgroundRefresh()) {
           console.log('NonBlockingProfile: Starting background refresh');
           setIsBackgroundRefreshing(true);
@@ -187,14 +219,13 @@ export const useNonBlockingProfile = () => {
             setIsBackgroundRefreshing(false);
           }
         }
-        
-        // Schedule next refresh
-        scheduleRefresh();
-      }, 5 * 60 * 1000); // Check every 5 minutes
+      }, 5 * 60 * 1000, 'profile_background_refresh'); // Check every 5 minutes
+
+      backgroundRefreshHandleRef.current = intervalHandle;
     };
 
     scheduleRefresh();
-  }, [user?.id, shouldBackgroundRefresh, fetchProfile]);
+  }, [user?.id, shouldBackgroundRefresh, fetchProfile, createInterval]);
 
   // Manual refresh function
   const refreshProfile = useCallback(async (): Promise<Profile | null> => {
@@ -232,21 +263,18 @@ export const useNonBlockingProfile = () => {
     startBackgroundRefresh();
 
     return () => {
-      if (backgroundRefreshRef.current) {
-        clearTimeout(backgroundRefreshRef.current);
-        backgroundRefreshRef.current = null;
+      // Memory-safe cleanup
+      if (backgroundRefreshHandleRef.current) {
+        backgroundRefreshHandleRef.current.clear();
+        backgroundRefreshHandleRef.current = null;
+      }
+      
+      if (currentRequestRef.current) {
+        currentRequestRef.current.cancel();
+        currentRequestRef.current = null;
       }
     };
   }, [user?.id, cachedProfile, shouldBackgroundRefresh, fetchProfile, startBackgroundRefresh]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (backgroundRefreshRef.current) {
-        clearTimeout(backgroundRefreshRef.current);
-      }
-    };
-  }, []);
 
   return {
     profile,
@@ -262,11 +290,12 @@ export const useNonBlockingProfile = () => {
     isProfileStale: shouldBackgroundRefresh(),
     canRetry: error?.retryable && state.retryCount < 3,
     
-    // Debug info
+    // Debug info with memory stats
     debugInfo: {
       retryCount: state.retryCount,
       lastFetchAttempt: lastFetchAttempt ? new Date(lastFetchAttempt).toISOString() : null,
-      cacheInfo: getCacheInfo()
+      cacheInfo: getCacheInfo(),
+      memoryReport: getMemoryReport()
     }
   };
 };

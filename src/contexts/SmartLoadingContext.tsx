@@ -1,5 +1,7 @@
 
 import React, { createContext, useContext, useReducer, useCallback, useEffect, ReactNode } from 'react';
+import { useMemorySafeEventListener } from '@/hooks/useMemorySafeEventListener';
+import { useMemoryMonitor } from '@/hooks/useMemoryMonitor';
 
 export interface LoadingState {
   // Core system loading
@@ -112,6 +114,15 @@ interface SmartLoadingProviderProps {
 
 export const SmartLoadingProvider: React.FC<SmartLoadingProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(loadingReducer, initialState);
+  
+  // Memory-safe utilities
+  const { addEventListener } = useMemorySafeEventListener();
+  const { logComponentRender } = useMemoryMonitor('SmartLoadingProvider');
+
+  // Log component renders for memory monitoring
+  useEffect(() => {
+    logComponentRender();
+  });
 
   const setLoading = useCallback((key: keyof LoadingState, value: boolean, operation?: string) => {
     dispatch({
@@ -153,7 +164,7 @@ export const SmartLoadingProvider: React.FC<SmartLoadingProviderProps> = ({ chil
     return state.profile || state.search || state.data;
   }, [state.profile, state.search, state.data]);
 
-  // Network status monitoring
+  // Memory-safe network status monitoring
   useEffect(() => {
     const updateNetworkStatus = () => {
       const connection = (navigator as any).connection;
@@ -174,21 +185,27 @@ export const SmartLoadingProvider: React.FC<SmartLoadingProviderProps> = ({ chil
 
     updateNetworkStatus();
     
-    window.addEventListener('online', updateNetworkStatus);
-    window.addEventListener('offline', updateNetworkStatus);
+    // Use memory-safe event listeners
+    const onlineHandle = addEventListener(window, 'online', updateNetworkStatus, false, 'network_online');
+    const offlineHandle = addEventListener(window, 'offline', updateNetworkStatus, false, 'network_offline');
     
+    let connectionHandle: { remove: () => void } | null = null;
     if ('connection' in navigator) {
-      (navigator as any).connection.addEventListener('change', updateNetworkStatus);
+      connectionHandle = addEventListener(
+        (navigator as any).connection, 
+        'change', 
+        updateNetworkStatus, 
+        false, 
+        'network_connection'
+      );
     }
 
     return () => {
-      window.removeEventListener('online', updateNetworkStatus);
-      window.removeEventListener('offline', updateNetworkStatus);
-      if ('connection' in navigator) {
-        (navigator as any).connection.removeEventListener('change', updateNetworkStatus);
-      }
+      onlineHandle.remove();
+      offlineHandle.remove();
+      connectionHandle?.remove();
     };
-  }, []);
+  }, [addEventListener]);
 
   const value: SmartLoadingContextType = {
     state,
