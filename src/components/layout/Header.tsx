@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Scale, 
@@ -26,7 +25,7 @@ import { UserAvatar } from './UserAvatar';
 import { ThemeToggle } from './ThemeToggle';
 import { NotificationCenter } from './NotificationCenter';
 import { MobileMenu } from './MobileMenu';
-import { DataStatusIndicator } from './DataStatusIndicator';
+// import { DataStatusIndicator } from './DataStatusIndicator'; // Temporarily disabled
 import { useHeader } from '@/hooks/useHeader';
 import { cn } from '@/lib/utils';
 
@@ -58,6 +57,17 @@ export function Header({}: HeaderProps) {
   };
 
   const isPremiumUser = profile && !['free', 'basic'].includes(profile.plan);
+
+  // Safe render function for DataStatusIndicator
+  const renderDataStatusIndicator = () => {
+    try {
+      const { DataStatusIndicator } = require('./DataStatusIndicator');
+      return <DataStatusIndicator />;
+    } catch (error) {
+      console.warn('DataStatusIndicator load error:', error);
+      return null;
+    }
+  };
 
   return (
     <>
@@ -139,8 +149,8 @@ export function Header({}: HeaderProps) {
                   Ara
                 </Button>
                 
-                {/* Data Status Indicator */}
-                <DataStatusIndicator />
+                {/* Data Status Indicator - Now with safe rendering */}
+                {renderDataStatusIndicator()}
 
                 {/* Theme Toggle */}
                 <ThemeToggle />

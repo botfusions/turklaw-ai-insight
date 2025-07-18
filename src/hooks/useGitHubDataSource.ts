@@ -24,63 +24,130 @@ const CACHE_KEY_YARGI = 'github_yargi_data';
 const CACHE_KEY_LAST_UPDATE = 'github_data_last_update';
 
 export const useGitHubDataSource = () => {
-  const [mevzuatCache, setMevzuatCache] = useLocalStorage<MevzuatResult[]>(CACHE_KEY_MEVZUAT, []);
-  const [yargiCache, setYargiCache] = useLocalStorage<MevzuatResult[]>(CACHE_KEY_YARGI, []);
-  const [lastUpdateCache, setLastUpdateCache] = useLocalStorage<string | null>(CACHE_KEY_LAST_UPDATE, null);
+  // Wrap localStorage hooks with try-catch for safety
+  let mevzuatCache: MevzuatResult[] = [];
+  let yargiCache: MevzuatResult[] = [];
+  let lastUpdateCache: string | null = null;
+  
+  try {
+    const [mevzuatCacheState, setMevzuatCache] = useLocalStorage<MevzuatResult[]>(CACHE_KEY_MEVZUAT, []);
+    const [yargiCacheState, setYargiCache] = useLocalStorage<MevzuatResult[]>(CACHE_KEY_YARGI, []);
+    const [lastUpdateCacheState, setLastUpdateCache] = useLocalStorage<string | null>(CACHE_KEY_LAST_UPDATE, null);
+    
+    mevzuatCache = mevzuatCacheState;
+    yargiCache = yargiCacheState;
+    lastUpdateCache = lastUpdateCacheState;
+  } catch (error) {
+    console.warn('LocalStorage error in useGitHubDataSource:', error);
+  }
 
-  const [state, setState] = useState<GitHubDataState>({
-    mevzuatData: mevzuatCache,
-    yargiData: yargiCache,
-    loading: false,
-    error: null,
-    lastUpdate: lastUpdateCache ? new Date(lastUpdateCache) : null,
-    autoRefresh: true,
-    dataStatus: mevzuatCache.length > 0 || yargiCache.length > 0 ? 'active' : 'loading'
+  const [state, setState] = useState<GitHubDataState>(() => {
+    try {
+      return {
+        mevzuatData: mevzuatCache || [],
+        yargiData: yargiCache || [],
+        loading: false,
+        error: null,
+        lastUpdate: lastUpdateCache ? new Date(lastUpdateCache) : null,
+        autoRefresh: true,
+        dataStatus: (mevzuatCache && mevzuatCache.length > 0) || (yargiCache && yargiCache.length > 0) ? 'active' : 'loading'
+      };
+    } catch (error) {
+      console.warn('State initialization error in useGitHubDataSource:', error);
+      return {
+        mevzuatData: [],
+        yargiData: [],
+        loading: false,
+        error: null,
+        lastUpdate: null,
+        autoRefresh: true,
+        dataStatus: 'error'
+      };
+    }
   });
 
-  const normalizeData = (data: any[], source: 'mevzuat' | 'yargi'): MevzuatResult[] => {
-    if (!Array.isArray(data)) return [];
-    
-    return data.map((item: any, index: number) => ({
-      id: item.id || `${source}-${index}`,
-      title: item.title || item.name || 'Başlık bulunamadı',
-      content: item.content || item.description || item.summary || '',
-      date: item.date || item.publication_date || '',
-      type: source === 'mevzuat' ? 'mevzuat' : 'yargi',
-      url: item.url || item.link || '',
-      relevance: item.relevance || item.score || 0,
-      source: 'github'
-    }));
-  };
+  const normalizeData = useCallback((data: any[], source: 'mevzuat' | 'yargi'): MevzuatResult[] => {
+    try {
+      if (!Array.isArray(data)) return [];
+      
+      return data.map((item: any, index: number) => ({
+        id: item.id || `${source}-${index}`,
+        title: item.title || item.name || 'Başlık bulunamadı',
+        content: item.content || item.description || item.summary || '',
+        date: item.date || item.publication_date || '',
+        type: source === 'mevzuat' ? 'mevzuat' : 'yargi',
+        url: item.url || item.link || '',
+        relevance: item.relevance || item.score || 0,
+        source: 'github'
+      }));
+    } catch (error) {
+      console.warn(`Data normalization error for ${source}:`, error);
+      return [];
+    }
+  }, []);
 
   const fetchGitHubData = useCallback(async () => {
-    setState(prev => ({ ...prev, loading: true, error: null, dataStatus: 'loading' }));
-
     try {
+      setState(prev => ({ ...prev, loading: true, error: null, dataStatus: 'loading' }));
+
       const [mevzuatResponse, yargiResponse] = await Promise.allSettled([
-        fetch(GITHUB_ENDPOINTS.mevzuat),
-        fetch(GITHUB_ENDPOINTS.yargi)
+        fetch(GITHUB_ENDPOINTS.mevzuat, { 
+          timeout: 10000,
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        }).catch(error => {
+          console.warn('Mevzuat fetch error:', error);
+          return null;
+        }),
+        fetch(GITHUB_ENDPOINTS.yargi, { 
+          timeout: 10000,
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        }).catch(error => {
+          console.warn('Yargi fetch error:', error);
+          return null;
+        })
       ]);
 
       let mevzuatData: MevzuatResult[] = [];
       let yargiData: MevzuatResult[] = [];
 
-      // Process mevzuat data
-      if (mevzuatResponse.status === 'fulfilled' && mevzuatResponse.value.ok) {
-        const rawMevzuat = await mevzuatResponse.value.json();
-        mevzuatData = normalizeData(rawMevzuat.data || rawMevzuat, 'mevzuat');
-        setMevzuatCache(mevzuatData);
+      // Process mevzuat data with comprehensive error handling
+      try {
+        if (mevzuatResponse.status === 'fulfilled' && mevzuatResponse.value && mevzuatResponse.value.ok) {
+          const rawMevzuat = await mevzuatResponse.value.json();
+          mevzuatData = normalizeData(rawMevzuat.data || rawMevzuat, 'mevzuat');
+          console.log(`Mevzuat data fetched: ${mevzuatData.length} items`);
+        }
+      } catch (error) {
+        console.warn('Mevzuat processing error:', error);
       }
 
-      // Process yargi data
-      if (yargiResponse.status === 'fulfilled' && yargiResponse.value.ok) {
-        const rawYargi = await yargiResponse.value.json();
-        yargiData = normalizeData(rawYargi.data || rawYargi, 'yargi');
-        setYargiCache(yargiData);
+      // Process yargi data with comprehensive error handling
+      try {
+        if (yargiResponse.status === 'fulfilled' && yargiResponse.value && yargiResponse.value.ok) {
+          const rawYargi = await yargiResponse.value.json();
+          yargiData = normalizeData(rawYargi.data || rawYargi, 'yargi');
+          console.log(`Yargi data fetched: ${yargiData.length} items`);
+        }
+      } catch (error) {
+        console.warn('Yargi processing error:', error);
       }
 
       const now = new Date();
-      setLastUpdateCache(now.toISOString());
+
+      // Save to cache with error handling
+      try {
+        if (typeof setMevzuatCache === 'function') setMevzuatCache(mevzuatData);
+        if (typeof setYargiCache === 'function') setYargiCache(yargiData);
+        if (typeof setLastUpdateCache === 'function') setLastUpdateCache(now.toISOString());
+      } catch (error) {
+        console.warn('Cache save error:', error);
+      }
 
       setState(prev => ({
         ...prev,
@@ -88,10 +155,11 @@ export const useGitHubDataSource = () => {
         yargiData,
         loading: false,
         lastUpdate: now,
-        dataStatus: mevzuatData.length > 0 || yargiData.length > 0 ? 'active' : 'error'
+        dataStatus: mevzuatData.length > 0 || yargiData.length > 0 ? 'active' : 'error',
+        error: null
       }));
 
-      console.log(`GitHub data fetched: ${mevzuatData.length} mevzuat, ${yargiData.length} yargi`);
+      console.log(`GitHub data fetch completed: ${mevzuatData.length} mevzuat, ${yargiData.length} yargi`);
 
     } catch (error) {
       console.error('GitHub data fetch error:', error);
@@ -102,67 +170,94 @@ export const useGitHubDataSource = () => {
         dataStatus: 'error'
       }));
     }
-  }, [setMevzuatCache, setYargiCache, setLastUpdateCache]);
+  }, [normalizeData]);
 
   const searchInGitHubData = useCallback((query: string, maxResults: number = 10): MevzuatResult[] => {
-    const searchTerm = query.trim().toLowerCase();
-    const allData = [...state.mevzuatData, ...state.yargiData];
-    
-    const filteredResults = allData.filter(item => 
-      item.title.toLowerCase().includes(searchTerm) ||
-      item.content.toLowerCase().includes(searchTerm)
-    );
+    try {
+      const searchTerm = query.trim().toLowerCase();
+      if (!searchTerm) return [];
+      
+      const allData = [...state.mevzuatData, ...state.yargiData];
+      
+      const filteredResults = allData.filter(item => 
+        item.title.toLowerCase().includes(searchTerm) ||
+        item.content.toLowerCase().includes(searchTerm)
+      );
 
-    // Calculate relevance score
-    const scoredResults = filteredResults.map(item => {
-      let score = 0;
+      // Calculate relevance score
+      const scoredResults = filteredResults.map(item => {
+        let score = 0;
+        
+        if (item.title.toLowerCase().includes(searchTerm)) {
+          score += 2;
+        }
+        
+        if (item.content.toLowerCase().includes(searchTerm)) {
+          score += 1;
+        }
+        
+        return {
+          ...item,
+          relevance: score
+        };
+      });
       
-      if (item.title.toLowerCase().includes(searchTerm)) {
-        score += 2;
-      }
-      
-      if (item.content.toLowerCase().includes(searchTerm)) {
-        score += 1;
-      }
-      
-      return {
-        ...item,
-        relevance: score
-      };
-    });
-    
-    return scoredResults
-      .sort((a, b) => (b.relevance || 0) - (a.relevance || 0))
-      .slice(0, maxResults);
+      return scoredResults
+        .sort((a, b) => (b.relevance || 0) - (a.relevance || 0))
+        .slice(0, maxResults);
+    } catch (error) {
+      console.warn('GitHub data search error:', error);
+      return [];
+    }
   }, [state.mevzuatData, state.yargiData]);
 
   const toggleAutoRefresh = useCallback(() => {
-    setState(prev => ({ ...prev, autoRefresh: !prev.autoRefresh }));
+    try {
+      setState(prev => ({ ...prev, autoRefresh: !prev.autoRefresh }));
+    } catch (error) {
+      console.warn('Toggle auto refresh error:', error);
+    }
   }, []);
 
   const manualRefresh = useCallback(() => {
-    fetchGitHubData();
+    try {
+      fetchGitHubData();
+    } catch (error) {
+      console.warn('Manual refresh error:', error);
+    }
   }, [fetchGitHubData]);
 
-  // Auto-refresh effect
+  // Auto-refresh effect with error handling
   useEffect(() => {
     if (!state.autoRefresh) return;
 
-    const interval = setInterval(() => {
-      fetchGitHubData();
-    }, REFRESH_INTERVAL);
+    let interval: NodeJS.Timeout;
+    
+    try {
+      interval = setInterval(() => {
+        fetchGitHubData();
+      }, REFRESH_INTERVAL);
+    } catch (error) {
+      console.warn('Auto refresh setup error:', error);
+    }
 
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [state.autoRefresh, fetchGitHubData]);
 
-  // Initial fetch
+  // Initial fetch with error handling
   useEffect(() => {
-    // Only fetch if we don't have cached data or it's older than 5 minutes
-    const shouldFetch = !state.lastUpdate || 
-      (Date.now() - state.lastUpdate.getTime()) > REFRESH_INTERVAL;
-    
-    if (shouldFetch) {
-      fetchGitHubData();
+    try {
+      // Only fetch if we don't have cached data or it's older than 5 minutes
+      const shouldFetch = !state.lastUpdate || 
+        (Date.now() - state.lastUpdate.getTime()) > REFRESH_INTERVAL;
+      
+      if (shouldFetch) {
+        fetchGitHubData();
+      }
+    } catch (error) {
+      console.warn('Initial fetch error:', error);
     }
   }, []);
 
@@ -171,6 +266,6 @@ export const useGitHubDataSource = () => {
     searchInGitHubData,
     toggleAutoRefresh,
     manualRefresh,
-    totalRecords: state.mevzuatData.length + state.yargiData.length
+    totalRecords: (state.mevzuatData?.length || 0) + (state.yargiData?.length || 0)
   };
 };
