@@ -14,12 +14,7 @@ export default defineConfig(({ mode }) => ({
     }
   },
   plugins: [
-    react({
-      // Enable Fast Refresh
-      fastRefresh: true,
-      // Reduce bundle size
-      jsxImportSource: '@emotion/react'
-    }),
+    react(),
     mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {

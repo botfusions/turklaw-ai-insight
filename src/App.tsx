@@ -12,6 +12,9 @@ import { MemoryManagementProvider } from "@/contexts/MemoryManagementContext";
 import { LoadingPerformanceMonitor } from "@/components/ui/LoadingPerformanceMonitor";
 import { ErrorMonitoringProvider } from "@/components/system/ErrorMonitoringSystem";
 import NetworkMonitor from "@/components/system/NetworkMonitor";
+import ProfileDebugPanel from "@/components/debug/ProfileDebugPanel";
+import MemoryDebugPanel from "@/components/debug/MemoryDebugPanel";
+import ErrorDebugPanel from "@/components/debug/ErrorDebugPanel";
 
 const App = () => (
   <SimplifiedErrorBoundary>
