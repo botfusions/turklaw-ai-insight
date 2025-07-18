@@ -1,4 +1,3 @@
-
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,34 +21,11 @@ import {
   Sparkles
 } from 'lucide-react';
 import { subscriptionPlans } from '@/constants';
-import { useAuth } from '@/contexts/UnifiedAuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Landing() {
-  console.log('Landing component rendering...'); // Debug log
-  
   const navigate = useNavigate();
-  
-  // Auth hook'u güvenli şekilde kullan
-  let user = null;
-  let profile = null;
-  let loading = false;
-  
-  try {
-    const authData = useAuth();
-    console.log('Landing useAuth data:', { 
-      user: !!authData.user, 
-      profile: !!authData.profile, 
-      loading: authData.loading 
-    });
-    
-    user = authData.user;
-    profile = authData.profile;
-    loading = authData.loading;
-  } catch (error) {
-    console.error('Landing useAuth error:', error);
-    // Auth başarısız olsa bile sayfayı göster
-    loading = false;
-  }
+  const { user, profile, loading } = useAuth();
 
   const features = [
     {
@@ -112,24 +88,6 @@ export default function Landing() {
       description: 'Size özel öneriler ve akıllı arama geçmişi'
     }
   ];
-
-  console.log('Landing about to render JSX...'); // Debug log
-
-  // Loading state için basit skeleton
-  if (loading) {
-    console.log('Landing showing loading state');
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  console.log('Landing rendering main content, user:', !!user, 'profile:', !!profile);
 
   return (
     <div className="min-h-screen bg-background">

@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, AuthResult, AuthContextType } from '@/types/auth';
@@ -16,8 +16,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [initialized, setInitialized] = useState(false);
   const [loading, setLoading] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
+  
+  // Use ref to prevent race conditions during cleanup
+  const mountedRef = useRef(true);
+  const retryCountRef = useRef(0);
+  const MAX_RETRIES = 3;
 
   const fetchProfile = useCallback(async (userId: string) => {
+    if (!mountedRef.current) return;
+    
     try {
       console.log('UnifiedAuthContext: Fetching profile for user:', userId);
       const { data, error } = await supabase
@@ -25,6 +32,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .select('*')
         .eq('id', userId)
         .maybeSingle();
+
+      if (!mountedRef.current) return;
 
       if (error) {
         console.error('UnifiedAuthContext: Error fetching profile:', error);
@@ -40,12 +49,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setProfile(data as Profile);
     } catch (error) {
       console.error('UnifiedAuthContext: Error fetching profile:', error);
-      setProfile(null);
+      if (mountedRef.current) {
+        setProfile(null);
+      }
     }
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (user) {
+    if (user && mountedRef.current) {
       await fetchProfile(user.id);
     }
   }, [user, fetchProfile]);
@@ -204,70 +215,87 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  useEffect(() => {
-    let mounted = true;
+  // Initialize auth with retry mechanism
+  const initializeAuth = useCallback(async () => {
+    if (!mountedRef.current) return;
 
-    const initializeAuth = async () => {
-      try {
-        // Set up auth state listener first
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, session) => {
-            if (!mounted) return;
-            
-            console.log('Auth state change:', event, session?.user?.id);
-            setUser(session?.user ?? null);
-            
-            if (session?.user) {
-              // Use setTimeout to avoid blocking the auth state change
-              setTimeout(() => {
-                if (mounted) {
-                  fetchProfile(session.user.id);
-                }
-              }, 0);
-            } else {
-              setProfile(null);
-            }
-          }
-        );
-
-        // Then get initial session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting initial session:', error);
-          setInitError(error.message);
-        } else {
-          console.log('Initial session check:', session?.user?.id);
+    try {
+      console.log('UnifiedAuthContext: Initializing auth...');
+      
+      // Set up auth state listener first
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          if (!mountedRef.current) return;
+          
+          console.log('UnifiedAuthContext: Auth state change:', event, session?.user?.id);
           setUser(session?.user ?? null);
+          
           if (session?.user) {
-            fetchProfile(session.user.id);
+            // Use setTimeout to prevent blocking auth state change
+            setTimeout(() => {
+              if (mountedRef.current) {
+                fetchProfile(session.user.id);
+              }
+            }, 0);
+          } else {
+            setProfile(null);
           }
         }
-        
-        setInitialized(true);
+      );
 
-        return () => {
-          mounted = false;
-          subscription.unsubscribe();
-        };
-      } catch (error: any) {
-        console.error('Auth initialization error:', error);
-        setInitError(error.message);
-        setInitialized(true);
+      // Then get initial session
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (!mountedRef.current) return;
+      
+      if (error) {
+        console.error('UnifiedAuthContext: Error getting initial session:', error);
+        throw error;
+      } else {
+        console.log('UnifiedAuthContext: Initial session check:', session?.user?.id);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchProfile(session.user.id);
+        }
       }
-    };
+      
+      setInitError(null);
+      retryCountRef.current = 0;
+      setInitialized(true);
 
+      return () => {
+        subscription.unsubscribe();
+      };
+    } catch (error: any) {
+      console.error('UnifiedAuthContext: Auth initialization error:', error);
+      
+      if (mountedRef.current) {
+        setInitError(error.message);
+        
+        // Retry logic
+        if (retryCountRef.current < MAX_RETRIES) {
+          retryCountRef.current++;
+          console.log(`UnifiedAuthContext: Retrying initialization (${retryCountRef.current}/${MAX_RETRIES})`);
+          setTimeout(() => {
+            if (mountedRef.current) {
+              initializeAuth();
+            }
+          }, 1000 * retryCountRef.current); // Exponential backoff
+        } else {
+          setInitialized(true); // Mark as initialized even with error to prevent infinite loading
+        }
+      }
+    }
+  }, [fetchProfile]);
+
+  useEffect(() => {
+    mountedRef.current = true;
     initializeAuth();
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
     };
-  }, [fetchProfile]);
-
-  // If there's an initialization error, provide a fallback
-  if (initError) {
-    console.error('Auth context initialization failed:', initError);
-  }
+  }, [initializeAuth]);
 
   const value: AuthContextType = {
     user,
