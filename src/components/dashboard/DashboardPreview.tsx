@@ -35,7 +35,7 @@ const MOCK_STATS = {
 const StatCard = memo(({ icon: Icon, label, value, className }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  value: string | number;
+  value: string | number | React.ReactNode;
   className?: string;
 }) => (
   <Card className="bg-card shadow-card">
