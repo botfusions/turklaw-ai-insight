@@ -1,70 +1,31 @@
 
-import { useCallback } from 'react';
-import { centralErrorHandler } from '@/services/centralErrorHandler';
-import { useToast } from '@/hooks/use-toast';
+import { useUnifiedErrorHandler } from './useUnifiedErrorHandler';
 import { UseErrorHandlerOptions } from '@/types/hooks';
-import { ErrorType, ErrorSeverity } from '@/components/system/ErrorMonitoringSystem';
 
-export const useErrorHandler = () => {
-  const { toast } = useToast();
+// Backward compatibility wrapper
+export const useErrorHandler = (options: { component?: string } = {}) => {
+  const { handleError, handleAsyncError } = useUnifiedErrorHandler({
+    component: options.component || 'Unknown',
+    showToast: true
+  });
 
-  const handleError = useCallback((
+  // Legacy API compatibility
+  const legacyHandleError = (
     error: Error | string,
-    options: UseErrorHandlerOptions = {}
+    legacyOptions: UseErrorHandlerOptions = {}
   ) => {
-    const {
-      showToast = true,
-      component = 'Unknown',
-      action = 'unknown',
-      metadata = {}
-    } = options;
+    return handleError(error, legacyOptions.action || 'unknown', legacyOptions.metadata);
+  };
 
-    const result = centralErrorHandler.handleError(error, {
-      component,
-      action,
-      metadata,
-      showToast
-    });
-
-    // Show toast notification if enabled
-    if (showToast) {
-      toast({
-        title: "Hata",
-        description: result.error,
-        variant: "destructive",
-      });
-    }
-
-    return result;
-  }, [toast]);
-
-  const handleAsyncError = useCallback(async <T>(
+  const legacyHandleAsyncError = async <T>(
     asyncOperation: () => Promise<T>,
-    options: UseErrorHandlerOptions = {}
-  ): Promise<{ success: boolean; data: T | null; error: Error | null }> => {
-    const result = await centralErrorHandler.handleAsyncOperation(asyncOperation, {
-      component: options.component || 'useErrorHandler',
-      action: options.action || 'execute',
-      metadata: options.metadata
-    });
-
-    if (!result.success && options.showToast !== false) {
-      toast({
-        title: "Hata",
-        description: result.error || 'Bir hata oluştu',
-        variant: "destructive",
-      });
-    }
-
-    return {
-      success: result.success,
-      data: result.data,
-      error: result.error ? new Error(result.error) : null
-    };
-  }, [toast]);
+    legacyOptions: UseErrorHandlerOptions = {}
+  ) => {
+    return handleAsyncError(asyncOperation, legacyOptions.action || 'execute', legacyOptions.metadata);
+  };
 
   return {
-    handleError,
-    handleAsyncError
+    handleError: legacyHandleError,
+    handleAsyncError: legacyHandleAsyncError
   };
 };

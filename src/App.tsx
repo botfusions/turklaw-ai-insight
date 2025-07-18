@@ -10,7 +10,6 @@ import { SimplifiedErrorBoundary } from "@/components/ui/SimplifiedErrorBoundary
 import { SmartLoadingProvider } from "@/contexts/SmartLoadingContext";
 import { MemoryManagementProvider } from "@/contexts/MemoryManagementContext";
 import { LoadingPerformanceMonitor } from "@/components/ui/LoadingPerformanceMonitor";
-import { ErrorMonitoringProvider } from "@/components/system/ErrorMonitoringSystem";
 import NetworkMonitor from "@/components/system/NetworkMonitor";
 import ProfileDebugPanel from "@/components/debug/ProfileDebugPanel";
 import MemoryDebugPanel from "@/components/debug/MemoryDebugPanel";
@@ -18,30 +17,28 @@ import ErrorDebugPanel from "@/components/debug/ErrorDebugPanel";
 
 const App = () => (
   <SimplifiedErrorBoundary>
-    <ErrorMonitoringProvider>
-      <MemoryManagementProvider>
-        <SmartLoadingProvider>
-          <AccessibilityProvider>
-            <TooltipProvider>
-              <NetworkStatus />
-              <NetworkMonitor />
-              <Toaster />
-              <Sonner />
-              <AppRoutes />
-              <AccessibilitySettings />
-              <LoadingPerformanceMonitor />
-              {import.meta.env.DEV && (
-                <>
-                  <ProfileDebugPanel />
-                  <MemoryDebugPanel />
-                  <ErrorDebugPanel />
-                </>
-              )}
-            </TooltipProvider>
-          </AccessibilityProvider>
-        </SmartLoadingProvider>
-      </MemoryManagementProvider>
-    </ErrorMonitoringProvider>
+    <MemoryManagementProvider>
+      <SmartLoadingProvider>
+        <AccessibilityProvider>
+          <TooltipProvider>
+            <NetworkStatus />
+            <NetworkMonitor />
+            <Toaster />
+            <Sonner />
+            <AppRoutes />
+            <AccessibilitySettings />
+            <LoadingPerformanceMonitor />
+            {import.meta.env.DEV && (
+              <>
+                <ProfileDebugPanel />
+                <MemoryDebugPanel />
+                <ErrorDebugPanel />
+              </>
+            )}
+          </TooltipProvider>
+        </AccessibilityProvider>
+      </SmartLoadingProvider>
+    </MemoryManagementProvider>
   </SimplifiedErrorBoundary>
 );
 
