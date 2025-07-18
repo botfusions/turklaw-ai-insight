@@ -26,6 +26,8 @@ class UnifiedErrorHandler {
   private readonly maxErrors = 20;
   private readonly maxRetries = 3;
   private cleanupTimer: NodeJS.Timeout | null = null;
+  private unhandledRejectionHandler: ((event: PromiseRejectionEvent) => void) | null = null;
+  private globalErrorHandler: ((event: ErrorEvent) => void) | null = null;
 
   static getInstance(): UnifiedErrorHandler {
     if (!UnifiedErrorHandler.instance) {
@@ -202,7 +204,7 @@ class UnifiedErrorHandler {
 
   private setupGlobalErrorHandlers() {
     // Handle unhandled promise rejections
-    window.addEventListener('unhandledrejection', (event) => {
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       this.handleError(event.reason, {
         component: 'GlobalHandler',
         action: 'unhandledRejection',
@@ -210,10 +212,10 @@ class UnifiedErrorHandler {
         severity: ErrorSeverity.HIGH,
         metadata: { url: window.location.href }
       });
-    });
+    };
 
     // Handle global errors
-    window.addEventListener('error', (event) => {
+    const handleGlobalError = (event: ErrorEvent) => {
       this.handleError(event.error || event.message, {
         component: 'GlobalHandler',
         action: 'globalError',
@@ -226,7 +228,14 @@ class UnifiedErrorHandler {
           url: window.location.href
         }
       });
-    });
+    };
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    window.addEventListener('error', handleGlobalError);
+
+    // Store references for cleanup
+    this.unhandledRejectionHandler = handleUnhandledRejection;
+    this.globalErrorHandler = handleGlobalError;
   }
 
   getErrorStats() {
@@ -266,8 +275,15 @@ class UnifiedErrorHandler {
     }
     this.errors = [];
     
-    window.removeEventListener('unhandledrejection', this.handleError);
-    window.removeEventListener('error', this.handleError);
+    if (this.unhandledRejectionHandler) {
+      window.removeEventListener('unhandledrejection', this.unhandledRejectionHandler);
+      this.unhandledRejectionHandler = null;
+    }
+    
+    if (this.globalErrorHandler) {
+      window.removeEventListener('error', this.globalErrorHandler);
+      this.globalErrorHandler = null;
+    }
   }
 }
 
