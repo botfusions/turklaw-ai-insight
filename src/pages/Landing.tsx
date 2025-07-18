@@ -1,3 +1,4 @@
+
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +21,7 @@ import {
   Award,
   Sparkles
 } from 'lucide-react';
-import { subscriptionPlans } from '@/lib/mockData';
+import { subscriptionPlans } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Landing() {

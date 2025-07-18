@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -15,7 +16,6 @@ import Profile from '@/pages/Profile';
 import SearchPage from '@/pages/SearchPage';
 import SavedCases from '@/pages/SavedCases';
 import Subscription from '@/pages/Subscription';
-import APITest from '@/pages/APITest';
 import MevzuatExample from '@/pages/MevzuatExample';
 import About from '@/pages/About';
 import Contact from '@/pages/Contact';
@@ -137,18 +137,6 @@ export const AppRoutes: React.FC = () => {
             protection={RouteProtectionLevel.AUTHENTICATED}
           >
             <Subscription />
-          </ProtectedRoute>
-        } 
-      />
-
-      {/* API Test Route */}
-      <Route 
-        path="/api-test" 
-        element={
-          <ProtectedRoute 
-            protection={RouteProtectionLevel.AUTHENTICATED}
-          >
-            <APITest />
           </ProtectedRoute>
         } 
       />

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
@@ -5,7 +6,6 @@ import { useAuth } from '../useAuth';
 import { AuthDataProvider } from '@/contexts/AuthDataContext';
 import { AuthActionsProvider } from '@/contexts/AuthActionsContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { mockUser, mockProfile } from '@/test/mocks/data';
 
 // Test wrapper
 function createWrapper() {

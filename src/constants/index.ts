@@ -1,67 +1,66 @@
 
-export const APP_CONFIG = {
-  name: 'TurkLaw AI',
-  version: '1.0.0',
-  description: 'AI-powered Turkish legal case search and analysis platform',
-  author: 'TurkLaw Team',
-  
-  // Search Configuration
-  search: {
-    defaultLimit: 10,
-    maxLimit: 100,
-    debounceMs: 300,
-    minQueryLength: 2
+// Subscription Plans
+export const subscriptionPlans = [
+  {
+    id: 'basic',
+    name: 'Basic',
+    price: 49,
+    originalPrice: 99,
+    popular: false,
+    features: [
+      '50 arama/ay',
+      'Temel karar özeti',
+      'PDF indirme',
+      'E-posta desteği',
+      '7 gün ücretsiz deneme'
+    ]
   },
-
-  // Performance Configuration
-  performance: {
-    cacheTimeout: 5 * 60 * 1000, // 5 minutes
-    retryAttempts: 3,
-    retryDelay: 1000 // 1 second
-  },
-
-  // UI Configuration
-  ui: {
-    cardAnimationDuration: 200,
-    toastDuration: 5000,
-    loadingSpinnerDelay: 500
+  {
+    id: 'premium',
+    name: 'Premium',
+    price: 99,
+    originalPrice: 199,
+    popular: true,
+    features: [
+      '250 arama/ay',
+      'Detaylı AI analizi',
+      'Gelişmiş filtreleme',
+      'Tam metin erişimi',
+      'Benzer karar önerileri',
+      'Özel notlar',
+      'İstatistikler',
+      'Öncelikli destek',
+      '7 gün ücretsiz deneme'
+    ]
   }
-} as const;
+];
 
-export const SUBSCRIPTION_PLANS = {
-  FREE: 'free',
-  BASIC: 'basic',
-  PREMIUM: 'premium',
-  ENTERPRISE: 'enterprise'
-} as const;
+// Mock User Data
+export const mockUser = {
+  id: 'mock-user-id',
+  email: 'test@example.com',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
+};
 
-export const USER_ROLES = {
-  USER: 'user',
-  ADMIN: 'admin',
-  MODERATOR: 'moderator'
-} as const;
+// Mock Profile Data
+export const mockProfile = {
+  id: 'mock-user-id',
+  email: 'test@example.com',
+  full_name: 'Test User',
+  plan: 'premium',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
+};
 
-export const API_ENDPOINTS = {
-  CASES: '/api/cases',
-  SEARCH: '/api/search',
-  USERS: '/api/users',
-  SUBSCRIPTIONS: '/api/subscriptions'
-} as const;
+// Application Constants
+export const APP_NAME = 'TurkLaw AI';
+export const APP_DESCRIPTION = 'AI Destekli Hukuk Araştırma Platformu';
 
-export const ERROR_MESSAGES = {
-  NETWORK_ERROR: 'Ağ bağlantısı hatası. Lütfen internet bağlantınızı kontrol edin.',
-  UNAUTHORIZED: 'Bu işlem için giriş yapmanız gerekiyor.',
-  FORBIDDEN: 'Bu işlemi gerçekleştirme yetkiniz bulunmuyor.',
-  NOT_FOUND: 'Aradığınız kaynak bulunamadı.',
-  VALIDATION_ERROR: 'Girilen bilgiler geçersiz.',
-  SERVER_ERROR: 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.',
-  SEARCH_FAILED: 'Arama işlemi başarısız. Lütfen tekrar deneyin.',
-  CASE_NOT_FOUND: 'Belirtilen dava kaydı bulunamadı.'
-} as const;
+// Default Limits
+export const DEFAULT_SEARCH_LIMIT = 50;
+export const PREMIUM_SEARCH_LIMIT = 250;
 
-export const SUCCESS_MESSAGES = {
-  SEARCH_COMPLETED: 'Arama başarıyla tamamlandı.',
-  CASE_SAVED: 'Dava başarıyla kaydedildi.',
-  PROFILE_UPDATED: 'Profil bilgileri güncellendi.',
-  SUBSCRIPTION_UPDATED: 'Abonelik planı güncellendi.'
-} as const;
+// Contact Information
+export const CONTACT_EMAIL = 'info@turklaw.ai';
+export const SUPPORT_EMAIL = 'destek@turklaw.ai';
