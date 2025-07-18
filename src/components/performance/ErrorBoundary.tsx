@@ -29,9 +29,12 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
+    console.error('ErrorBoundary caught error:', error);
+    
     const isContextError = error.message.includes('useAuth') || 
                           error.message.includes('AuthProvider') ||
-                          error.message.includes('context');
+                          error.message.includes('context') ||
+                          error.message.includes('undefined');
     
     return {
       hasError: true,
@@ -81,9 +84,9 @@ export class ErrorBoundary extends Component<Props, State> {
                 <div className="mx-auto mb-4 p-3 bg-destructive/10 rounded-full w-fit">
                   <AlertTriangle className="h-8 w-8 text-destructive" />
                 </div>
-                <CardTitle className="text-xl">Kimlik Doğrulama Hatası</CardTitle>
+                <CardTitle className="text-xl">Yükleme Hatası</CardTitle>
                 <CardDescription>
-                  Uygulama başlatılırken bir hata oluştu. Sayfayı yenileme deneyiniz.
+                  Uygulama yüklenirken bir hata oluştu. Lütfen sayfayı yenilemeyi deneyin.
                 </CardDescription>
               </CardHeader>
               
@@ -94,7 +97,7 @@ export class ErrorBoundary extends Component<Props, State> {
                     className="flex-1"
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    Tekrar Dene
+                    Sayfayı Yenile
                   </Button>
                   
                   <Button
@@ -183,9 +186,6 @@ export class ErrorBoundary extends Component<Props, State> {
 export function useErrorHandler() {
   return (error: Error, errorInfo?: ErrorInfo) => {
     console.error('Error caught by useErrorHandler:', error, errorInfo);
-    
-    // You can send error to logging service here
-    // logErrorToService(error, errorInfo);
   };
 }
 

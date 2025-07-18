@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Header } from '@/components/layout/Header';
@@ -24,42 +25,44 @@ const plans = [
     popular: false
   },
   {
-    id: 'pro',
-    name: 'Pro',
-    price: 299,
-    priceText: '299 ₺/ay',
-    description: 'Profesyonel avukatlar için',
+    id: 'basic',
+    name: 'Basic',
+    price: 850,
+    originalPrice: 1700,
+    priceText: '850 ₺/ay',
+    description: 'Başlangıç seviyesi kullanım',
+    icon: Zap,
+    features: [
+      '50 arama/ay',
+      'Temel karar özeti',
+      'PDF indirme',
+      'E-posta desteği',
+      '7 gün ücretsiz deneme'
+    ],
+    maxSearches: 50,
+    popular: false
+  },
+  {
+    id: 'premium',
+    name: 'Premium',
+    price: 2750,
+    originalPrice: 5500,
+    priceText: '2750 ₺/ay',
+    description: 'Profesyonel hukuk pratiği',
     icon: Crown,
     features: [
-      '100 arama/ay',
+      '250 arama/ay',
+      'Detaylı AI analizi',
       'Gelişmiş filtreleme',
       'Tam metin erişimi',
       'Benzer karar önerileri',
       'Özel notlar',
+      'İstatistikler',
       'Öncelikli destek',
-      'İstatistikler ve analiz'
+      '7 gün ücretsiz deneme'
     ],
-    maxSearches: 100,
+    maxSearches: 250,
     popular: true
-  },
-  {
-    id: 'enterprise',
-    name: 'Kurumsal',
-    price: 999,
-    priceText: '999 ₺/ay',
-    description: 'Hukuk büroları ve kurumlar için',
-    icon: Building,
-    features: [
-      'Sınırsız arama',
-      'Tüm Pro özellikler',
-      'Çoklu kullanıcı yönetimi',
-      'API erişimi',
-      'Özel entegrasyonlar',
-      'Eğitim ve danışmanlık',
-      '7/24 telefon desteği'
-    ],
-    maxSearches: 1000,
-    popular: false
   }
 ];
 
@@ -141,8 +144,25 @@ export default function Subscription() {
                       <IconComponent className="h-8 w-8 text-primary" />
                     </div>
                     <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                    <div className="text-3xl font-bold text-primary">
-                      {plan.priceText}
+                    
+                    {/* Discount Badge for paid plans */}
+                    {plan.id !== 'free' && (
+                      <div className="mb-2">
+                        <Badge variant="destructive" className="text-sm">
+                          %50 Özel İndirim!
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    <div className="space-y-1">
+                      {plan.originalPrice && (
+                        <div className="text-lg text-muted-foreground line-through">
+                          {plan.originalPrice} ₺/ay
+                        </div>
+                      )}
+                      <div className="text-3xl font-bold text-primary">
+                        {plan.priceText}
+                      </div>
                     </div>
                     <p className="text-muted-foreground">{plan.description}</p>
                   </CardHeader>
@@ -171,7 +191,7 @@ export default function Subscription() {
           </div>
 
           {/* Features Comparison */}
-          <Card>
+          <Card className="mb-8">
             <CardHeader>
               <CardTitle className="text-center">Özellik Karşılaştırması</CardTitle>
             </CardHeader>
@@ -182,37 +202,31 @@ export default function Subscription() {
                     <tr className="border-b">
                       <th className="text-left py-3 px-4">Özellik</th>
                       <th className="text-center py-3 px-4">Ücretsiz</th>
-                      <th className="text-center py-3 px-4">Pro</th>
-                      <th className="text-center py-3 px-4">Kurumsal</th>
+                      <th className="text-center py-3 px-4">Basic</th>
+                      <th className="text-center py-3 px-4">Premium</th>
                     </tr>
                   </thead>
                   <tbody className="text-sm">
                     <tr className="border-b">
                       <td className="py-3 px-4">Aylık Arama Limiti</td>
                       <td className="text-center py-3 px-4">5</td>
-                      <td className="text-center py-3 px-4">100</td>
-                      <td className="text-center py-3 px-4">Sınırsız</td>
+                      <td className="text-center py-3 px-4">50</td>
+                      <td className="text-center py-3 px-4">250</td>
                     </tr>
                     <tr className="border-b">
                       <td className="py-3 px-4">Tam Metin Erişimi</td>
                       <td className="text-center py-3 px-4">❌</td>
-                      <td className="text-center py-3 px-4">✅</td>
+                      <td className="text-center py-3 px-4">❌</td>
                       <td className="text-center py-3 px-4">✅</td>
                     </tr>
                     <tr className="border-b">
                       <td className="py-3 px-4">Gelişmiş Filtreler</td>
                       <td className="text-center py-3 px-4">❌</td>
-                      <td className="text-center py-3 px-4">✅</td>
-                      <td className="text-center py-3 px-4">✅</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-3 px-4">API Erişimi</td>
-                      <td className="text-center py-3 px-4">❌</td>
                       <td className="text-center py-3 px-4">❌</td>
                       <td className="text-center py-3 px-4">✅</td>
                     </tr>
                     <tr className="border-b">
-                      <td className="py-3 px-4">Çoklu Kullanıcı</td>
+                      <td className="py-3 px-4">İstatistikler</td>
                       <td className="text-center py-3 px-4">❌</td>
                       <td className="text-center py-3 px-4">❌</td>
                       <td className="text-center py-3 px-4">✅</td>
@@ -220,8 +234,8 @@ export default function Subscription() {
                     <tr>
                       <td className="py-3 px-4">Destek</td>
                       <td className="text-center py-3 px-4">E-posta</td>
+                      <td className="text-center py-3 px-4">E-posta</td>
                       <td className="text-center py-3 px-4">Öncelikli</td>
-                      <td className="text-center py-3 px-4">7/24 Telefon</td>
                     </tr>
                   </tbody>
                 </table>
@@ -229,8 +243,13 @@ export default function Subscription() {
             </CardContent>
           </Card>
 
+          {/* VAT Disclaimer */}
+          <div className="text-center text-sm text-muted-foreground mb-8">
+            <p>Fiyatlarımıza KDV dahil değildir.</p>
+          </div>
+
           {/* Contact Section */}
-          <div className="text-center mt-12">
+          <div className="text-center">
             <h2 className="text-2xl font-bold mb-4">Özel İhtiyaçlarınız mı Var?</h2>
             <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
               Kurumsal çözümler, özel entegrasyonlar veya toplu lisanslama için 

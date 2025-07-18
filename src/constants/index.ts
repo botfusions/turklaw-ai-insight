@@ -4,8 +4,8 @@ export const subscriptionPlans = [
   {
     id: 'basic',
     name: 'Basic',
-    price: 49,
-    originalPrice: 99,
+    price: 850,
+    originalPrice: 1700,
     popular: false,
     features: [
       '50 arama/ay',
@@ -18,8 +18,8 @@ export const subscriptionPlans = [
   {
     id: 'premium',
     name: 'Premium',
-    price: 99,
-    originalPrice: 199,
+    price: 2750,
+    originalPrice: 5500,
     popular: true,
     features: [
       '250 arama/ay',

@@ -177,11 +177,11 @@ export default function Pricing() {
                     <div className="space-y-1">
                       {plan.originalPrice && (
                         <div className="text-lg text-muted-foreground line-through">
-                          {plan.originalPrice}₺/ay
+                          {plan.originalPrice} ₺/ay
                         </div>
                       )}
                       <div className="text-4xl font-bold text-primary">
-                        {plan.price}₺
+                        {plan.price} ₺
                         <span className="text-lg font-normal text-muted-foreground">/ay</span>
                       </div>
                     </div>
@@ -313,7 +313,7 @@ export default function Pricing() {
           </Card>
 
           {/* CTA Section */}
-          <Card className="bg-gradient-hero text-white">
+          <Card className="bg-gradient-hero text-white mb-8">
             <CardContent className="p-8 text-center">
               <h2 className="text-3xl font-bold mb-4">
                 Hukuki Araştırmalarınızı Dönüştürün
@@ -342,6 +342,11 @@ export default function Pricing() {
               </div>
             </CardContent>
           </Card>
+
+          {/* VAT Disclaimer */}
+          <div className="text-center text-sm text-muted-foreground">
+            <p>Fiyatlarımıza KDV dahil değildir.</p>
+          </div>
         </div>
       </main>
 
