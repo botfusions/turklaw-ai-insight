@@ -1,5 +1,5 @@
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,14 +17,66 @@ import {
 } from 'lucide-react';
 import { useAuthData } from '@/contexts/AuthDataContext';
 
-export function DashboardPreview() {
+// Static mock data moved outside component
+const MOCK_RECENT_SEARCHES = [
+  { query: 'iş kazası tazminat', date: '2024-01-15', results: 24 },
+  { query: 'boşanma nafaka', date: '2024-01-14', results: 18 },
+  { query: 'sözleşme ihlali', date: '2024-01-13', results: 31 }
+];
+
+const MOCK_STATS = {
+  monthlySearches: 42,
+  savedCases: 12,
+  totalCases: 100000,
+  activeSearches: 3
+};
+
+// Memoized sub-components
+const StatCard = memo(({ icon: Icon, label, value, className }: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string | number;
+  className?: string;
+}) => (
+  <Card className="bg-card shadow-card">
+    <CardContent className="p-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="text-lg font-bold text-foreground">{value}</p>
+        </div>
+        <Icon className={`h-5 w-5 ${className}`} />
+      </div>
+    </CardContent>
+  </Card>
+));
+
+const SearchItem = memo(({ search, onClick }: {
+  search: typeof MOCK_RECENT_SEARCHES[0];
+  onClick: (query: string) => void;
+}) => (
+  <div 
+    className="flex items-center justify-between p-2 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+    onClick={() => onClick(search.query)}
+  >
+    <div className="flex-1">
+      <p className="text-sm font-medium text-foreground">{search.query}</p>
+      <p className="text-xs text-muted-foreground">
+        {search.results} sonuç • {new Date(search.date).toLocaleDateString('tr-TR')}
+      </p>
+    </div>
+    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+  </div>
+));
+
+export const DashboardPreview = memo(() => {
   const navigate = useNavigate();
   const { user, profile } = useAuthData();
   const [quickSearchQuery, setQuickSearchQuery] = useState('');
   
-  // Memoized calculations for performance
+  // Memoized calculations
   const isPremiumUser = useMemo(() => 
-    profile && profile.plan === 'premium', 
+    profile?.plan === 'premium', 
     [profile?.plan]
   );
   
@@ -33,20 +85,7 @@ export function DashboardPreview() {
     [profile?.full_name, user?.email]
   );
 
-  // Static mock data - no loading needed
-  const mockRecentSearches = useMemo(() => [
-    { query: 'iş kazası tazminat', date: '2024-01-15', results: 24 },
-    { query: 'boşanma nafaka', date: '2024-01-14', results: 18 },
-    { query: 'sözleşme ihlali', date: '2024-01-13', results: 31 }
-  ], []);
-
-  const mockStats = useMemo(() => ({
-    monthlySearches: 42,
-    savedCases: 12,
-    totalCases: 100000,
-    activeSearches: 3
-  }), []);
-
+  // Memoized handlers
   const handleQuickSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (quickSearchQuery.trim()) {
@@ -104,56 +143,35 @@ export function DashboardPreview() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <Card className="bg-card shadow-card">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Bu Ay</p>
-                <p className="text-lg font-bold text-foreground">{mockStats.monthlySearches}</p>
-              </div>
-              <Search className="h-5 w-5 text-primary" />
+        <StatCard 
+          icon={Search} 
+          label="Bu Ay" 
+          value={MOCK_STATS.monthlySearches} 
+          className="text-primary"
+        />
+        <StatCard 
+          icon={BookOpen} 
+          label="Kayıtlı" 
+          value={MOCK_STATS.savedCases} 
+          className="text-secondary"
+        />
+        <StatCard 
+          icon={Database} 
+          label="Toplam" 
+          value={MOCK_STATS.totalCases.toLocaleString()} 
+          className="text-success"
+        />
+        <StatCard 
+          icon={TrendingUp} 
+          label="Plan" 
+          value={
+            <div className="flex items-center gap-1">
+              <span className="text-sm font-semibold capitalize">{profile?.plan || 'basic'}</span>
+              {isPremiumUser && <Crown className="h-3 w-3 text-secondary" />}
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card shadow-card">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Kayıtlı</p>
-                <p className="text-lg font-bold text-foreground">{mockStats.savedCases}</p>
-              </div>
-              <BookOpen className="h-5 w-5 text-secondary" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card shadow-card">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Toplam</p>
-                <p className="text-lg font-bold text-foreground">{mockStats.totalCases.toLocaleString()}</p>
-              </div>
-              <Database className="h-5 w-5 text-success" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card shadow-card">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Plan</p>
-                <div className="flex items-center gap-1">
-                  <p className="text-sm font-semibold text-foreground capitalize">{profile?.plan || 'basic'}</p>
-                  {isPremiumUser && <Crown className="h-3 w-3 text-secondary" />}
-                </div>
-              </div>
-              <TrendingUp className="h-5 w-5 text-accent" />
-            </div>
-          </CardContent>
-        </Card>
+          } 
+          className="text-accent"
+        />
       </div>
 
       {/* Plan Info */}
@@ -171,7 +189,7 @@ export function DashboardPreview() {
             <div className="flex items-center justify-center gap-2 mb-2">
               <Crown className="h-5 w-5 text-primary" />
               <span className="font-semibold">
-                {profile?.plan === 'premium' ? 'Premium Özellikler Aktif' : 'Temel Plan Özelliklerini Kullanabilirsiniz'}
+                {isPremiumUser ? 'Premium Özellikler Aktif' : 'Temel Plan Özelliklerini Kullanabilirsiniz'}
               </span>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -191,20 +209,12 @@ export function DashboardPreview() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {mockRecentSearches.map((search, index) => (
-              <div 
-                key={index}
-                className="flex items-center justify-between p-2 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => handleSearchClick(search.query)}
-              >
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{search.query}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {search.results} sonuç • {new Date(search.date).toLocaleDateString('tr-TR')}
-                  </p>
-                </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
-              </div>
+            {MOCK_RECENT_SEARCHES.map((search, index) => (
+              <SearchItem 
+                key={index} 
+                search={search} 
+                onClick={handleSearchClick}
+              />
             ))}
           </div>
         </CardContent>
@@ -233,4 +243,6 @@ export function DashboardPreview() {
       </div>
     </div>
   );
-}
+});
+
+DashboardPreview.displayName = 'DashboardPreview';

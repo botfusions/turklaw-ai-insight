@@ -18,25 +18,12 @@ export const useOptimizedAuth = () => {
   const authActions = useAuthActions();
 
   const optimizedStates = useMemo((): OptimizedAuthStates => {
-    // App is initializing if not initialized
     const isInitializing = !authData.initialized;
-    
-    // App is ready when initialized
     const isReady = authData.initialized;
-    
-    // No auth errors in new simplified structure
     const hasAuthError = false;
-    
-    // User is properly authenticated
     const isUserAuthenticated = isReady && !!authData.user && !!authData.profile;
-    
-    // Profile loading is handled differently in new structure
     const isProfileLoading = false;
-    
-    // Action is in progress
     const isActionInProgress = authActions.loading;
-    
-    // Can render main app when ready
     const canRenderApp = isReady;
 
     return {
@@ -48,11 +35,10 @@ export const useOptimizedAuth = () => {
       isActionInProgress,
       canRenderApp,
     };
-  }, [authData, authActions]);
+  }, [authData.initialized, authData.user, authData.profile, authActions.loading]);
 
-  // Combine all auth functionality for backward compatibility
-  const combinedAuth = useMemo(() => ({
-    // Original auth context structure
+  return useMemo(() => ({
+    // Auth data
     user: authData.user,
     profile: authData.profile,
     initialized: authData.initialized,
@@ -76,6 +62,4 @@ export const useOptimizedAuth = () => {
     // Optimized states
     ...optimizedStates,
   }), [authData, authActions, optimizedStates]);
-
-  return combinedAuth;
 };

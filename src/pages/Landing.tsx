@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,25 +10,93 @@ import { Footer } from '@/components/layout/Footer';
 import { DashboardPreview } from '@/components/dashboard/DashboardPreview';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { landingFeatures, landingTestimonials } from '@/constants/landingData';
+import { subscriptionPlans } from '@/constants';
 import { 
-  Search, 
-  Zap, 
-  Shield, 
-  Users, 
   CheckCircle, 
   Star,
   ArrowRight,
   Scale,
-  Clock,
-  Database,
   TrendingUp,
-  Award,
-  Sparkles,
   AlertTriangle
 } from 'lucide-react';
-import { subscriptionPlans } from '@/constants';
 
-export default function Landing() {
+// Memoized sub-components for better performance
+const FeatureCard = memo(({ feature }: { feature: typeof landingFeatures[0] }) => (
+  <Card className="bg-card shadow-lg hover:shadow-xl transition-all duration-300">
+    <CardHeader className="text-center">
+      <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+        <feature.icon className="h-8 w-8 text-primary" />
+      </div>
+      <CardTitle className="text-xl">{feature.title}</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <CardDescription className="text-center">
+        {feature.description}
+      </CardDescription>
+    </CardContent>
+  </Card>
+));
+
+const TestimonialCard = memo(({ testimonial }: { testimonial: typeof landingTestimonials[0] }) => (
+  <Card className="bg-card shadow-lg">
+    <CardContent className="p-6">
+      <div className="flex items-center mb-4">
+        {[...Array(testimonial.rating)].map((_, i) => (
+          <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
+        ))}
+      </div>
+      <p className="text-foreground mb-4 italic">"{testimonial.content}"</p>
+      <div>
+        <p className="font-semibold text-foreground">{testimonial.name}</p>
+        <p className="text-sm text-muted-foreground">{testimonial.title}</p>
+      </div>
+    </CardContent>
+  </Card>
+));
+
+const PlanCard = memo(({ plan, isActionInProgress, onRegister }: { 
+  plan: typeof subscriptionPlans[0];
+  isActionInProgress: boolean;
+  onRegister: () => void;
+}) => (
+  <Card 
+    className={`relative bg-card shadow-lg hover:shadow-xl transition-all duration-300 ${
+      plan.popular ? 'border-primary shadow-2xl scale-105' : ''
+    }`}
+  >
+    {plan.popular && (
+      <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground">
+        En Popüler
+      </Badge>
+    )}
+    <CardHeader className="text-center">
+      <CardTitle className="text-2xl">{plan.name}</CardTitle>
+      <div className="mt-4">
+        <span className="text-4xl font-bold">{plan.price}</span>
+        <span className="text-muted-foreground">₺/ay</span>
+      </div>
+    </CardHeader>
+    <CardContent className="space-y-4">
+      {plan.features.map((feature, index) => (
+        <div key={index} className="flex items-center">
+          <CheckCircle className="h-4 w-4 text-green-600 mr-3" />
+          <span className="text-sm">{feature}</span>
+        </div>
+      ))}
+      <Button 
+        className="w-full mt-6"
+        variant={plan.popular ? "default" : "outline"}
+        onClick={onRegister}
+        disabled={isActionInProgress}
+      >
+        {isActionInProgress ? 'İşlem yapılıyor...' : 'Başlayın'}
+      </Button>
+    </CardContent>
+  </Card>
+));
+
+function Landing() {
   const navigate = useNavigate();
   
   const {
@@ -41,22 +109,24 @@ export default function Landing() {
     refreshProfile
   } = useOptimizedAuth();
 
-  console.log('Landing: Auth states:', { 
-    isInitializing,
-    isUserAuthenticated,
-    isActionInProgress,
-    canRenderApp
-  });
+  const handleRegister = useCallback(() => {
+    navigate('/register');
+  }, [navigate]);
 
-  // Show simple loading for critical operations only
+  const handleLogin = useCallback(() => {
+    navigate('/login');
+  }, [navigate]);
+
+  const handleDemoClick = useCallback(() => {
+    navigate('/search');
+  }, [navigate]);
+
+  // Early returns for better performance
   if (isInitializing) {
-    console.log('Landing: App is initializing');
     return <LoadingSpinner variant="detailed" message="Uygulama yükleniyor..." />;
   }
 
-  // Show auth error with recovery options
   if (authError) {
-    console.log('Landing: Showing auth error:', authError);
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -84,7 +154,7 @@ export default function Landing() {
                 </Button>
                 
                 <Button 
-                  onClick={() => navigate('/login')}
+                  onClick={handleLogin}
                   className="w-full"
                   variant="outline"
                 >
@@ -107,64 +177,15 @@ export default function Landing() {
     );
   }
 
-  // Can't render app due to critical issues
   if (!canRenderApp) {
-    console.log('Landing: Cannot render app');
     return <LoadingSpinner variant="detailed" message="Sistem hazırlanıyor..." />;
   }
-
-  // Static data
-  const features = [
-    {
-      icon: Search,
-      title: 'AI Destekli Araştırma',
-      description: 'Gelişmiş yapay zeka algoritmaları ile saniyeler içinde ilgili kararları bulun'
-    },
-    {
-      icon: Database,
-      title: '100,000+ Karar',
-      description: 'Yargıtay, Danıştay ve tüm mahkemelerden güncel karar arşivi'
-    },
-    {
-      icon: Clock,
-      title: 'Anında Sonuç',
-      description: 'Geleneksel araştırma yöntemlerinden 10x daha hızlı sonuç alın'
-    },
-    {
-      icon: Shield,
-      title: 'Güvenli Platform',
-      description: 'Verileriniz en yüksek güvenlik standartlarıyla korunur'
-    }
-  ];
-
-  const testimonials = [
-    {
-      name: 'Av. Mehmet Özkan',
-      title: 'Hukuk Bürosu Sahibi',
-      content: 'TurkLaw AI sayesinde araştırma sürem %80 azaldı. Müvekkillerime daha kaliteli hizmet verebiliyorum.',
-      rating: 5
-    },
-    {
-      name: 'Av. Ayşe Demir',
-      title: 'İş Hukuku Uzmanı',
-      content: 'Emsal kararları bulmak hiç bu kadar kolay olmamıştı. Platform gerçekten etkileyici.',
-      rating: 5
-    },
-    {
-      name: 'Hukuk Firması ABC',
-      title: 'Kurumsal Müşteri',
-      content: 'Tüm ekibimiz TurkLaw AI kullanıyor. Verimliliğimiz önemli ölçüde arttı.',
-      rating: 5
-    }
-  ];
-
-  console.log('Landing: Rendering main content. User authenticated:', isUserAuthenticated);
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Show simple action loading indicator */}
+      {/* Action loading indicator */}
       {isActionInProgress && (
         <div className="fixed top-4 right-4 z-50">
           <div className="bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg">
@@ -175,7 +196,7 @@ export default function Landing() {
       )}
       
       {isUserAuthenticated ? (
-        // Authenticated User View - Simplified
+        // Authenticated User View
         <>
           <section className="relative py-20 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 opacity-50"></div>
@@ -216,28 +237,15 @@ export default function Landing() {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {testimonials.slice(0, 2).map((testimonial, index) => (
-                  <Card key={index} className="bg-card shadow-lg">
-                    <CardContent className="p-6">
-                      <div className="flex items-center mb-4">
-                        {[...Array(testimonial.rating)].map((_, i) => (
-                          <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                        ))}
-                      </div>
-                      <p className="text-foreground mb-4 italic">"{testimonial.content}"</p>
-                      <div>
-                        <p className="font-semibold text-foreground">{testimonial.name}</p>
-                        <p className="text-sm text-muted-foreground">{testimonial.title}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                {landingTestimonials.slice(0, 2).map((testimonial, index) => (
+                  <TestimonialCard key={index} testimonial={testimonial} />
                 ))}
               </div>
             </div>
           </section>
         </>
       ) : (
-        // Guest User View - Optimized
+        // Guest User View
         <>
           <section className="relative py-20 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 opacity-50"></div>
@@ -260,7 +268,7 @@ export default function Landing() {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button 
                     size="lg" 
-                    onClick={() => navigate('/register')}
+                    onClick={handleRegister}
                     disabled={isActionInProgress}
                     className="bg-primary hover:bg-primary/90 text-lg px-8 py-6"
                   >
@@ -270,7 +278,7 @@ export default function Landing() {
                   <Button 
                     variant="outline" 
                     size="lg"
-                    onClick={() => navigate('/search')}
+                    onClick={handleDemoClick}
                     disabled={isActionInProgress}
                     className="text-lg px-8 py-6"
                   >
@@ -308,20 +316,8 @@ export default function Landing() {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {features.map((feature, index) => (
-                  <Card key={index} className="bg-card shadow-lg hover:shadow-xl transition-all duration-300">
-                    <CardHeader className="text-center">
-                      <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <feature.icon className="h-8 w-8 text-primary" />
-                      </div>
-                      <CardTitle className="text-xl">{feature.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription className="text-center">
-                        {feature.description}
-                      </CardDescription>
-                    </CardContent>
-                  </Card>
+                {landingFeatures.map((feature, index) => (
+                  <FeatureCard key={index} feature={feature} />
                 ))}
               </div>
             </div>
@@ -340,41 +336,12 @@ export default function Landing() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                 {subscriptionPlans.map((plan) => (
-                  <Card 
+                  <PlanCard 
                     key={plan.id} 
-                    className={`relative bg-card shadow-lg hover:shadow-xl transition-all duration-300 ${
-                      plan.popular ? 'border-primary shadow-2xl scale-105' : ''
-                    }`}
-                  >
-                    {plan.popular && (
-                      <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground">
-                        En Popüler
-                      </Badge>
-                    )}
-                    <CardHeader className="text-center">
-                      <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                      <div className="mt-4">
-                        <span className="text-4xl font-bold">{plan.price}</span>
-                        <span className="text-muted-foreground">₺/ay</span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {plan.features.map((feature, index) => (
-                        <div key={index} className="flex items-center">
-                          <CheckCircle className="h-4 w-4 text-green-600 mr-3" />
-                          <span className="text-sm">{feature}</span>
-                        </div>
-                      ))}
-                      <Button 
-                        className="w-full mt-6"
-                        variant={plan.popular ? "default" : "outline"}
-                        onClick={() => navigate('/register')}
-                        disabled={isActionInProgress}
-                      >
-                        {isActionInProgress ? 'İşlem yapılıyor...' : 'Başlayın'}
-                      </Button>
-                    </CardContent>
-                  </Card>
+                    plan={plan}
+                    isActionInProgress={isActionInProgress}
+                    onRegister={handleRegister}
+                  />
                 ))}
               </div>
             </div>
@@ -392,21 +359,8 @@ export default function Landing() {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {testimonials.map((testimonial, index) => (
-                  <Card key={index} className="bg-card shadow-lg">
-                    <CardContent className="p-6">
-                      <div className="flex items-center mb-4">
-                        {[...Array(testimonial.rating)].map((_, i) => (
-                          <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                        ))}
-                      </div>
-                      <p className="text-foreground mb-4 italic">"{testimonial.content}"</p>
-                      <div>
-                        <p className="font-semibold text-foreground">{testimonial.name}</p>
-                        <p className="text-sm text-muted-foreground">{testimonial.title}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                {landingTestimonials.map((testimonial, index) => (
+                  <TestimonialCard key={index} testimonial={testimonial} />
                 ))}
               </div>
             </div>
@@ -424,7 +378,7 @@ export default function Landing() {
                 </p>
                 <Button 
                   size="lg"
-                  onClick={() => navigate('/register')}
+                  onClick={handleRegister}
                   disabled={isActionInProgress}
                   className="bg-primary hover:bg-primary/90 text-lg px-8 py-6"
                 >
@@ -441,3 +395,5 @@ export default function Landing() {
     </div>
   );
 }
+
+export default memo(Landing);

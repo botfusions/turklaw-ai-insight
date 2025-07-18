@@ -7,38 +7,37 @@ import { AccessibilityProvider } from "@/components/accessibility/AccessibilityP
 import { NetworkStatus } from "@/components/layout/NetworkStatus";
 import { AccessibilitySettings } from "@/components/accessibility/AccessibilitySettings";
 import { SimplifiedErrorBoundary } from "@/components/ui/SimplifiedErrorBoundary";
-import { SmartLoadingProvider } from "@/contexts/SmartLoadingContext";
-import { MemoryManagementProvider } from "@/contexts/MemoryManagementContext";
-import { LoadingPerformanceMonitor } from "@/components/ui/LoadingPerformanceMonitor";
+import { UnifiedPerformanceProvider } from "@/contexts/UnifiedPerformanceContext";
 import NetworkMonitor from "@/components/system/NetworkMonitor";
-import ProfileDebugPanel from "@/components/debug/ProfileDebugPanel";
-import MemoryDebugPanel from "@/components/debug/MemoryDebugPanel";
-import ErrorDebugPanel from "@/components/debug/ErrorDebugPanel";
+
+// Only show performance monitors in development
+const DevelopmentMonitors = () => {
+  if (!import.meta.env.DEV) return null;
+  
+  return (
+    <>
+      <div id="profile-debug-panel" />
+      <div id="memory-debug-panel" />
+      <div id="error-debug-panel" />
+    </>
+  );
+};
 
 const App = () => (
   <SimplifiedErrorBoundary>
-    <MemoryManagementProvider>
-      <SmartLoadingProvider>
-        <AccessibilityProvider>
-          <TooltipProvider>
-            <NetworkStatus />
-            <NetworkMonitor />
-            <Toaster />
-            <Sonner />
-            <AppRoutes />
-            <AccessibilitySettings />
-            <LoadingPerformanceMonitor />
-            {import.meta.env.DEV && (
-              <>
-                <ProfileDebugPanel />
-                <MemoryDebugPanel />
-                <ErrorDebugPanel />
-              </>
-            )}
-          </TooltipProvider>
-        </AccessibilityProvider>
-      </SmartLoadingProvider>
-    </MemoryManagementProvider>
+    <UnifiedPerformanceProvider>
+      <AccessibilityProvider>
+        <TooltipProvider>
+          <NetworkStatus />
+          <NetworkMonitor />
+          <Toaster />
+          <Sonner />
+          <AppRoutes />
+          <AccessibilitySettings />
+          <DevelopmentMonitors />
+        </TooltipProvider>
+      </AccessibilityProvider>
+    </UnifiedPerformanceProvider>
   </SimplifiedErrorBoundary>
 );
 
