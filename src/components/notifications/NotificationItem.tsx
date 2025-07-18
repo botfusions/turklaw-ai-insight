@@ -1,20 +1,9 @@
 
 import { Button } from '@/components/ui/button';
 import { Check, X, ExternalLink } from 'lucide-react';
-import { useNotifications } from '@/contexts/NotificationContext';
+import { useNotifications, type Notification } from '@/contexts/NotificationContext';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-
-interface Notification {
-  id: string;
-  title: string;
-  message?: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  read: boolean;
-  timestamp: string;
-  actionUrl?: string;
-  actionLabel?: string;
-}
 
 interface NotificationItemProps {
   notification: Notification;
@@ -85,7 +74,7 @@ export function NotificationItem({ notification, onClose }: NotificationItemProp
           
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
-              {new Date(notification.timestamp).toLocaleDateString('tr-TR')}
+              {notification.timestamp.toLocaleDateString('tr-TR')}
             </span>
             
             {notification.actionLabel && (
