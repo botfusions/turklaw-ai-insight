@@ -22,7 +22,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { subscriptionPlans } from '@/constants';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/UnifiedAuthContext';
 
 export default function Landing() {
   console.log('Landing component rendering...'); // Debug log

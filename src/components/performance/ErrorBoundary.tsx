@@ -14,6 +14,7 @@ interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
+  isContextError: boolean;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -23,14 +24,19 @@ export class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
+      isContextError: false,
     };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    const isContextError = error.message.includes('useAuth') || 
+                          error.message.includes('AuthProvider') ||
+                          error.message.includes('context');
+    
     return {
       hasError: true,
       error,
-      errorInfo: null,
+      isContextError,
     };
   }
 
@@ -51,6 +57,7 @@ export class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
+      isContextError: false,
     });
   };
 
@@ -63,6 +70,46 @@ export class ErrorBoundary extends Component<Props, State> {
       // Custom fallback UI
       if (this.props.fallback) {
         return this.props.fallback;
+      }
+
+      // Special handling for context errors
+      if (this.state.isContextError) {
+        return (
+          <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+            <Card className="max-w-lg w-full">
+              <CardHeader className="text-center">
+                <div className="mx-auto mb-4 p-3 bg-destructive/10 rounded-full w-fit">
+                  <AlertTriangle className="h-8 w-8 text-destructive" />
+                </div>
+                <CardTitle className="text-xl">Kimlik Doğrulama Hatası</CardTitle>
+                <CardDescription>
+                  Uygulama başlatılırken bir hata oluştu. Sayfayı yenileme deneyiniz.
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    onClick={this.handleRetry}
+                    className="flex-1"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Tekrar Dene
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={this.handleGoHome}
+                    className="flex-1"
+                  >
+                    <Home className="h-4 w-4 mr-2" />
+                    Ana Sayfaya Dön
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
       }
 
       // Default error UI

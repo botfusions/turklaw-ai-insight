@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/UnifiedAuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
