@@ -1,4 +1,7 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 export interface Notification {
   id: string;
@@ -14,6 +17,7 @@ export interface Notification {
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
+  loading: boolean;
   addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
@@ -24,65 +28,162 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    // Demo bildirimler
-    {
-      id: '1',
-      type: 'info',
-      title: 'Hoş geldiniz!',
-      message: 'TurkLaw AI platformuna hoş geldiniz. Hukuki araştırmalarınızı kolaylaştırmak için buradayız.',
-      timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5 dakika önce
-      read: false,
-    },
-    {
-      id: '2',
-      type: 'success',
-      title: 'Arama limitiniz yenilendi',
-      message: 'Aylık arama limitiniz sıfırlandı. Bu ay 50 arama hakkınız bulunuyor.',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 saat önce
-      read: false,
-      actionLabel: 'Arama Yap',
-      actionUrl: '/search',
-    },
-  ]);
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch notifications from Supabase
+  const fetchNotifications = useCallback(async () => {
+    if (!user) {
+      setNotifications([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedNotifications = data?.map(notif => ({
+        id: notif.id,
+        type: notif.type as 'info' | 'success' | 'warning' | 'error',
+        title: notif.title,
+        message: notif.message || undefined,
+        timestamp: new Date(notif.created_at || ''),
+        read: notif.read || false,
+        actionLabel: notif.action_label || undefined,
+        actionUrl: notif.action_url || undefined,
+      })) || [];
+
+      setNotifications(formattedNotifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      toast.error('Bildirimler yüklenirken hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // Set up real-time subscription
+  useEffect(() => {
+    if (!user) return;
+
+    fetchNotifications();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel(`notifications:user_id=eq.${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchNotifications]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
-    const newNotification: Notification = {
-      ...notification,
-      id: Date.now().toString(),
-      timestamp: new Date(),
-      read: false,
-    };
+  const addNotification = useCallback(async (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+    if (!user) return;
 
-    setNotifications(prev => [newNotification, ...prev]);
-  }, []);
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: user.id,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          action_label: notification.actionLabel,
+          action_url: notification.actionUrl,
+        });
 
-  const markAsRead = useCallback((id: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    );
-  }, []);
+      if (error) throw error;
+      // Real-time will update the local state
+    } catch (error) {
+      console.error('Error adding notification:', error);
+      toast.error('Bildirim eklenirken hata oluştu');
+    }
+  }, [user]);
 
-  const markAllAsRead = useCallback(() => {
-    setNotifications(prev => 
-      prev.map(n => ({ ...n, read: true }))
-    );
-  }, []);
+  const markAsRead = useCallback(async (id: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      // Real-time will update the local state
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      toast.error('Bildirim güncellenirken hata oluştu');
+    }
+  }, [user]);
+
+  const markAllAsRead = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', user.id)
+        .eq('read', false);
+
+      if (error) throw error;
+      // Real-time will update the local state
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      toast.error('Bildirimler güncellenirken hata oluştu');
+    }
+  }, [user]);
 
   const removeNotification = useCallback((id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   }, []);
 
-  const clearAll = useCallback(() => {
-    setNotifications([]);
-  }, []);
+  const clearAll = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      // Real-time will update the local state
+    } catch (error) {
+      console.error('Error clearing notifications:', error);
+      toast.error('Bildirimler silinirken hata oluştu');
+    }
+  }, [user]);
 
   return (
     <NotificationContext.Provider value={{
       notifications,
       unreadCount,
+      loading,
       addNotification,
       markAsRead,
       markAllAsRead,

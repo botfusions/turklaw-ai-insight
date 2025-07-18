@@ -7,6 +7,12 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { SearchCard } from "@/components/dashboard/SearchCard";
 import { SearchResults } from "@/components/dashboard/SearchResults";
+import { LiveSearchResults } from "@/components/dashboard/LiveSearchResults";
+import { QuickStatsWidget } from "@/components/dashboard/QuickStatsWidget";
+import { SystemStatus } from "@/components/system/SystemStatus";
+import { FloatingActionButton } from "@/components/mobile/FloatingActionButton";
+import { BottomSheet } from "@/components/mobile/BottomSheet";
+import { SmartSearchSuggestions } from "@/components/search/SmartSearchSuggestions";
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -23,6 +29,8 @@ const Dashboard = () => {
   // Enhanced state management
   const [searchQuery, setSearchQuery] = useState('');
   const [searchTime, setSearchTime] = useState(0);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   // Mock search results generator with enhanced data
   const generateMockResults = (query: string, count: number = 8) => {
@@ -142,24 +150,79 @@ const Dashboard = () => {
         
         <main className="dashboard-main">
           <div className="dashboard-content">
-            {/* Search Card */}
-            <SearchCard onSearch={handleSearch} />
-            
-            {/* Search Results */}
-            <SearchResults
-              results={currentResults}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-              loading={isSearching}
-              totalResults={searchResults.length}
-              searchTime={searchTime}
-              query={searchQuery}
-            />
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              {/* Left Column - Search and Results */}
+              <div className="lg:col-span-2 space-y-6">
+                <SearchCard onSearch={handleSearch} />
+                <SearchResults
+                  results={currentResults}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                  loading={isSearching}
+                  totalResults={searchResults.length}
+                  searchTime={searchTime}
+                  query={searchQuery}
+                />
+              </div>
+              
+              {/* Right Column - Widgets (Desktop) */}
+              <div className="hidden lg:block space-y-6">
+                <QuickStatsWidget />
+                <LiveSearchResults />
+                <SystemStatus />
+                <SmartSearchSuggestions 
+                  onSelect={(suggestion) => handleSearch(suggestion, {})} 
+                />
+              </div>
+            </div>
           </div>
         </main>
       </div>
       
+      {/* Mobile FAB */}
+      {isMobile && (
+        <FloatingActionButton
+          onSearchClick={() => setShowMobileSearch(true)}
+          onFilterClick={() => setShowMobileFilters(true)}
+          onVoiceSearchClick={() => {
+            // Voice search implementation would go here
+            toast.info('Sesli arama özelliği yakında geliyor!');
+          }}
+        />
+      )}
+
+      {/* Mobile Bottom Sheets */}
+      <BottomSheet
+        isOpen={showMobileSearch}
+        onClose={() => setShowMobileSearch(false)}
+        title="Hızlı Arama"
+        snapPoints={[40, 70, 90]}
+      >
+        <div className="space-y-6">
+          <SmartSearchSuggestions 
+            onSelect={(suggestion) => {
+              handleSearch(suggestion, {});
+              setShowMobileSearch(false);
+            }} 
+          />
+          <QuickStatsWidget />
+        </div>
+      </BottomSheet>
+
+      <BottomSheet
+        isOpen={showMobileFilters}
+        onClose={() => setShowMobileFilters(false)}
+        title="Sistem Durumu & Canlı Aktivite"
+        snapPoints={[50, 80]}
+      >
+        <div className="space-y-6">
+          <SystemStatus />
+          <LiveSearchResults />
+        </div>
+      </BottomSheet>
+
       {/* Mobile overlay */}
       {isMobile && sidebarOpen && (
         <div 

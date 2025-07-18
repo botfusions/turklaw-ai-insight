@@ -56,6 +56,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          action_label: string | null
+          action_url: string | null
+          created_at: string | null
+          id: string
+          message: string | null
+          read: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_label?: string | null
+          action_url?: string | null
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          read?: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          action_label?: string | null
+          action_url?: string | null
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          read?: boolean | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -121,6 +157,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saved_searches: {
+        Row: {
+          created_at: string | null
+          filters: Json | null
+          id: string
+          name: string | null
+          query: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          filters?: Json | null
+          id?: string
+          name?: string | null
+          query: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          filters?: Json | null
+          id?: string
+          name?: string | null
+          query?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      search_suggestions: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          popularity_score: number | null
+          suggestion: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          popularity_score?: number | null
+          suggestion: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          popularity_score?: number | null
+          suggestion?: string
+        }
+        Relationships: []
       }
       subscription_plans: {
         Row: {
@@ -189,6 +276,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_subscriptions: {
+        Row: {
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          subscription_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          subscription_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          subscription_type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
