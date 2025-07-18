@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -11,6 +10,7 @@ import { SearchResults } from "@/components/dashboard/SearchResults";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Crown, Zap, Building } from "lucide-react";
+import { FloatingActionButton } from "@/components/mobile/FloatingActionButton";
 
 const Dashboard = () => {
   const { user, profile, authLoading, actionLoading } = useAuth();
@@ -24,6 +24,14 @@ const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchTime, setSearchTime] = useState(0);
+
+  // Enhanced search with progressive loading
+  const [searchLoadingSteps, setSearchLoadingSteps] = useState([
+    { id: 'query', label: 'Sorgu analiz ediliyor...', status: 'pending' as const },
+    { id: 'database', label: 'Veritabanında aranıyor...', status: 'pending' as const },
+    { id: 'filter', label: 'Sonuçlar filtreleniyor...', status: 'pending' as const },
+    { id: 'rank', label: 'İlgi düzeyine göre sıralanıyor...', status: 'pending' as const }
+  ]);
 
   // Mock search results generator
   const generateMockResults = (query: string, count: number = 8) => {
@@ -59,8 +67,28 @@ const Dashboard = () => {
     setSearchQuery(query);
     const startTime = performance.now();
     
+    // Reset loading steps
+    setSearchLoadingSteps(steps => 
+      steps.map(step => ({ ...step, status: 'pending' as const }))
+    );
+    
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Simulate progressive loading steps
+      for (let i = 0; i < searchLoadingSteps.length; i++) {
+        setSearchLoadingSteps(prev => 
+          prev.map((step, index) => 
+            index === i ? { ...step, status: 'loading' as const } : step
+          )
+        );
+        
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        setSearchLoadingSteps(prev => 
+          prev.map((step, index) => 
+            index === i ? { ...step, status: 'completed' as const } : step
+          )
+        );
+      }
       
       const results = generateMockResults(query, Math.floor(Math.random() * 20) + 8);
       setSearchResults(results);
@@ -73,6 +101,9 @@ const Dashboard = () => {
       toast.success(`${results.length} sonuç bulundu!`);
     } catch (error) {
       toast.error('Arama sırasında bir hata oluştu');
+      setSearchLoadingSteps(prev => 
+        prev.map(step => ({ ...step, status: 'error' as const }))
+      );
     } finally {
       setIsSearching(false);
     }
@@ -165,6 +196,35 @@ const Dashboard = () => {
               {/* Left Column - Search and Results */}
               <div className="lg:col-span-2 space-y-6">
                 <SearchCard onSearch={handleSearch} />
+                
+                {/* Progressive Loading Display */}
+                {isSearching && (
+                  <div className="flex justify-center">
+                    <div className="w-full max-w-md">
+                      <div className="space-y-3">
+                        {searchLoadingSteps.map((step) => (
+                          <div key={step.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                            <div className={`w-3 h-3 rounded-full ${
+                              step.status === 'loading' ? 'bg-primary animate-pulse' :
+                              step.status === 'completed' ? 'bg-green-500' :
+                              step.status === 'error' ? 'bg-red-500' :
+                              'bg-muted-foreground/30'
+                            }`} />
+                            <span className={`text-sm ${
+                              step.status === 'loading' ? 'text-primary font-medium' :
+                              step.status === 'completed' ? 'text-green-600' :
+                              step.status === 'error' ? 'text-red-600' :
+                              'text-muted-foreground'
+                            }`}>
+                              {step.label}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <SearchResults
                   results={currentResults}
                   currentPage={currentPage}
@@ -217,6 +277,15 @@ const Dashboard = () => {
           </div>
         </main>
       </div>
+      
+      {/* Mobile FAB */}
+      {isMobile && (
+        <FloatingActionButton
+          onSearch={handleSearch}
+          onVoiceSearchClick={() => console.log('Voice search')}
+          onFilterClick={() => console.log('Filters')}
+        />
+      )}
       
       {/* Mobile overlay */}
       {isMobile && sidebarOpen && (
