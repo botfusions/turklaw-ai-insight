@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, AlertCircle } from 'lucide-react';
-import { useHybridMevzuatSearch } from './hooks/useHybridMevzuatSearch';
+import { useAIEnhancedMevzuatSearch } from './hooks/useAIEnhancedMevzuatSearch';
+import { AIEnhancementIndicator } from './components/AIEnhancementIndicator';
 import { SearchInput } from './SearchInput';
 import { SearchResults } from './SearchResults';
 import { StatsCards } from './components/StatsCards';
@@ -39,14 +40,15 @@ export const MevzuatSearchHybrid: React.FC<MevzuatSearchHybridProps> = ({
     dataSource, 
     hasSearched,
     performanceInfo,
+    aiEnhancement,
+    aiLoading,
+    aiEnabled,
+    searchHistory: aiSearchHistory,
     searchMevzuat,
     clearError,
-    clearSearchCache
-  } = useHybridMevzuatSearch({
-    cacheEnabled: true,
-    fallbackEnabled: true,
-    primaryTimeout: 10000
-  });
+    clearSearchCache,
+    toggleAIEnhancement
+  } = useAIEnhancedMevzuatSearch();
 
   // Auto-search on mount
   useEffect(() => {
@@ -125,10 +127,20 @@ export const MevzuatSearchHybrid: React.FC<MevzuatSearchHybridProps> = ({
               </div>
             </div>
 
+            {/* AI Enhancement Indicator */}
+            <div className="mt-4">
+              <AIEnhancementIndicator 
+                enabled={aiEnabled}
+                onToggle={toggleAIEnhancement}
+                enhancement={aiEnhancement}
+                loading={aiLoading}
+              />
+            </div>
+
             {/* Search History */}
             {showHistory && (
               <SearchHistoryPills
-                searchHistory={searchHistory}
+                searchHistory={aiSearchHistory.length > 0 ? aiSearchHistory : searchHistory}
                 onSelectQuery={handleSelectHistoryQuery}
               />
             )}
