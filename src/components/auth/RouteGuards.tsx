@@ -1,3 +1,4 @@
+
 import { useAuth } from '@/hooks/useAuth';
 import { RouteGuardResult, PlanType } from '@/types/routes';
 
@@ -45,19 +46,12 @@ export const useRouteGuards = () => {
     return { allowed: true };
   };
 
-  // Removed searchLimitGuard as credit system is removed
-  const searchLimitGuard = (): RouteGuardResult => {
-    // No search limits anymore - always allow
-    return { allowed: true };
-  };
-
   const adminGuard = (): RouteGuardResult => {
     if (!user || !profile) {
       return { allowed: false, redirectTo: '/login', reason: 'not_authenticated' };
     }
 
-    // For now, admin is determined by plan type
-    // In a real app, you'd have a separate admin role system
+    // Admin access is determined by premium plan
     if (profile.plan !== 'premium') {
       return { 
         allowed: false, 
@@ -99,7 +93,6 @@ export const useRouteGuards = () => {
   return {
     emailVerificationGuard,
     subscriptionGuard,
-    searchLimitGuard,
     adminGuard,
     guestOnlyGuard,
     maintenanceGuard

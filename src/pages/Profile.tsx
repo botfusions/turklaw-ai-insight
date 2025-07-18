@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Header } from '@/components/layout/Header';
@@ -37,16 +38,16 @@ export default function Profile() {
 
   const getPlanBadgeVariant = (plan: string) => {
     switch (plan) {
-      case 'pro': return 'default';
-      case 'enterprise': return 'secondary';
+      case 'premium': return 'default';
+      case 'basic': return 'secondary';
       default: return 'outline';
     }
   };
 
   const getPlanDisplayName = (plan: string) => {
     switch (plan) {
-      case 'pro': return 'Pro';
-      case 'enterprise': return 'Kurumsal';
+      case 'premium': return 'Premium';
+      case 'basic': return 'Temel';
       default: return 'Ücretsiz';
     }
   };
@@ -158,18 +159,18 @@ export default function Profile() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-4 border rounded-lg">
                   <div className="text-2xl font-bold text-primary">
-                    ∞
+                    Sınırsız
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Arama Hakkı
+                    Arama İmkanı
                   </div>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
                   <div className="text-2xl font-bold text-primary">
-                    {profile?.plan === 'premium' ? 'Premium' : 'Temel'}
+                    {getPlanDisplayName(profile?.plan || 'free')}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Mevcut Plan
+                    Aktif Plan
                   </div>
                 </div>
               </div>

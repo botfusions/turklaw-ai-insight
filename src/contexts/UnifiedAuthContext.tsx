@@ -15,6 +15,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [initialized, setInitialized] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
 
   const fetchProfile = useCallback(async (userId: string) => {
     try {
@@ -23,11 +24,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('UnifiedAuthContext: Error fetching profile:', error);
-        // Don't throw error, just set profile to null
+        // Don't set error if user profile doesn't exist yet
+        if (!error.message.includes('No rows')) {
+          throw error;
+        }
         setProfile(null);
         return;
       }
@@ -203,43 +207,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     let mounted = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return;
-        
-        console.log('Auth state change:', event, session?.user?.id);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Use setTimeout to avoid blocking the auth state change
-          setTimeout(() => {
-            if (mounted) {
-              fetchProfile(session.user.id);
+    const initializeAuth = async () => {
+      try {
+        // Set up auth state listener first
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            if (!mounted) return;
+            
+            console.log('Auth state change:', event, session?.user?.id);
+            setUser(session?.user ?? null);
+            
+            if (session?.user) {
+              // Use setTimeout to avoid blocking the auth state change
+              setTimeout(() => {
+                if (mounted) {
+                  fetchProfile(session.user.id);
+                }
+              }, 0);
+            } else {
+              setProfile(null);
             }
-          }, 0);
-        } else {
-          setProfile(null);
-        }
-      }
-    );
+          }
+        );
 
-    // Initialize auth state
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      
-      console.log('Initial session check:', session?.user?.id);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
+        // Then get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting initial session:', error);
+          setInitError(error.message);
+        } else {
+          console.log('Initial session check:', session?.user?.id);
+          setUser(session?.user ?? null);
+          if (session?.user) {
+            fetchProfile(session.user.id);
+          }
+        }
+        
+        setInitialized(true);
+
+        return () => {
+          mounted = false;
+          subscription.unsubscribe();
+        };
+      } catch (error: any) {
+        console.error('Auth initialization error:', error);
+        setInitError(error.message);
+        setInitialized(true);
       }
-      setInitialized(true);
-    });
+    };
+
+    initializeAuth();
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
     };
   }, [fetchProfile]);
+
+  // If there's an initialization error, provide a fallback
+  if (initError) {
+    console.error('Auth context initialization failed:', initError);
+  }
 
   const value: AuthContextType = {
     user,
