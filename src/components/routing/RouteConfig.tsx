@@ -110,7 +110,6 @@ export const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute 
             protection={RouteProtectionLevel.AUTHENTICATED}
-            requiresSearchLimit={true}
           >
             <SearchPage />
           </ProtectedRoute>
