@@ -1,2 +1,2 @@
 
-export { useAuth } from '@/contexts/UnifiedAuthContext';
+export { useAuth } from '@/contexts/AuthContext';

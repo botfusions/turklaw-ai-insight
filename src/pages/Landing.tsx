@@ -23,9 +23,8 @@ import {
   Sparkles
 } from 'lucide-react';
 import { subscriptionPlans } from '@/constants';
-import { useAuth } from '@/contexts/UnifiedAuthContext';
 
-// Loading skeleton component
+// Comprehensive loading skeleton component
 const LoadingSkeleton = () => (
   <div className="min-h-screen bg-background">
     <Header />
@@ -46,8 +45,8 @@ const LoadingSkeleton = () => (
   </div>
 );
 
-// Error fallback component
-const ErrorFallback = () => (
+// Robust error fallback component
+const ErrorFallback = ({ error }: { error?: string }) => (
   <div className="min-h-screen bg-background">
     <Header />
     <section className="relative py-20 overflow-hidden">
@@ -61,6 +60,13 @@ const ErrorFallback = () => (
             Yargıtay, Danıştay ve Emsal kararlarını saniyeler içinde bulun. 
             100,000+ karar, AI destekli analiz, mobil uyumlu platform.
           </p>
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
+              <p className="text-destructive text-sm">
+                Yükleme hatası: {error}
+              </p>
+            </div>
+          )}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
@@ -81,27 +87,32 @@ const ErrorFallback = () => (
 export default function Landing() {
   const navigate = useNavigate();
   
-  // Safe auth state access with error handling
+  // Enhanced auth state access with robust error handling
   let authState = {
     user: null,
     profile: null,
     loading: false,
     initialized: false,
-    error: false
+    error: false,
+    errorMessage: ''
   };
 
   try {
+    // Dynamically import auth to prevent crashes
+    const { useAuth } = require('@/hooks/useAuth');
     const auth = useAuth();
     authState = {
       user: auth.user,
       profile: auth.profile,
       loading: auth.loading,
       initialized: auth.initialized,
-      error: false
+      error: false,
+      errorMessage: ''
     };
   } catch (error) {
     console.error('Landing: Auth context error:', error);
     authState.error = true;
+    authState.errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
   }
 
   // Show loading skeleton while auth is initializing
@@ -111,9 +122,10 @@ export default function Landing() {
 
   // Show error fallback if auth context failed
   if (authState.error) {
-    return <ErrorFallback />;
+    return <ErrorFallback error={authState.errorMessage} />;
   }
 
+  // Static data for components
   const features = [
     {
       icon: Search,
@@ -158,25 +170,7 @@ export default function Landing() {
     }
   ];
 
-  const advancedFeatures = [
-    {
-      icon: TrendingUp,
-      title: 'Analitik Dashboard',
-      description: 'Aramalarınızı takip edin ve verimliliğinizi artırın'
-    },
-    {
-      icon: Award,
-      title: 'Premium Özellikler',
-      description: 'AI destekli analiz ve gelişmiş filtreleme seçenekleri'
-    },
-    {
-      icon: Sparkles,
-      title: 'Kişiselleştirilmiş Deneyim',
-      description: 'Size özel öneriler ve akıllı arama geçmişi'
-    }
-  ];
-
-  // Check if user is authenticated and has profile
+  // Check if user is authenticated
   const isAuthenticated = authState.user && authState.profile;
 
   return (
@@ -211,38 +205,6 @@ export default function Landing() {
                 <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-8 border border-border shadow-2xl">
                   <DashboardPreview />
                 </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Advanced Features for Authenticated Users */}
-          <section className="py-20 bg-muted/30">
-            <div className="container mx-auto px-4">
-              <div className="text-center mb-16">
-                <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                  Gelişmiş Özellikler
-                </h2>
-                <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                  Size özel hazırlanmış premium araçlar ve analizler
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {advancedFeatures.map((feature, index) => (
-                  <Card key={index} className="bg-card shadow-lg hover:shadow-xl transition-all duration-300">
-                    <CardHeader className="text-center">
-                      <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <feature.icon className="h-8 w-8 text-primary" />
-                      </div>
-                      <CardTitle className="text-xl">{feature.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription className="text-center">
-                        {feature.description}
-                      </CardDescription>
-                    </CardContent>
-                  </Card>
-                ))}
               </div>
             </div>
           </section>

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/UnifiedAuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { RouteProtectionLevel } from '@/types/routes';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { RouteErrorDisplay } from '@/components/ui/RouteErrorDisplay';
@@ -20,12 +20,13 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
 }) => {
   const location = useLocation();
 
-  // Safe auth context access with error handling
+  // Safe auth context access with comprehensive error handling
   let authState = {
     user: null,
     initialized: false,
     loading: false,
-    error: false
+    error: false,
+    errorMessage: ''
   };
 
   try {
@@ -34,11 +35,13 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
       user: auth.user,
       initialized: auth.initialized,
       loading: auth.loading,
-      error: false
+      error: false,
+      errorMessage: ''
     };
   } catch (error) {
     console.error('ProtectedRoute: Auth context error:', error);
     authState.error = true;
+    authState.errorMessage = error instanceof Error ? error.message : 'Auth context hatası';
   }
 
   // Show error state if auth context failed
@@ -46,7 +49,7 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
     return (
       <RouteErrorDisplay
         title="Yetkilendirme Hatası"
-        message="Kullanıcı oturumu kontrol edilemiyor. Lütfen sayfayı yenileyin."
+        message={`Kullanıcı oturumu kontrol edilemiyor: ${authState.errorMessage}`}
         redirectTo="/login"
         redirectText="Giriş Yap"
       />
