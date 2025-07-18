@@ -23,17 +23,22 @@ export function DashboardHeader({ onMenuClick, showMenuButton = false }: Dashboa
   
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Kullanıcı';
   const userInitials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const currentPlan = profile?.plan || 'free';
+  
+  const planNames = {
+    free: 'Ücretsiz',
+    basic: 'Temel', 
+    premium: 'Premium',
+    enterprise: 'Kurumsal'
+  };
 
   return (
     <header className="relative bg-gradient-to-r from-primary/5 via-background to-primary/5 border-b border-border/50 backdrop-blur-sm">
-      {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10 opacity-30"></div>
       
       <div className="relative px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
-          {/* Sol: Enhanced Logo + Dashboard */}
           <div className="flex items-center gap-3 sm:gap-6">
-            {/* Mobile Menu Button */}
             <MobileNavigation />
             
             <div className="flex items-center gap-3">
@@ -53,9 +58,7 @@ export function DashboardHeader({ onMenuClick, showMenuButton = false }: Dashboa
             </div>
           </div>
 
-          {/* Sağ: Quick Actions + Notifications + User Profile */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Quick Search - Hidden on mobile */}
             <Button
               variant="ghost"
               size="sm"
@@ -65,10 +68,8 @@ export function DashboardHeader({ onMenuClick, showMenuButton = false }: Dashboa
               <span className="text-sm">Hızlı Arama</span>
             </Button>
 
-            {/* Notifications */}
             <NotificationBell />
 
-            {/* User Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
@@ -81,9 +82,14 @@ export function DashboardHeader({ onMenuClick, showMenuButton = false }: Dashboa
                       {userInitials}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden sm:inline text-sm font-medium text-foreground">
-                    {displayName}
-                  </span>
+                  <div className="hidden sm:flex flex-col items-start">
+                    <span className="text-sm font-medium text-foreground">
+                      {displayName}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {planNames[currentPlan as keyof typeof planNames]}
+                    </span>
+                  </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
@@ -93,6 +99,9 @@ export function DashboardHeader({ onMenuClick, showMenuButton = false }: Dashboa
                 <div className="px-3 py-2 border-b border-border/50">
                   <p className="text-sm font-medium text-foreground">{displayName}</p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  <p className="text-xs text-primary font-medium">
+                    {planNames[currentPlan as keyof typeof planNames]}
+                  </p>
                 </div>
                 <DropdownMenuItem className="hover:bg-accent/10 transition-colors">
                   <User className="mr-2 h-4 w-4" />
@@ -100,7 +109,7 @@ export function DashboardHeader({ onMenuClick, showMenuButton = false }: Dashboa
                 </DropdownMenuItem>
                 <DropdownMenuItem className="hover:bg-accent/10 transition-colors">
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Ayarlar</span>
+                  <span>Abonelik Ayarları</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-border/50" />
                 <DropdownMenuItem 

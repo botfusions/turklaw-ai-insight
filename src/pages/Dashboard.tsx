@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from "@/contexts/UnifiedAuthContext";
+import React, { useState } from 'react';
+import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -8,77 +8,48 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { SearchCard } from "@/components/dashboard/SearchCard";
 import { SearchResults } from "@/components/dashboard/SearchResults";
-import { LiveSearchResults } from "@/components/dashboard/LiveSearchResults";
-import { QuickStatsWidget } from "@/components/dashboard/QuickStatsWidget";
-import { SystemStatus } from "@/components/system/SystemStatus";
-import { FloatingActionButton } from "@/components/mobile/FloatingActionButton";
-import { BottomSheet } from "@/components/mobile/BottomSheet";
-import { SmartSearchSuggestions } from "@/components/search/SmartSearchSuggestions";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Crown, Zap, Building } from "lucide-react";
 
 const Dashboard = () => {
-  console.log('Dashboard page rendering...'); // Debug log
-  
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
-  console.log('Dashboard auth state:', { user: !!user, loading }); // Debug log
-
-  // State management
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isSearching, setIsSearching] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Enhanced state management
   const [searchQuery, setSearchQuery] = useState('');
   const [searchTime, setSearchTime] = useState(0);
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
-  // Mock search results generator with enhanced data
+  // Mock search results generator
   const generateMockResults = (query: string, count: number = 8) => {
-    const courts = ['Yargıtay', 'Danıştay', 'Anayasa Mahkemesi', 'Bölge Adliye Mahkemesi', 'Asliye Hukuk Mahkemesi'];
-    const keywords = ['hukuk', 'karar', 'emsal', 'dava', 'mahkeme', 'mevzuat', 'yargı', 'adalet'];
-    
+    const courts = ['Yargıtay', 'Danıştay', 'Anayasa Mahkemesi', 'Bölge Adliye Mahkemesi'];
     const mockResults = [];
+    
     for (let i = 1; i <= count; i++) {
       const randomCourt = courts[Math.floor(Math.random() * courts.length)];
-      const relevanceScore = Math.random() * 10;
-      const citationCount = Math.floor(Math.random() * 50);
-      const isNew = Math.random() > 0.8;
-      const isPopular = Math.random() > 0.7;
-      
       mockResults.push({
         id: `result-${i}`,
         title: `${query} ile İlgili ${randomCourt} Kararı ${i}`,
         court: randomCourt,
         department: `${Math.floor(Math.random() * 15) + 1}. Daire`,
         date: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        summary: `${query} konusunda verilen bu karar, hukuki durumu detaylı şekilde ele almakta ve ilgili mevzuat çerçevesinde değerlendirmeler sunmaktadır. Bu kararda önemli içtihat değeri olan hususlar bulunmaktadır ve benzeri davalar için emsal teşkil etmektedir.`,
-        relevanceScore: Math.round(relevanceScore * 10) / 10,
-        citationCount: citationCount,
-        isNew: isNew,
-        isPopular: isPopular,
-        keywords: keywords.slice(0, Math.floor(Math.random() * 4) + 2)
+        summary: `${query} konusunda verilen bu karar, hukuki durumu detaylı şekilde ele almaktadır.`,
+        relevanceScore: Math.round(Math.random() * 10 * 10) / 10,
+        citationCount: Math.floor(Math.random() * 50),
+        isNew: Math.random() > 0.8,
+        isPopular: Math.random() > 0.7,
+        keywords: ['hukuk', 'karar', 'emsal']
       });
     }
     return mockResults;
   };
 
-  // Enhanced search handler
-  const handleSearch = async (query: string, filters: { 
-    court?: string; 
-    department?: string; 
-    dateRange?: string;
-    legalField?: string;
-    documentType?: string;
-    dateFrom?: Date;
-    dateTo?: Date;
-  }) => {
-    console.log('Dashboard handleSearch called with:', { query, filters }); // Debug log
-    
+  const handleSearch = async (query: string, filters: any = {}) => {
     if (!query.trim()) {
       toast.error('Lütfen bir arama terimi girin');
       return;
@@ -89,38 +60,31 @@ const Dashboard = () => {
     const startTime = performance.now();
     
     try {
-      // Simulate API call with variable delay for realism
-      const delay = Math.random() * 800 + 200; // 200-1000ms
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      const results = generateMockResults(query, Math.floor(Math.random() * 20) + 8); // 8-28 results
+      const results = generateMockResults(query, Math.floor(Math.random() * 20) + 8);
       setSearchResults(results);
-      setTotalPages(Math.ceil(results.length / 6)); // 6 sonuç per sayfa
+      setTotalPages(Math.ceil(results.length / 6));
       setCurrentPage(1);
       
       const endTime = performance.now();
-      const searchTime = (endTime - startTime) / 1000;
-      setSearchTime(searchTime);
+      setSearchTime((endTime - startTime) / 1000);
       
       toast.success(`${results.length} sonuç bulundu!`);
     } catch (error) {
       toast.error('Arama sırasında bir hata oluştu');
-      console.error('Search error:', error);
     } finally {
       setIsSearching(false);
     }
   };
 
-  // Page change handler
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    // Scroll to top of results
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Loading state
   if (loading) {
-    console.log('Dashboard showing loading state...'); // Debug log
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -132,17 +96,17 @@ const Dashboard = () => {
 
   // Auth check
   if (!user) {
-    console.log('Dashboard: No user, redirecting to login...'); // Debug log
     navigate('/login');
     return null;
   }
 
-  console.log('Dashboard about to render main content...'); // Debug log
-
-  // Get current page results
   const resultsPerPage = 6;
   const startIndex = (currentPage - 1) * resultsPerPage;
   const currentResults = searchResults.slice(startIndex, startIndex + resultsPerPage);
+
+  // Subscription upgrade prompt
+  const currentPlan = profile?.plan || 'free';
+  const isFreePlan = currentPlan === 'free';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-muted/40">
@@ -156,13 +120,48 @@ const Dashboard = () => {
           isOpen={sidebarOpen} 
           onClose={() => setSidebarOpen(false)}
           isMobile={isMobile}
-          onSearch={(query) => handleSearch(query, {})}
+          onSearch={handleSearch}
         />
         
         <main className="dashboard-main">
           <div className="dashboard-content">
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            {/* Subscription Upgrade Banner for Free Users */}
+            {isFreePlan && (
+              <Card className="mb-6 border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Crown className="h-5 w-5 text-primary" />
+                    Premium Özellikleri Keşfedin
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground">
+                        Gelişmiş arama filtreleri, sınırsız erişim ve premium destek için planınızı yükseltin.
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate('/subscription')}
+                      >
+                        Planları Görüntüle
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={() => navigate('/subscription')}
+                      >
+                        Premium'a Geç
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left Column - Search and Results */}
               <div className="lg:col-span-2 space-y-6">
                 <SearchCard onSearch={handleSearch} />
@@ -178,62 +177,47 @@ const Dashboard = () => {
                 />
               </div>
               
-              {/* Right Column - Widgets (Desktop) */}
+              {/* Right Column - Plan Info */}
               <div className="hidden lg:block space-y-6">
-                <QuickStatsWidget />
-                <LiveSearchResults />
-                <SystemStatus />
-                <SmartSearchSuggestions 
-                  onSelect={(suggestion) => handleSearch(suggestion, {})} 
-                />
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Mevcut Planınız</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        {currentPlan === 'free' && <Zap className="h-5 w-5 text-blue-500" />}
+                        {currentPlan === 'premium' && <Crown className="h-5 w-5 text-yellow-500" />}
+                        {currentPlan === 'enterprise' && <Building className="h-5 w-5 text-purple-500" />}
+                        <span className="font-medium">
+                          {currentPlan === 'free' && 'Ücretsiz Plan'}
+                          {currentPlan === 'premium' && 'Premium Plan'}
+                          {currentPlan === 'enterprise' && 'Kurumsal Plan'}
+                        </span>
+                      </div>
+                      
+                      <div className="text-sm text-muted-foreground">
+                        {currentPlan === 'free' && 'Temel özelliklere erişim'}
+                        {currentPlan === 'premium' && 'Gelişmiş özellikler ve sınırsız arama'}
+                        {currentPlan === 'enterprise' && 'Tüm özellikler ve özel destek'}
+                      </div>
+                      
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => navigate('/subscription')}
+                      >
+                        Plan Yönetimi
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>
         </main>
       </div>
       
-      {/* Mobile FAB */}
-      {isMobile && (
-        <FloatingActionButton
-          onSearchClick={() => setShowMobileSearch(true)}
-          onFilterClick={() => setShowMobileFilters(true)}
-          onVoiceSearchClick={() => {
-            // Voice search implementation would go here
-            toast.info('Sesli arama özelliği yakında geliyor!');
-          }}
-        />
-      )}
-
-      {/* Mobile Bottom Sheets */}
-      <BottomSheet
-        isOpen={showMobileSearch}
-        onClose={() => setShowMobileSearch(false)}
-        title="Hızlı Arama"
-        snapPoints={[40, 70, 90]}
-      >
-        <div className="space-y-6">
-          <SmartSearchSuggestions 
-            onSelect={(suggestion) => {
-              handleSearch(suggestion, {});
-              setShowMobileSearch(false);
-            }} 
-          />
-          <QuickStatsWidget />
-        </div>
-      </BottomSheet>
-
-      <BottomSheet
-        isOpen={showMobileFilters}
-        onClose={() => setShowMobileFilters(false)}
-        title="Sistem Durumu & Canlı Aktivite"
-        snapPoints={[50, 80]}
-      >
-        <div className="space-y-6">
-          <SystemStatus />
-          <LiveSearchResults />
-        </div>
-      </BottomSheet>
-
       {/* Mobile overlay */}
       {isMobile && sidebarOpen && (
         <div 
