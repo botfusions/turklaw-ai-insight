@@ -1,7 +1,9 @@
+
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { DashboardPreview } from '@/components/dashboard/DashboardPreview';
@@ -21,11 +23,96 @@ import {
   Sparkles
 } from 'lucide-react';
 import { subscriptionPlans } from '@/constants';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/UnifiedAuthContext';
+
+// Loading skeleton component
+const LoadingSkeleton = () => (
+  <div className="min-h-screen bg-background">
+    <Header />
+    <section className="relative py-20 overflow-hidden">
+      <div className="container mx-auto px-4">
+        <div className="max-w-4xl mx-auto text-center space-y-6">
+          <Skeleton className="h-8 w-96 mx-auto" />
+          <Skeleton className="h-16 w-full max-w-2xl mx-auto" />
+          <Skeleton className="h-6 w-full max-w-3xl mx-auto" />
+          <div className="flex justify-center gap-4">
+            <Skeleton className="h-12 w-32" />
+            <Skeleton className="h-12 w-32" />
+          </div>
+        </div>
+      </div>
+    </section>
+    <Footer />
+  </div>
+);
+
+// Error fallback component
+const ErrorFallback = () => (
+  <div className="min-h-screen bg-background">
+    <Header />
+    <section className="relative py-20 overflow-hidden">
+      <div className="container mx-auto px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
+            Türk Hukukunda
+            <span className="text-primary block">AI Destekli Araştırma</span>
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Yargıtay, Danıştay ve Emsal kararlarını saniyeler içinde bulun. 
+            100,000+ karar, AI destekli analiz, mobil uyumlu platform.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              size="lg" 
+              onClick={() => window.location.href = '/register'}
+              className="bg-primary hover:bg-primary/90 text-lg px-8 py-6"
+            >
+              Ücretsiz Deneyin
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <Footer />
+  </div>
+);
 
 export default function Landing() {
   const navigate = useNavigate();
-  const { user, profile, loading } = useAuth();
+  
+  // Safe auth state access with error handling
+  let authState = {
+    user: null,
+    profile: null,
+    loading: false,
+    initialized: false,
+    error: false
+  };
+
+  try {
+    const auth = useAuth();
+    authState = {
+      user: auth.user,
+      profile: auth.profile,
+      loading: auth.loading,
+      initialized: auth.initialized,
+      error: false
+    };
+  } catch (error) {
+    console.error('Landing: Auth context error:', error);
+    authState.error = true;
+  }
+
+  // Show loading skeleton while auth is initializing
+  if (!authState.error && (!authState.initialized || authState.loading)) {
+    return <LoadingSkeleton />;
+  }
+
+  // Show error fallback if auth context failed
+  if (authState.error) {
+    return <ErrorFallback />;
+  }
 
   const features = [
     {
@@ -89,11 +176,14 @@ export default function Landing() {
     }
   ];
 
+  // Check if user is authenticated and has profile
+  const isAuthenticated = authState.user && authState.profile;
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
-      {user && profile ? (
+      {isAuthenticated ? (
         // Authenticated User View
         <>
           {/* Personalized Hero Section */}

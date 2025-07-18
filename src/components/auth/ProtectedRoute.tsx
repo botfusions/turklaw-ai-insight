@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/UnifiedAuthContext';
 import { RouteProtectionLevel } from '@/types/routes';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { RouteErrorDisplay } from '@/components/ui/RouteErrorDisplay';
+import { ErrorBoundary } from '@/components/performance/ErrorBoundary';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,31 +13,36 @@ interface ProtectedRouteProps {
   fallbackRoute?: string;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({ 
   children,
   protection = RouteProtectionLevel.AUTHENTICATED,
   fallbackRoute = '/login'
 }) => {
   const location = useLocation();
 
-  // Use try-catch to handle auth context errors gracefully
-  let user = null;
-  let initialized = false;
-  let loading = false;
-  let authError = false;
+  // Safe auth context access with error handling
+  let authState = {
+    user: null,
+    initialized: false,
+    loading: false,
+    error: false
+  };
 
   try {
-    const authData = useAuth();
-    user = authData.user;
-    initialized = authData.initialized;
-    loading = authData.loading;
+    const auth = useAuth();
+    authState = {
+      user: auth.user,
+      initialized: auth.initialized,
+      loading: auth.loading,
+      error: false
+    };
   } catch (error) {
     console.error('ProtectedRoute: Auth context error:', error);
-    authError = true;
+    authState.error = true;
   }
 
   // Show error state if auth context failed
-  if (authError) {
+  if (authState.error) {
     return (
       <RouteErrorDisplay
         title="Yetkilendirme Hatası"
@@ -48,7 +54,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Show loading while checking auth state
-  if (!initialized || loading) {
+  if (!authState.initialized || authState.loading) {
     return <LoadingSpinner message="Yetkilendirme kontrol ediliyor..." />;
   }
 
@@ -58,13 +64,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       return <>{children}</>;
 
     case RouteProtectionLevel.GUEST_ONLY:
-      if (user && initialized) {
+      if (authState.user && authState.initialized) {
         return <Navigate to="/dashboard" replace />;
       }
       return <>{children}</>;
 
     case RouteProtectionLevel.AUTHENTICATED:
-      if (!user) {
+      if (!authState.user) {
         return <Navigate to={fallbackRoute} state={{ from: location }} replace />;
       }
       return <>{children}</>;
@@ -72,4 +78,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     default:
       return <>{children}</>;
   }
+};
+
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = (props) => {
+  return (
+    <ErrorBoundary>
+      <ProtectedRouteContent {...props} />
+    </ErrorBoundary>
+  );
 };

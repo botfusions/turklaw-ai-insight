@@ -19,7 +19,7 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  private maxRetries = 3;
+  private maxRetries = 2;
   private retryTimeout: NodeJS.Timeout | null = null;
 
   constructor(props: Props) {
@@ -42,7 +42,8 @@ export class ErrorBoundary extends Component<Props, State> {
                           error.message.includes('undefined') ||
                           error.message.includes('Cannot read') ||
                           error.stack?.includes('useAuth') ||
-                          error.stack?.includes('AuthContext');
+                          error.stack?.includes('AuthContext') ||
+                          error.stack?.includes('UnifiedAuthContext');
     
     return {
       hasError: true,
@@ -69,7 +70,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   scheduleRetry = () => {
-    const delay = Math.min(1000 * Math.pow(2, this.state.retryCount), 5000); // Exponential backoff, max 5s
+    const delay = Math.min(1000 * Math.pow(2, this.state.retryCount), 3000); // Exponential backoff, max 3s
     
     this.retryTimeout = setTimeout(() => {
       console.log(`ErrorBoundary: Auto-retrying (${this.state.retryCount + 1}/${this.maxRetries})`);
@@ -126,12 +127,12 @@ export class ErrorBoundary extends Component<Props, State> {
                   <AlertTriangle className="h-8 w-8 text-destructive" />
                 </div>
                 <CardTitle className="text-xl">
-                  {isAutoRetrying ? 'Yeniden Deneniyor...' : 'Yükleme Hatası'}
+                  {isAutoRetrying ? 'Otomatik Yeniden Deneniyor...' : 'Uygulama Başlatma Hatası'}
                 </CardTitle>
                 <CardDescription>
                   {isAutoRetrying 
                     ? `Uygulama otomatik olarak yeniden başlatılıyor (${this.state.retryCount}/${this.maxRetries})`
-                    : 'Uygulama yüklenirken bir hata oluştu. Lütfen sayfayı yenilemeyi deneyin.'
+                    : 'Uygulama başlatılırken bir hata oluştu. Sayfayı yenileyerek tekrar deneyin.'
                   }
                 </CardDescription>
               </CardHeader>
@@ -143,26 +144,26 @@ export class ErrorBoundary extends Component<Props, State> {
                   </div>
                 )}
 
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button
-                    onClick={this.handleHardRefresh}
-                    className="flex-1"
-                    disabled={isAutoRetrying}
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Sayfayı Yenile
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    onClick={this.handleRetry}
-                    className="flex-1"
-                    disabled={isAutoRetrying}
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Tekrar Dene
-                  </Button>
-                </div>
+                {!isAutoRetrying && (
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      onClick={this.handleHardRefresh}
+                      className="flex-1"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Sayfayı Yenile
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      onClick={this.handleRetry}
+                      className="flex-1"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Tekrar Dene
+                    </Button>
+                  </div>
+                )}
 
                 <Button
                   variant="ghost"
@@ -187,9 +188,9 @@ export class ErrorBoundary extends Component<Props, State> {
               <div className="mx-auto mb-4 p-3 bg-destructive/10 rounded-full w-fit">
                 <AlertTriangle className="h-8 w-8 text-destructive" />
               </div>
-              <CardTitle className="text-xl">Bir Hata Oluştu</CardTitle>
+              <CardTitle className="text-xl">Beklenmeyen Hata</CardTitle>
               <CardDescription>
-                Beklenmeyen bir hata meydana geldi. Lütfen sayfayı yenilemeyi deneyin.
+                Uygulama çalışırken bir hata oluştu. Lütfen sayfayı yenilemeyi deneyin.
               </CardDescription>
             </CardHeader>
             

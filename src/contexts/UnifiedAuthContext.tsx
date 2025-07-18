@@ -17,13 +17,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
   
-  // Use ref to prevent race conditions during cleanup
+  // Use refs to prevent dependencies and race conditions
   const mountedRef = useRef(true);
+  const initializingRef = useRef(false);
   const retryCountRef = useRef(0);
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 2;
 
-  const fetchProfile = useCallback(async (userId: string) => {
-    if (!mountedRef.current) return;
+  // Simplified profile fetching without complex dependencies
+  const fetchProfile = useCallback(async (userId: string): Promise<void> => {
+    if (!mountedRef.current || !userId) return;
     
     try {
       console.log('UnifiedAuthContext: Fetching profile for user:', userId);
@@ -37,10 +39,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) {
         console.error('UnifiedAuthContext: Error fetching profile:', error);
-        // Don't set error if user profile doesn't exist yet
-        if (!error.message.includes('No rows')) {
-          throw error;
-        }
         setProfile(null);
         return;
       }
@@ -55,9 +53,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  const refreshProfile = useCallback(async () => {
-    if (user && mountedRef.current) {
-      await fetchProfile(user.id);
+  const refreshProfile = useCallback(async (): Promise<void> => {
+    const currentUser = user;
+    if (currentUser && mountedRef.current) {
+      await fetchProfile(currentUser.id);
     }
   }, [user, fetchProfile]);
 
@@ -166,7 +165,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const updateProfile = useCallback(async (updates: Partial<Profile>): Promise<AuthResult> => {
-    if (!user) {
+    const currentUser = user;
+    if (!currentUser) {
       return { success: false, error: 'Kullanıcı oturum açmamış' };
     }
 
@@ -175,7 +175,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { error } = await supabase
         .from('profiles')
         .update(updates)
-        .eq('id', user.id);
+        .eq('id', currentUser.id);
 
       if (error) throw error;
 
@@ -215,23 +215,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Initialize auth with retry mechanism
-  const initializeAuth = useCallback(async () => {
-    if (!mountedRef.current) return;
+  // Simplified initialization without complex retry logic
+  const initializeAuth = useCallback(async (): Promise<() => void> => {
+    if (!mountedRef.current || initializingRef.current) {
+      return () => {};
+    }
+
+    initializingRef.current = true;
 
     try {
       console.log('UnifiedAuthContext: Initializing auth...');
       
-      // Set up auth state listener first
+      // Set up auth state listener
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
+        (event, session) => {
           if (!mountedRef.current) return;
           
           console.log('UnifiedAuthContext: Auth state change:', event, session?.user?.id);
           setUser(session?.user ?? null);
           
           if (session?.user) {
-            // Use setTimeout to prevent blocking auth state change
+            // Use setTimeout to prevent blocking
             setTimeout(() => {
               if (mountedRef.current) {
                 fetchProfile(session.user.id);
@@ -243,25 +247,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       );
 
-      // Then get initial session
+      // Get initial session
       const { data: { session }, error } = await supabase.auth.getSession();
       
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) {
+        subscription.unsubscribe();
+        return () => {};
+      }
       
       if (error) {
         console.error('UnifiedAuthContext: Error getting initial session:', error);
-        throw error;
+        setInitError(error.message);
       } else {
         console.log('UnifiedAuthContext: Initial session check:', session?.user?.id);
         setUser(session?.user ?? null);
         if (session?.user) {
           fetchProfile(session.user.id);
         }
+        setInitError(null);
       }
       
-      setInitError(null);
-      retryCountRef.current = 0;
       setInitialized(true);
+      initializingRef.current = false;
 
       return () => {
         subscription.unsubscribe();
@@ -271,29 +278,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (mountedRef.current) {
         setInitError(error.message);
-        
-        // Retry logic
-        if (retryCountRef.current < MAX_RETRIES) {
-          retryCountRef.current++;
-          console.log(`UnifiedAuthContext: Retrying initialization (${retryCountRef.current}/${MAX_RETRIES})`);
-          setTimeout(() => {
-            if (mountedRef.current) {
-              initializeAuth();
-            }
-          }, 1000 * retryCountRef.current); // Exponential backoff
-        } else {
-          setInitialized(true); // Mark as initialized even with error to prevent infinite loading
-        }
+        setInitialized(true); // Mark as initialized even with error
       }
+      
+      initializingRef.current = false;
+      return () => {};
     }
   }, [fetchProfile]);
 
   useEffect(() => {
     mountedRef.current = true;
-    initializeAuth();
+    let cleanup: () => void;
+
+    initializeAuth().then((cleanupFn) => {
+      cleanup = cleanupFn;
+    });
 
     return () => {
       mountedRef.current = false;
+      if (cleanup) {
+        cleanup();
+      }
     };
   }, [initializeAuth]);
 
