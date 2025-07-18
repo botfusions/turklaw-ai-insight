@@ -20,23 +20,41 @@ const Dashboard = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Mock search results generator
+  // Enhanced state management
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTime, setSearchTime] = useState(0);
+
+  // Mock search results generator with enhanced data
   const generateMockResults = (query: string, count: number = 8) => {
+    const courts = ['Yargıtay', 'Danıştay', 'Anayasa Mahkemesi', 'Bölge Adliye Mahkemesi', 'Asliye Hukuk Mahkemesi'];
+    const keywords = ['hukuk', 'karar', 'emsal', 'dava', 'mahkeme', 'mevzuat', 'yargı', 'adalet'];
+    
     const mockResults = [];
     for (let i = 1; i <= count; i++) {
+      const randomCourt = courts[Math.floor(Math.random() * courts.length)];
+      const relevanceScore = Math.random() * 10;
+      const citationCount = Math.floor(Math.random() * 50);
+      const isNew = Math.random() > 0.8;
+      const isPopular = Math.random() > 0.7;
+      
       mockResults.push({
         id: `result-${i}`,
-        title: `${query} ile İlgili Karar ${i}`,
-        court: i % 2 === 0 ? 'Yargıtay' : 'Danıştay',
+        title: `${query} ile İlgili ${randomCourt} Kararı ${i}`,
+        court: randomCourt,
         department: `${Math.floor(Math.random() * 15) + 1}. Daire`,
-        date: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toLocaleDateString('tr-TR'),
-        summary: `${query} konusunda verilen bu karar, hukuki durumu detaylı şekilde ele almakta ve ilgili mevzuat çerçevesinde değerlendirmeler sunmaktadır. Bu kararda önemli içtihat değeri olan hususlar bulunmaktadır.`
+        date: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        summary: `${query} konusunda verilen bu karar, hukuki durumu detaylı şekilde ele almakta ve ilgili mevzuat çerçevesinde değerlendirmeler sunmaktadır. Bu kararda önemli içtihat değeri olan hususlar bulunmaktadır ve benzeri davalar için emsal teşkil etmektedir.`,
+        relevanceScore: Math.round(relevanceScore * 10) / 10,
+        citationCount: citationCount,
+        isNew: isNew,
+        isPopular: isPopular,
+        keywords: keywords.slice(0, Math.floor(Math.random() * 4) + 2)
       });
     }
     return mockResults;
   };
 
-  // Search handler
+  // Enhanced search handler
   const handleSearch = async (query: string, filters: { 
     court?: string; 
     department?: string; 
@@ -52,15 +70,22 @@ const Dashboard = () => {
     }
     
     setIsSearching(true);
+    setSearchQuery(query);
+    const startTime = performance.now();
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate API call with variable delay for realism
+      const delay = Math.random() * 800 + 200; // 200-1000ms
+      await new Promise(resolve => setTimeout(resolve, delay));
       
-      const results = generateMockResults(query, 12);
+      const results = generateMockResults(query, Math.floor(Math.random() * 20) + 8); // 8-28 results
       setSearchResults(results);
       setTotalPages(Math.ceil(results.length / 6)); // 6 sonuç per sayfa
       setCurrentPage(1);
+      
+      const endTime = performance.now();
+      const searchTime = (endTime - startTime) / 1000;
+      setSearchTime(searchTime);
       
       toast.success(`${results.length} sonuç bulundu!`);
     } catch (error) {
@@ -126,6 +151,10 @@ const Dashboard = () => {
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
+              loading={isSearching}
+              totalResults={searchResults.length}
+              searchTime={searchTime}
+              query={searchQuery}
             />
           </div>
         </main>
