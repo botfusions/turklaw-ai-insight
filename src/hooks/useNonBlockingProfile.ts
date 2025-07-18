@@ -118,12 +118,23 @@ export const useNonBlockingProfile = () => {
           retryCount: state.retryCount 
         });
 
-        const { data, error } = await supabase
+        // Create a promise that can be aborted
+        const fetchPromise = supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .maybeSingle()
-          .abortSignal(signal);
+          .maybeSingle();
+
+        // Create an abortable wrapper
+        const abortablePromise = new Promise<any>((resolve, reject) => {
+          signal.addEventListener('abort', () => {
+            reject(new Error('AbortError'));
+          });
+          
+          fetchPromise.then(resolve).catch(reject);
+        });
+
+        const { data, error } = await abortablePromise;
 
         if (error) throw error;
 
@@ -145,7 +156,7 @@ export const useNonBlockingProfile = () => {
         
         return newProfile;
       } catch (error) {
-        if (signal.aborted) {
+        if (signal.aborted || (error as Error).message === 'AbortError') {
           console.log('NonBlockingProfile: Request was cancelled');
           return null;
         }
