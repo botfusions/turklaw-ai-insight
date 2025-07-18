@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Utility function to safely update state
-  const safeSetState = useCallback(<T>(setState: React.Dispatch<React.SetStateAction<T>>, value: T) => {
+  const safeSetState = useCallback(<T extends any>(setState: React.Dispatch<React.SetStateAction<T>>, value: T) => {
     if (mounted.current) {
       setState(value);
     }
