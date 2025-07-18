@@ -9,6 +9,7 @@ import { AccessibilitySettings } from "@/components/accessibility/AccessibilityS
 import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
 import { SmartLoadingProvider } from "@/contexts/SmartLoadingContext";
 import { LoadingPerformanceMonitor } from "@/components/ui/LoadingPerformanceMonitor";
+import ProfileDebugPanel from "@/components/debug/ProfileDebugPanel";
 
 const App = () => (
   <ErrorBoundary>
@@ -21,6 +22,7 @@ const App = () => (
           <AppRoutes />
           <AccessibilitySettings />
           <LoadingPerformanceMonitor />
+          <ProfileDebugPanel />
         </TooltipProvider>
       </AccessibilityProvider>
     </SmartLoadingProvider>

@@ -2,6 +2,7 @@
 import { useEffect, useCallback } from 'react';
 import { useSmartLoading } from '@/contexts/SmartLoadingContext';
 import { useOptimizedAuth } from './useOptimizedAuth';
+import { useNonBlockingProfile } from './useNonBlockingProfile';
 
 export const useSmartLoadingIntegration = () => {
   const { setLoading, resetRetry } = useSmartLoading();
@@ -13,6 +14,9 @@ export const useSmartLoadingIntegration = () => {
     isActionInProgress
   } = useOptimizedAuth();
 
+  // Use non-blocking profile for enhanced profile loading
+  const { isBackgroundRefreshing } = useNonBlockingProfile();
+
   // Sync auth loading states
   useEffect(() => {
     setLoading('auth', authLoading || isInitializing, 'Kimlik doğrulanıyor...');
@@ -22,9 +26,12 @@ export const useSmartLoadingIntegration = () => {
     setLoading('action', actionLoading || isActionInProgress, 'İşlem gerçekleştiriliyor...');
   }, [actionLoading, isActionInProgress, setLoading]);
 
+  // Enhanced profile loading - only show loading for initial fetch, not background refresh
   useEffect(() => {
-    setLoading('profile', profileLoading, 'Profil bilgileri yükleniyor...');
-  }, [profileLoading, setLoading]);
+    // Only show profile loading if it's blocking (not a background refresh)
+    const isBlockingProfileLoad = profileLoading && !isBackgroundRefreshing;
+    setLoading('profile', isBlockingProfileLoad, 'Profil bilgileri yükleniyor...');
+  }, [profileLoading, isBackgroundRefreshing, setLoading]);
 
   // Smart loading operations with retry logic
   const withSmartLoading = useCallback(
