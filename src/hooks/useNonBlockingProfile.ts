@@ -118,20 +118,34 @@ export const useNonBlockingProfile = () => {
           retryCount: state.retryCount 
         });
 
-        // Create a promise that can be aborted
-        const fetchPromise = supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        // Create an abortable wrapper
-        const abortablePromise = new Promise<any>((resolve, reject) => {
-          signal.addEventListener('abort', () => {
+        // Create an abortable promise wrapper
+        const abortablePromise = new Promise<{ data: any; error: any }>((resolve, reject) => {
+          // Handle abort signal
+          const abortHandler = () => {
             reject(new Error('AbortError'));
-          });
+          };
+          signal.addEventListener('abort', abortHandler);
           
-          fetchPromise.then(resolve).catch(reject);
+          // Execute the Supabase query using async/await to avoid Promise chain issues
+          (async () => {
+            try {
+              const result = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .maybeSingle();
+                
+              if (!signal.aborted) {
+                signal.removeEventListener('abort', abortHandler);
+                resolve(result);
+              }
+            } catch (err) {
+              if (!signal.aborted) {
+                signal.removeEventListener('abort', abortHandler);
+                reject(err);
+              }
+            }
+          })();
         });
 
         const { data, error } = await abortablePromise;
