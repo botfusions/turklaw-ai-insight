@@ -18,11 +18,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const location = useLocation();
 
-  // Safe auth context access with error boundary
+  // Safe auth context access with enhanced error handling
   let authState = {
     user: null,
     initialized: false,
-    loading: false,
+    authLoading: false,
+    actionLoading: false,
+    authError: null,
     error: false
   };
 
@@ -31,14 +33,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     authState = {
       user: auth.user,
       initialized: auth.initialized,
-      loading: auth.loading,
+      authLoading: auth.authLoading,
+      actionLoading: auth.actionLoading,
+      authError: auth.authError,
       error: false
     };
     
-    console.log('ProtectedRoute: Auth state retrieved:', { 
+    console.log('ProtectedRoute: Optimized auth state:', { 
       hasUser: !!auth.user, 
       initialized: auth.initialized, 
-      loading: auth.loading 
+      authLoading: auth.authLoading,
+      actionLoading: auth.actionLoading,
+      authError: auth.authError
     });
   } catch (error) {
     console.error('ProtectedRoute: Auth context error:', error);
@@ -64,15 +70,34 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Show loading while checking auth state - but only if not initialized yet
-  if (!authState.initialized) {
-    console.log('ProtectedRoute: Showing loading - auth not initialized yet');
+  // Show loading only during auth initialization
+  if (!authState.initialized || authState.authLoading) {
+    console.log('ProtectedRoute: Showing auth loading state');
     return <LoadingSpinner message="Yetkilendirme kontrol ediliyor..." />;
   }
 
-  // Don't show loading for normal operation loading states
-  if (authState.loading) {
-    console.log('ProtectedRoute: Auth is loading but initialized, allowing navigation');
+  // Show auth error if present
+  if (authState.authError) {
+    console.log('ProtectedRoute: Showing auth error:', authState.authError);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Giriş Hatası</h2>
+          <p className="text-muted-foreground mb-4">{authState.authError}</p>
+          <button 
+            onClick={() => window.location.href = '/login'}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+          >
+            Tekrar Dene
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't block for action loading (user can still navigate)
+  if (authState.actionLoading) {
+    console.log('ProtectedRoute: Action loading but allowing navigation');
   }
 
   // Handle different protection levels

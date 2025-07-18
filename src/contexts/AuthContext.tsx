@@ -11,57 +11,77 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  // Core auth state
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  
+  // Granular loading states
+  const [authLoading, setAuthLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
-  const [loading, setLoading] = useState(false);
+  
+  // Error states
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
-  // Simple profile fetch with proper error handling
-  const fetchProfile = async (userId: string, isMounted: () => boolean) => {
+  // Error management functions
+  const clearAuthError = () => setAuthError(null);
+  const clearProfileError = () => setProfileError(null);
+
+  // Optimized profile fetch with dedicated loading state
+  const fetchProfile = async (userId: string, signal?: AbortSignal) => {
     try {
-      console.log('AuthContext: Starting profile fetch for user:', userId);
+      setProfileLoading(true);
+      setProfileError(null);
+      
+      console.log('AuthContext: Starting optimized profile fetch for user:', userId);
       
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle();
+        .maybeSingle()
+        .abortSignal(signal || new AbortController().signal);
 
-      // Always check if component is still mounted before setting state
-      if (!isMounted()) {
-        console.log('AuthContext: Component unmounted during profile fetch, skipping state update');
+      // Check if request was aborted
+      if (signal?.aborted) {
+        console.log('AuthContext: Profile fetch aborted');
         return;
       }
 
       if (error) {
         console.error('AuthContext: Profile fetch error:', error);
-        // Don't throw - just log and continue without profile
+        setProfileError('Profil bilgileri yüklenemedi');
         setProfile(null);
         return;
       }
       
       console.log('AuthContext: Profile fetched successfully:', data);
       setProfile(data as Profile);
-    } catch (error) {
-      console.error('AuthContext: Profile fetch exception:', error);
-      if (isMounted()) {
+      setProfileError(null);
+    } catch (error: any) {
+      if (!signal?.aborted) {
+        console.error('AuthContext: Profile fetch exception:', error);
+        setProfileError('Profil bilgileri yüklenirken hata oluştu');
         setProfile(null);
+      }
+    } finally {
+      if (!signal?.aborted) {
+        setProfileLoading(false);
       }
     }
   };
 
+  // Refresh profile with proper loading state management
   const refreshProfile = async () => {
     if (user) {
-      let mounted = true;
-      const isMounted = () => mounted;
-      
-      await fetchProfile(user.id, isMounted);
-      
-      // Cleanup
-      mounted = false;
+      const controller = new AbortController();
+      await fetchProfile(user.id, controller.signal);
     }
   };
 
+  // Enhanced error message handling
   const getErrorMessage = (error: any): string => {
     if (!error?.message) return 'Bilinmeyen bir hata oluştu';
     
@@ -83,9 +103,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return error.message;
   };
 
+  // Optimized auth actions with proper loading states
   const signUp = async (email: string, password: string, fullName?: string): Promise<AuthResult> => {
     try {
-      setLoading(true);
+      setActionLoading(true);
+      setAuthError(null);
+      
       const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
@@ -103,18 +126,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       return { success: true, user: data.user };
     } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      setAuthError(errorMessage);
       return { 
         success: false, 
-        error: getErrorMessage(error)
+        error: errorMessage
       };
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string): Promise<AuthResult> => {
     try {
-      setLoading(true);
+      setActionLoading(true);
+      setAuthError(null);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -124,29 +151,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       return { success: true, user: data.user };
     } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      setAuthError(errorMessage);
       return { 
         success: false, 
-        error: getErrorMessage(error)
+        error: errorMessage
       };
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
   const signOut = async (): Promise<void> => {
     try {
-      setLoading(true);
+      setActionLoading(true);
+      setAuthError(null);
       await supabase.auth.signOut();
     } catch (error) {
       console.error('Error signing out:', error);
+      setAuthError('Çıkış yapılırken hata oluştu');
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
   const resetPassword = async (email: string): Promise<AuthResult> => {
     try {
-      setLoading(true);
+      setActionLoading(true);
+      setAuthError(null);
+      
       const redirectUrl = `${window.location.origin}/reset-password`;
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -157,22 +190,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       return { success: true };
     } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      setAuthError(errorMessage);
       return { 
         success: false, 
-        error: getErrorMessage(error)
+        error: errorMessage
       };
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
   const updateProfile = async (updates: Partial<Profile>): Promise<AuthResult> => {
     if (!user) {
-      return { success: false, error: 'Kullanıcı oturum açmamış' };
+      const errorMessage = 'Kullanıcı oturum açmamış';
+      setProfileError(errorMessage);
+      return { success: false, error: errorMessage };
     }
 
     try {
-      setLoading(true);
+      setActionLoading(true);
+      setProfileError(null);
+      
       const { error } = await supabase
         .from('profiles')
         .update(updates)
@@ -184,18 +223,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       return { success: true };
     } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      setProfileError(errorMessage);
       return { 
         success: false, 
-        error: getErrorMessage(error)
+        error: errorMessage
       };
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
   const resendConfirmation = async (email: string): Promise<AuthResult> => {
     try {
-      setLoading(true);
+      setActionLoading(true);
+      setAuthError(null);
+      
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
@@ -205,65 +248,62 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (error) {
-        return { success: false, error: getErrorMessage(error) };
+        const errorMessage = getErrorMessage(error);
+        setAuthError(errorMessage);
+        return { success: false, error: errorMessage };
       }
 
       return { success: true };
     } catch (error: any) {
-      return { success: false, error: getErrorMessage(error) };
+      const errorMessage = getErrorMessage(error);
+      setAuthError(errorMessage);
+      return { success: false, error: errorMessage };
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
-  // Stabilized auth initialization with proper cleanup
+  // Optimized auth initialization with state machine pattern
   useEffect(() => {
     let mounted = true;
     let authSubscription: any = null;
-    let profileCleanup: (() => void) | null = null;
+    const abortController = new AbortController();
 
-    const isMounted = () => mounted;
-
-    const initAuth = async () => {
+    const initializeAuth = async () => {
       try {
-        console.log('AuthContext: Starting stable initialization...');
+        console.log('AuthContext: Starting optimized initialization...');
+        setAuthLoading(true);
+        setAuthError(null);
         
-        // Set up auth state listener
+        // Set up auth state listener first
         authSubscription = supabase.auth.onAuthStateChange(
-          (event, session) => {
-            if (!isMounted()) {
-              console.log('AuthContext: Component unmounted during auth state change, ignoring');
+          async (event, session) => {
+            if (!mounted) {
+              console.log('AuthContext: Component unmounted during auth state change');
               return;
             }
             
             console.log('AuthContext: Auth state changed:', event, session?.user?.id);
             
+            // Clear any existing auth errors on successful auth change
+            if (session?.user) {
+              setAuthError(null);
+            }
+            
             // Update user state immediately
             setUser(session?.user ?? null);
             
-            // Handle profile fetch asynchronously and safely
-            if (session?.user) {
-              // Clean up any previous profile fetch
-              if (profileCleanup) {
-                profileCleanup();
-                profileCleanup = null;
-              }
-              
-              // Start new profile fetch with timeout to prevent blocking
-              const timeoutId = setTimeout(() => {
-                if (isMounted()) {
-                  fetchProfile(session.user.id, isMounted);
+            // Handle profile fetch separately with dedicated loading state
+            if (session?.user && !abortController.signal.aborted) {
+              // Small delay to prevent race conditions
+              setTimeout(() => {
+                if (mounted && !abortController.signal.aborted) {
+                  fetchProfile(session.user.id, abortController.signal);
                 }
-              }, 50); // Small delay to prevent race conditions
-              
-              // Store timeout cleanup
-              profileCleanup = () => clearTimeout(timeoutId);
+              }, 50);
             } else {
               setProfile(null);
-              if (profileCleanup) {
-                profileCleanup();
-                profileCleanup = null;
-              }
+              setProfileError(null);
             }
           }
         );
@@ -273,9 +313,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (error) {
           console.error('AuthContext: Session fetch error:', error);
+          setAuthError('Oturum kontrol edilemedi');
         }
         
-        if (!isMounted()) {
+        if (!mounted) {
           console.log('AuthContext: Component unmounted during session fetch');
           return;
         }
@@ -286,59 +327,69 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(session?.user ?? null);
         
         // Fetch initial profile if user exists
-        if (session?.user) {
-          const timeoutId = setTimeout(() => {
-            if (isMounted()) {
-              fetchProfile(session.user.id, isMounted);
+        if (session?.user && !abortController.signal.aborted) {
+          setTimeout(() => {
+            if (mounted && !abortController.signal.aborted) {
+              fetchProfile(session.user.id, abortController.signal);
             }
           }, 50);
-          
-          profileCleanup = () => clearTimeout(timeoutId);
         }
         
         // Mark as initialized
-        if (isMounted()) {
+        if (mounted) {
           setInitialized(true);
-          console.log('AuthContext: Initialization completed successfully');
+          setAuthLoading(false);
+          console.log('AuthContext: Optimized initialization completed');
         }
       } catch (error) {
         console.error('AuthContext: Initialization error:', error);
-        if (isMounted()) {
-          setInitialized(true); // Always mark as initialized to prevent infinite loading
+        if (mounted) {
+          setAuthError('Sistem başlatılırken hata oluştu');
+          setInitialized(true);
+          setAuthLoading(false);
         }
       }
     };
 
     // Start initialization
-    initAuth();
+    initializeAuth();
 
     // Cleanup function
     return () => {
-      console.log('AuthContext: Cleaning up...');
+      console.log('AuthContext: Cleaning up optimized auth...');
       mounted = false;
       
+      // Abort any ongoing requests
+      abortController.abort();
+      
+      // Unsubscribe from auth changes
       if (authSubscription?.data?.subscription) {
         authSubscription.data.subscription.unsubscribe();
-      }
-      
-      if (profileCleanup) {
-        profileCleanup();
       }
     };
   }, []); // Empty dependency array - run only once
 
   const value: AuthContextType = {
+    // State
     user,
     profile,
-    loading,
+    authLoading,
+    actionLoading,
+    profileLoading,
     initialized,
+    authError,
+    profileError,
+    
+    // Actions
     refreshProfile,
     signUp,
     signIn,
     signOut,
     resetPassword,
     updateProfile,
-    resendConfirmation
+    resendConfirmation,
+    clearAuthError,
+    clearProfileError
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

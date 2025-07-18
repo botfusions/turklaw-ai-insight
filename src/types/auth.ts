@@ -1,3 +1,4 @@
+
 import { User } from '@supabase/supabase-js';
 
 export interface Profile {
@@ -9,11 +10,19 @@ export interface Profile {
   updated_at: string | null;
 }
 
-export interface AuthState {
+export interface OptimizedAuthState {
   user: User | null;
   profile: Profile | null;
-  loading: boolean;
-  initialized: boolean;
+  
+  // Granular loading states
+  authLoading: boolean;      // Auth listener & session check
+  actionLoading: boolean;    // User actions (login, signup, etc)
+  profileLoading: boolean;   // Profile fetch operations
+  initialized: boolean;      // Auth system ready
+  
+  // Error states
+  authError: string | null;     // Auth-related errors
+  profileError: string | null;  // Profile-related errors
 }
 
 export interface AuthActions {
@@ -24,6 +33,8 @@ export interface AuthActions {
   updateProfile: (updates: Partial<Profile>) => Promise<AuthResult>;
   resendConfirmation: (email: string) => Promise<AuthResult>;
   refreshProfile: () => Promise<void>;
+  clearAuthError: () => void;
+  clearProfileError: () => void;
 }
 
 export interface AuthResult {
@@ -32,4 +43,12 @@ export interface AuthResult {
   user?: User;
 }
 
-export interface AuthContextType extends AuthState, AuthActions {}
+export interface AuthContextType extends OptimizedAuthState, AuthActions {}
+
+// Legacy interface for backward compatibility
+export interface AuthState {
+  user: User | null;
+  profile: Profile | null;
+  loading: boolean;
+  initialized: boolean;
+}

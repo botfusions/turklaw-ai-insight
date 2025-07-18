@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { DashboardPreview } from '@/components/dashboard/DashboardPreview';
@@ -21,12 +22,14 @@ import {
   Database,
   TrendingUp,
   Award,
-  Sparkles
+  Sparkles,
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
 import { subscriptionPlans } from '@/constants';
 
-// Simple loading component - optimized for fast rendering
-const SimpleLoading = () => (
+// Optimized loading component with granular feedback
+const OptimizedLoading = ({ authLoading, profileLoading }: { authLoading: boolean; profileLoading: boolean }) => (
   <div className="min-h-screen bg-background">
     <Header />
     <section className="relative py-20 overflow-hidden">
@@ -38,6 +41,11 @@ const SimpleLoading = () => (
             <Skeleton className="h-12 w-32" />
             <Skeleton className="h-12 w-32" />
           </div>
+          {/* Granular loading feedback */}
+          <div className="mt-8 text-sm text-muted-foreground">
+            {authLoading && <p>Yetkilendirme kontrol ediliyor...</p>}
+            {profileLoading && <p>Profil bilgileri yükleniyor...</p>}
+          </div>
         </div>
       </div>
     </section>
@@ -48,20 +56,73 @@ const SimpleLoading = () => (
 export default function Landing() {
   const navigate = useNavigate();
   
-  // Call useAuth hook properly at top level - this is critical for React Rules of Hooks
-  const { user, profile, loading, initialized } = useAuth();
+  // Use optimized auth state with granular loading and error states
+  const { 
+    user, 
+    profile, 
+    authLoading, 
+    actionLoading, 
+    profileLoading, 
+    initialized,
+    authError,
+    profileError,
+    clearAuthError,
+    clearProfileError
+  } = useAuth();
 
-  console.log('Landing: Auth state:', { user: !!user, profile: !!profile, loading, initialized });
+  console.log('Landing: Optimized auth state:', { 
+    user: !!user, 
+    profile: !!profile, 
+    authLoading, 
+    actionLoading, 
+    profileLoading, 
+    initialized,
+    authError,
+    profileError
+  });
 
-  // Show loading ONLY while auth is initializing, not during normal operations
-  if (!initialized) {
-    console.log('Landing: Showing loading state - auth not initialized');
-    return <SimpleLoading />;
+  // Show loading only during auth initialization
+  if (!initialized || authLoading) {
+    console.log('Landing: Showing optimized loading state');
+    return <OptimizedLoading authLoading={authLoading} profileLoading={profileLoading} />;
   }
 
-  // Don't block for normal loading states (like sign in/out operations)
-  if (loading) {
-    console.log('Landing: Auth loading but initialized, continuing with render');
+  // Show auth error with recovery option
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <section className="relative py-20">
+          <div className="container mx-auto px-4">
+            <div className="max-w-md mx-auto">
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="mt-2">
+                  {authError}
+                </AlertDescription>
+              </Alert>
+              <div className="flex gap-2 mt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={clearAuthError}
+                  className="flex-1"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Tekrar Dene
+                </Button>
+                <Button 
+                  onClick={() => navigate('/login')}
+                  className="flex-1"
+                >
+                  Giriş Yap
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <Footer />
+      </div>
+    );
   }
 
   // Static data
@@ -109,13 +170,43 @@ export default function Landing() {
     }
   ];
 
-  // Check if user is authenticated - safe check now that auth is stabilized
+  // Check if user is authenticated
   const isAuthenticated = user && profile;
   console.log('Landing: User authenticated:', isAuthenticated);
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      
+      {/* Show profile error if present but don't block the page */}
+      {profileError && (
+        <div className="container mx-auto px-4 pt-4">
+          <Alert variant="destructive" className="max-w-md mx-auto">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              {profileError}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={clearProfileError}
+                className="ml-2"
+              >
+                ✕
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+      
+      {/* Show loading indicator for action loading */}
+      {actionLoading && (
+        <div className="fixed top-4 right-4 z-50">
+          <div className="bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg flex items-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+            İşlem yapılıyor...
+          </div>
+        </div>
+      )}
       
       {isAuthenticated ? (
         // Authenticated User View
@@ -128,6 +219,7 @@ export default function Landing() {
                   <Badge variant="secondary" className="mb-4">
                     <TrendingUp className="h-4 w-4 mr-2" />
                     Aktif Kullanıcı Dashboard
+                    {profileLoading && <span className="ml-2 animate-spin">⟳</span>}
                   </Badge>
                   
                   <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
@@ -204,15 +296,17 @@ export default function Landing() {
                   <Button 
                     size="lg" 
                     onClick={() => navigate('/register')}
+                    disabled={actionLoading}
                     className="bg-primary hover:bg-primary/90 text-lg px-8 py-6"
                   >
-                    Ücretsiz Deneyin
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    {actionLoading ? 'İşlem yapılıyor...' : 'Ücretsiz Deneyin'}
+                    {!actionLoading && <ArrowRight className="ml-2 h-5 w-5" />}
                   </Button>
                   <Button 
                     variant="outline" 
                     size="lg"
                     onClick={() => navigate('/search')}
+                    disabled={actionLoading}
                     className="text-lg px-8 py-6"
                   >
                     Demo İzle
@@ -237,7 +331,6 @@ export default function Landing() {
             </div>
           </section>
 
-          {/* Features Section */}
           <section className="py-20 bg-muted/30">
             <div className="container mx-auto px-4">
               <div className="text-center mb-16">
@@ -269,7 +362,6 @@ export default function Landing() {
             </div>
           </section>
 
-          {/* Pricing Section */}
           <section className="py-20">
             <div className="container mx-auto px-4">
               <div className="text-center mb-16">
@@ -312,8 +404,9 @@ export default function Landing() {
                         className="w-full mt-6"
                         variant={plan.popular ? "default" : "outline"}
                         onClick={() => navigate('/register')}
+                        disabled={actionLoading}
                       >
-                        Başlayın
+                        {actionLoading ? 'İşlem yapılıyor...' : 'Başlayın'}
                       </Button>
                     </CardContent>
                   </Card>
@@ -322,7 +415,6 @@ export default function Landing() {
             </div>
           </section>
 
-          {/* Testimonials Section */}
           <section className="py-20 bg-muted/30">
             <div className="container mx-auto px-4">
               <div className="text-center mb-16">
@@ -355,7 +447,6 @@ export default function Landing() {
             </div>
           </section>
 
-          {/* CTA Section */}
           <section className="py-20 bg-gradient-to-r from-primary/20 to-secondary/20">
             <div className="container mx-auto px-4 text-center">
               <div className="max-w-3xl mx-auto">
@@ -369,10 +460,11 @@ export default function Landing() {
                 <Button 
                   size="lg"
                   onClick={() => navigate('/register')}
+                  disabled={actionLoading}
                   className="bg-primary hover:bg-primary/90 text-lg px-8 py-6"
                 >
-                  Hemen Başlayın - Ücretsiz
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  {actionLoading ? 'İşlem yapılıyor...' : 'Hemen Başlayın - Ücretsiz'}
+                  {!actionLoading && <ArrowRight className="ml-2 h-5 w-5" />}
                 </Button>
               </div>
             </div>
