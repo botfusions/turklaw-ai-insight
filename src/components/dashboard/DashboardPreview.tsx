@@ -1,22 +1,19 @@
+
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Search, 
   BookOpen, 
-  Scale, 
   Clock, 
   TrendingUp, 
   Database,
   Crown,
   ArrowRight,
-  Activity,
-  FileText
+  Activity
 } from 'lucide-react';
 import { useAuthData } from '@/contexts/AuthDataContext';
 
@@ -32,10 +29,11 @@ export function DashboardPreview() {
   );
   
   const displayName = useMemo(() => 
-    profile?.full_name || user?.email?.split('@')[0], 
+    profile?.full_name || user?.email?.split('@')[0] || 'Kullanıcı', 
     [profile?.full_name, user?.email]
   );
 
+  // Static mock data - no loading needed
   const mockRecentSearches = useMemo(() => [
     { query: 'iş kazası tazminat', date: '2024-01-15', results: 24 },
     { query: 'boşanma nafaka', date: '2024-01-14', results: 18 },
@@ -80,7 +78,7 @@ export function DashboardPreview() {
         </p>
       </div>
 
-      {/* Quick Search - Moved to top */}
+      {/* Quick Search */}
       <Card className="bg-card shadow-card mb-6">
         <CardHeader>
           <CardTitle className="flex items-center">
@@ -104,7 +102,7 @@ export function DashboardPreview() {
         </CardContent>
       </Card>
 
-      {/* Quick Stats - Smaller */}
+      {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <Card className="bg-card shadow-card">
           <CardContent className="p-3">
@@ -148,7 +146,7 @@ export function DashboardPreview() {
               <div>
                 <p className="text-xs text-muted-foreground">Plan</p>
                 <div className="flex items-center gap-1">
-                  <p className="text-sm font-semibold text-foreground capitalize">{profile?.plan}</p>
+                  <p className="text-sm font-semibold text-foreground capitalize">{profile?.plan || 'basic'}</p>
                   {isPremiumUser && <Crown className="h-3 w-3 text-secondary" />}
                 </div>
               </div>
@@ -183,7 +181,7 @@ export function DashboardPreview() {
         </CardContent>
       </Card>
 
-      {/* Recent Searches - Compact */}
+      {/* Recent Searches */}
       <Card className="bg-card shadow-card">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center text-lg">

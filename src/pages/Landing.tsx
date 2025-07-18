@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,9 +9,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { DashboardPreview } from '@/components/dashboard/DashboardPreview';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
-import { useSmartLoading } from '@/contexts/SmartLoadingContext';
-import { SmartLoader } from '@/components/ui/SmartLoader';
-import { AuthSkeleton, DashboardSkeleton } from '@/components/ui/SkeletonLoaders';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { 
   Search, 
   Zap, 
@@ -32,59 +31,32 @@ import { subscriptionPlans } from '@/constants';
 export default function Landing() {
   const navigate = useNavigate();
   
-  // Use optimized auth hook with smart loading states
   const {
-    // Optimized states
     isInitializing,
-    isReady,
-    hasAuthError,
     isUserAuthenticated,
-    isProfileLoading,
     isActionInProgress,
     canRenderApp,
-    // Original auth context
     authError,
-    profileError,
     clearAuthError,
-    clearProfileError,
     refreshProfile
   } = useOptimizedAuth();
 
-  const { isCriticalLoading, isBackgroundLoading } = useSmartLoading();
-
-  console.log('Landing: Optimized auth states:', { 
+  console.log('Landing: Auth states:', { 
     isInitializing,
-    isReady,
-    hasAuthError,
     isUserAuthenticated,
-    isProfileLoading,
     isActionInProgress,
-    canRenderApp,
-    isCriticalLoading: isCriticalLoading(),
-    isBackgroundLoading: isBackgroundLoading()
+    canRenderApp
   });
 
-  // Show smart loading for critical operations
-  if (isCriticalLoading()) {
-    console.log('Landing: Showing critical loading with Smart Loader');
-    return (
-      <SmartLoader
-        type="auth"
-        skeleton={<AuthSkeleton />}
-        progressBar={true}
-        timeout={8000}
-        onTimeout={() => console.log('Auth loading timed out')}
-        onRetry={() => {
-          console.log('Retrying auth...');
-          refreshProfile();
-        }}
-      />
-    );
+  // Show simple loading for critical operations only
+  if (isInitializing) {
+    console.log('Landing: App is initializing');
+    return <LoadingSpinner variant="detailed" message="Uygulama yükleniyor..." />;
   }
 
   // Show auth error with recovery options
-  if (hasAuthError && authError) {
-    console.log('Landing: Showing auth error recovery:', authError);
+  if (authError) {
+    console.log('Landing: Showing auth error:', authError);
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -137,15 +109,8 @@ export default function Landing() {
 
   // Can't render app due to critical issues
   if (!canRenderApp) {
-    console.log('Landing: Cannot render app, showing smart loading fallback');
-    return (
-      <SmartLoader
-        type="auth"
-        skeleton={<AuthSkeleton />}
-        timeout={10000}
-        fallback="error"
-      />
-    );
+    console.log('Landing: Cannot render app');
+    return <LoadingSpinner variant="detailed" message="Sistem hazırlanıyor..." />;
   }
 
   // Static data
@@ -199,36 +164,18 @@ export default function Landing() {
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Show profile error if present but don't block the page */}
-      {profileError && (
-        <div className="container mx-auto px-4 pt-4">
-          <Alert variant="destructive" className="max-w-md mx-auto">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between">
-              {profileError}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={clearProfileError}
-                className="ml-2"
-              >
-                ✕
-              </Button>
-            </AlertDescription>
-          </Alert>
+      {/* Show simple action loading indicator */}
+      {isActionInProgress && (
+        <div className="fixed top-4 right-4 z-50">
+          <div className="bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+            İşlem yapılıyor...
+          </div>
         </div>
       )}
       
-      {/* Show smart loading for actions */}
-      <SmartLoader
-        type="action"
-        progressBar={true}
-        showNetworkStatus={true}
-        className="fixed top-4 right-4 z-50"
-      />
-      
       {isUserAuthenticated ? (
-        // Authenticated User View
+        // Authenticated User View - Simplified
         <>
           <section className="relative py-20 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 opacity-50"></div>
@@ -238,14 +185,6 @@ export default function Landing() {
                   <Badge variant="secondary" className="mb-4">
                     <TrendingUp className="h-4 w-4 mr-2" />
                     Aktif Kullanıcı Dashboard
-                    {isProfileLoading && (
-                      <span className="ml-2">
-                        <SmartLoader 
-                          type="profile" 
-                          className="inline-flex items-center text-xs"
-                        />
-                      </span>
-                    )}
                   </Badge>
                   
                   <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
@@ -259,14 +198,7 @@ export default function Landing() {
                 </div>
 
                 <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-8 border border-border shadow-2xl">
-                  <SmartLoader
-                    type="data"
-                    skeleton={<DashboardSkeleton />}
-                    progressBar={true}
-                    showNetworkStatus={false}
-                  >
-                    <DashboardPreview />
-                  </SmartLoader>
+                  <DashboardPreview />
                 </div>
               </div>
             </div>
@@ -305,7 +237,7 @@ export default function Landing() {
           </section>
         </>
       ) : (
-        // Guest User View with Smart Loading
+        // Guest User View - Optimized
         <>
           <section className="relative py-20 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 opacity-50"></div>
