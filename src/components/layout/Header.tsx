@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Scale, 
@@ -25,7 +26,8 @@ import { UserAvatar } from './UserAvatar';
 import { ThemeToggle } from './ThemeToggle';
 import { NotificationCenter } from './NotificationCenter';
 import { MobileMenu } from './MobileMenu';
-// import { DataStatusIndicator } from './DataStatusIndicator'; // Temporarily disabled
+// Temporarily disabled DataStatusIndicator to prevent page crashes
+// import { DataStatusIndicator } from './DataStatusIndicator';
 import { useHeader } from '@/hooks/useHeader';
 import { cn } from '@/lib/utils';
 
@@ -35,6 +37,9 @@ interface HeaderProps {
 
 export function Header({}: HeaderProps) {
   const navigate = useNavigate();
+  
+  console.log('Header rendering...'); // Debug log
+  
   const {
     user,
     profile,
@@ -51,23 +56,14 @@ export function Header({}: HeaderProps) {
     isHeaderVisible,
   } = useHeader();
 
+  console.log('Header useHeader data:', { user: !!user, profile: !!profile, loading }); // Debug log
+
   const handleLogout = async () => {
     await signOut();
     navigate('/');
   };
 
   const isPremiumUser = profile && !['free', 'basic'].includes(profile.plan);
-
-  // Safe render function for DataStatusIndicator
-  const renderDataStatusIndicator = () => {
-    try {
-      const { DataStatusIndicator } = require('./DataStatusIndicator');
-      return <DataStatusIndicator />;
-    } catch (error) {
-      console.warn('DataStatusIndicator load error:', error);
-      return null;
-    }
-  };
 
   return (
     <>
@@ -149,8 +145,8 @@ export function Header({}: HeaderProps) {
                   Ara
                 </Button>
                 
-                {/* Data Status Indicator - Now with safe rendering */}
-                {renderDataStatusIndicator()}
+                {/* DataStatusIndicator temporarily disabled */}
+                {/* <DataStatusIndicator /> */}
 
                 {/* Theme Toggle */}
                 <ThemeToggle />

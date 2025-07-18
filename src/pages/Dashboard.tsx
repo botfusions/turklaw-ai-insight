@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -15,9 +16,13 @@ import { BottomSheet } from "@/components/mobile/BottomSheet";
 import { SmartSearchSuggestions } from "@/components/search/SmartSearchSuggestions";
 
 const Dashboard = () => {
+  console.log('Dashboard page rendering...'); // Debug log
+  
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+
+  console.log('Dashboard auth state:', { user: !!user, loading }); // Debug log
 
   // State management
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -72,6 +77,8 @@ const Dashboard = () => {
     dateFrom?: Date;
     dateTo?: Date;
   }) => {
+    console.log('Dashboard handleSearch called with:', { query, filters }); // Debug log
+    
     if (!query.trim()) {
       toast.error('Lütfen bir arama terimi girin');
       return;
@@ -113,6 +120,7 @@ const Dashboard = () => {
 
   // Loading state
   if (loading) {
+    console.log('Dashboard showing loading state...'); // Debug log
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -124,9 +132,12 @@ const Dashboard = () => {
 
   // Auth check
   if (!user) {
+    console.log('Dashboard: No user, redirecting to login...'); // Debug log
     navigate('/login');
     return null;
   }
+
+  console.log('Dashboard about to render main content...'); // Debug log
 
   // Get current page results
   const resultsPerPage = 6;

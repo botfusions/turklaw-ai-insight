@@ -9,6 +9,9 @@ import { Search, Scale, BookOpen, Users, ArrowRight, CheckCircle } from 'lucide-
 import { APP_CONFIG } from '@/constants';
 
 const Index = () => {
+  console.log('Index page rendering...'); // Debug log
+  console.log('APP_CONFIG:', APP_CONFIG); // Debug log
+  
   const navigate = useNavigate();
 
   const features = [
@@ -49,6 +52,8 @@ const Index = () => {
     '7/24 erişilebilir platform',
     'Güvenli ve şifreli veri koruması'
   ];
+
+  console.log('Index page about to render JSX...'); // Debug log
 
   return (
     <div className="min-h-screen bg-background">

@@ -5,8 +5,12 @@ import { useNotifications } from '@/contexts/NotificationContext';
 import { useScrollEffect } from './useScrollEffect';
 
 export function useHeader() {
+  console.log('useHeader called...'); // Debug log
+  
   try {
     const { user, profile, signOut, loading } = useAuth();
+    console.log('useHeader auth data:', { user: !!user, profile: !!profile, loading }); // Debug log
+    
     const { notifications, unreadCount } = useNotifications();
     const { scrolled, scrollDirection } = useScrollEffect({ threshold: 20 });
     
@@ -36,6 +40,14 @@ export function useHeader() {
     const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Kullanıcı';
     const userInitials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
+    console.log('useHeader returning data:', { 
+      user: !!user, 
+      displayName, 
+      userInitials, 
+      scrolled, 
+      isHeaderVisible 
+    }); // Debug log
+
     return {
       // Auth state
       user,
@@ -63,7 +75,7 @@ export function useHeader() {
       isHeaderVisible,
     };
   } catch (error) {
-    console.warn('useHeader error:', error);
+    console.error('useHeader error:', error);
     // Return safe defaults
     return {
       user: null,
