@@ -18,7 +18,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const location = useLocation();
 
-  // Safe auth context access
+  // Safe auth context access with error boundary
   let authState = {
     user: null,
     initialized: false,
@@ -34,6 +34,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       loading: auth.loading,
       error: false
     };
+    
+    console.log('ProtectedRoute: Auth state retrieved:', { 
+      hasUser: !!auth.user, 
+      initialized: auth.initialized, 
+      loading: auth.loading 
+    });
   } catch (error) {
     console.error('ProtectedRoute: Auth context error:', error);
     authState.error = true;
@@ -41,6 +47,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Show error state if auth context failed
   if (authState.error) {
+    console.log('ProtectedRoute: Showing error state due to auth context failure');
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -57,29 +64,41 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Show loading while checking auth state
-  if (!authState.initialized || authState.loading) {
+  // Show loading while checking auth state - but only if not initialized yet
+  if (!authState.initialized) {
+    console.log('ProtectedRoute: Showing loading - auth not initialized yet');
     return <LoadingSpinner message="Yetkilendirme kontrol ediliyor..." />;
+  }
+
+  // Don't show loading for normal operation loading states
+  if (authState.loading) {
+    console.log('ProtectedRoute: Auth is loading but initialized, allowing navigation');
   }
 
   // Handle different protection levels
   switch (protection) {
     case RouteProtectionLevel.PUBLIC:
+      console.log('ProtectedRoute: Public route, allowing access');
       return <>{children}</>;
 
     case RouteProtectionLevel.GUEST_ONLY:
       if (authState.user && authState.initialized) {
+        console.log('ProtectedRoute: Guest-only route but user authenticated, redirecting to dashboard');
         return <Navigate to="/dashboard" replace />;
       }
+      console.log('ProtectedRoute: Guest-only route, allowing access');
       return <>{children}</>;
 
     case RouteProtectionLevel.AUTHENTICATED:
       if (!authState.user) {
+        console.log('ProtectedRoute: Authentication required but no user, redirecting to login');
         return <Navigate to={fallbackRoute} state={{ from: location }} replace />;
       }
+      console.log('ProtectedRoute: User authenticated, allowing access');
       return <>{children}</>;
 
     default:
+      console.log('ProtectedRoute: Unknown protection level, allowing access');
       return <>{children}</>;
   }
 };

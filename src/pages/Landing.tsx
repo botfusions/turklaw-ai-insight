@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { subscriptionPlans } from '@/constants';
 
-// Simple loading component
+// Simple loading component - optimized for fast rendering
 const SimpleLoading = () => (
   <div className="min-h-screen bg-background">
     <Header />
@@ -53,10 +53,15 @@ export default function Landing() {
 
   console.log('Landing: Auth state:', { user: !!user, profile: !!profile, loading, initialized });
 
-  // Show loading while auth is initializing
-  if (!initialized || loading) {
-    console.log('Landing: Showing loading state');
+  // Show loading ONLY while auth is initializing, not during normal operations
+  if (!initialized) {
+    console.log('Landing: Showing loading state - auth not initialized');
     return <SimpleLoading />;
+  }
+
+  // Don't block for normal loading states (like sign in/out operations)
+  if (loading) {
+    console.log('Landing: Auth loading but initialized, continuing with render');
   }
 
   // Static data
@@ -104,7 +109,7 @@ export default function Landing() {
     }
   ];
 
-  // Check if user is authenticated
+  // Check if user is authenticated - safe check now that auth is stabilized
   const isAuthenticated = user && profile;
   console.log('Landing: User authenticated:', isAuthenticated);
 

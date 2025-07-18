@@ -16,31 +16,51 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [initialized, setInitialized] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Simple profile fetch without dependencies to prevent race conditions
-  const fetchProfile = async (userId: string) => {
+  // Simple profile fetch with proper error handling
+  const fetchProfile = async (userId: string, isMounted: () => boolean) => {
     try {
-      console.log('AuthContext: Fetching profile for user:', userId);
+      console.log('AuthContext: Starting profile fetch for user:', userId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
+      // Always check if component is still mounted before setting state
+      if (!isMounted()) {
+        console.log('AuthContext: Component unmounted during profile fetch, skipping state update');
+        return;
+      }
+
       if (error) {
         console.error('AuthContext: Profile fetch error:', error);
+        // Don't throw - just log and continue without profile
+        setProfile(null);
         return;
       }
       
-      console.log('AuthContext: Profile fetched:', data);
+      console.log('AuthContext: Profile fetched successfully:', data);
       setProfile(data as Profile);
     } catch (error) {
       console.error('AuthContext: Profile fetch exception:', error);
+      if (isMounted()) {
+        setProfile(null);
+      }
     }
   };
 
   const refreshProfile = async () => {
     if (user) {
-      await fetchProfile(user.id);
+      let mounted = true;
+      const isMounted = () => mounted;
+      
+      await fetchProfile(user.id, isMounted);
+      
+      // Cleanup function
+      return () => {
+        mounted = false;
+      };
     }
   };
 
@@ -198,73 +218,124 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Ultra-simple auth initialization
+  // Stabilized auth initialization with proper cleanup
   useEffect(() => {
     let mounted = true;
+    let authSubscription: any = null;
+    let profileCleanup: (() => void) | null = null;
+
+    const isMounted = () => mounted;
 
     const initAuth = async () => {
       try {
-        console.log('AuthContext: Starting initialization...');
+        console.log('AuthContext: Starting stable initialization...');
         
-        // Set up listener first
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        // Set up auth state listener
+        authSubscription = supabase.auth.onAuthStateChange(
           (event, session) => {
-            if (!mounted) return;
+            if (!isMounted()) {
+              console.log('AuthContext: Component unmounted during auth state change, ignoring');
+              return;
+            }
             
             console.log('AuthContext: Auth state changed:', event, session?.user?.id);
+            
+            // Update user state immediately
             setUser(session?.user ?? null);
             
-            // Non-blocking profile fetch
+            // Handle profile fetch asynchronously and safely
             if (session?.user) {
-              setTimeout(() => {
-                if (mounted) fetchProfile(session.user.id);
-              }, 100);
+              // Clean up any previous profile fetch
+              if (profileCleanup) {
+                profileCleanup();
+                profileCleanup = null;
+              }
+              
+              // Start new profile fetch with timeout to prevent blocking
+              const timeoutId = setTimeout(() => {
+                if (isMounted()) {
+                  fetchProfile(session.user.id, isMounted).then((cleanup) => {
+                    if (cleanup && isMounted()) {
+                      profileCleanup = cleanup;
+                    }
+                  });
+                }
+              }, 50); // Small delay to prevent race conditions
+              
+              // Store timeout cleanup
+              profileCleanup = () => clearTimeout(timeoutId);
             } else {
               setProfile(null);
+              if (profileCleanup) {
+                profileCleanup();
+                profileCleanup = null;
+              }
             }
           }
         );
 
         // Get initial session
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (!mounted) {
-          subscription.unsubscribe();
+        if (error) {
+          console.error('AuthContext: Session fetch error:', error);
+        }
+        
+        if (!isMounted()) {
+          console.log('AuthContext: Component unmounted during session fetch');
           return;
         }
         
-        console.log('AuthContext: Initial session:', session?.user?.id);
+        console.log('AuthContext: Initial session loaded:', session?.user?.id);
+        
+        // Set initial user state
         setUser(session?.user ?? null);
         
+        // Fetch initial profile if user exists
         if (session?.user) {
-          setTimeout(() => {
-            if (mounted) fetchProfile(session.user.id);
-          }, 100);
+          const timeoutId = setTimeout(() => {
+            if (isMounted()) {
+              fetchProfile(session.user.id, isMounted).then((cleanup) => {
+                if (cleanup && isMounted()) {
+                  profileCleanup = cleanup;
+                }
+              });
+            }
+          }, 50);
+          
+          profileCleanup = () => clearTimeout(timeoutId);
         }
         
-        setInitialized(true);
-
-        return () => {
-          subscription.unsubscribe();
-        };
+        // Mark as initialized
+        if (isMounted()) {
+          setInitialized(true);
+          console.log('AuthContext: Initialization completed successfully');
+        }
       } catch (error) {
         console.error('AuthContext: Initialization error:', error);
-        if (mounted) {
-          setInitialized(true); // Always mark as initialized
+        if (isMounted()) {
+          setInitialized(true); // Always mark as initialized to prevent infinite loading
         }
       }
     };
 
-    let cleanup: (() => void) | undefined;
-    initAuth().then((cleanupFn) => {
-      cleanup = cleanupFn;
-    });
+    // Start initialization
+    initAuth();
 
+    // Cleanup function
     return () => {
+      console.log('AuthContext: Cleaning up...');
       mounted = false;
-      cleanup?.();
+      
+      if (authSubscription?.data?.subscription) {
+        authSubscription.data.subscription.unsubscribe();
+      }
+      
+      if (profileCleanup) {
+        profileCleanup();
+      }
     };
-  }, []);
+  }, []); // Empty dependency array - run only once
 
   const value: AuthContextType = {
     user,
