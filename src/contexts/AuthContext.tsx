@@ -57,10 +57,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       await fetchProfile(user.id, isMounted);
       
-      // Cleanup function
-      return () => {
-        mounted = false;
-      };
+      // Cleanup
+      mounted = false;
     }
   };
 
@@ -254,11 +252,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               // Start new profile fetch with timeout to prevent blocking
               const timeoutId = setTimeout(() => {
                 if (isMounted()) {
-                  fetchProfile(session.user.id, isMounted).then((cleanup) => {
-                    if (cleanup && isMounted()) {
-                      profileCleanup = cleanup;
-                    }
-                  });
+                  fetchProfile(session.user.id, isMounted);
                 }
               }, 50); // Small delay to prevent race conditions
               
@@ -295,11 +289,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (session?.user) {
           const timeoutId = setTimeout(() => {
             if (isMounted()) {
-              fetchProfile(session.user.id, isMounted).then((cleanup) => {
-                if (cleanup && isMounted()) {
-                  profileCleanup = cleanup;
-                }
-              });
+              fetchProfile(session.user.id, isMounted);
             }
           }, 50);
           
