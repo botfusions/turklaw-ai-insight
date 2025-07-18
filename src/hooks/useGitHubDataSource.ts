@@ -24,22 +24,10 @@ const CACHE_KEY_YARGI = 'github_yargi_data';
 const CACHE_KEY_LAST_UPDATE = 'github_data_last_update';
 
 export const useGitHubDataSource = () => {
-  // Wrap localStorage hooks with try-catch for safety
-  let mevzuatCache: MevzuatResult[] = [];
-  let yargiCache: MevzuatResult[] = [];
-  let lastUpdateCache: string | null = null;
-  
-  try {
-    const [mevzuatCacheState, setMevzuatCache] = useLocalStorage<MevzuatResult[]>(CACHE_KEY_MEVZUAT, []);
-    const [yargiCacheState, setYargiCache] = useLocalStorage<MevzuatResult[]>(CACHE_KEY_YARGI, []);
-    const [lastUpdateCacheState, setLastUpdateCache] = useLocalStorage<string | null>(CACHE_KEY_LAST_UPDATE, null);
-    
-    mevzuatCache = mevzuatCacheState;
-    yargiCache = yargiCacheState;
-    lastUpdateCache = lastUpdateCacheState;
-  } catch (error) {
-    console.warn('LocalStorage error in useGitHubDataSource:', error);
-  }
+  // Use localStorage hooks with proper error handling
+  const [mevzuatCache, setMevzuatCache] = useLocalStorage<MevzuatResult[]>(CACHE_KEY_MEVZUAT, []);
+  const [yargiCache, setYargiCache] = useLocalStorage<MevzuatResult[]>(CACHE_KEY_YARGI, []);
+  const [lastUpdateCache, setLastUpdateCache] = useLocalStorage<string | null>(CACHE_KEY_LAST_UPDATE, null);
 
   const [state, setState] = useState<GitHubDataState>(() => {
     try {
@@ -92,7 +80,6 @@ export const useGitHubDataSource = () => {
 
       const [mevzuatResponse, yargiResponse] = await Promise.allSettled([
         fetch(GITHUB_ENDPOINTS.mevzuat, { 
-          timeout: 10000,
           headers: {
             'Accept': 'application/json',
             'Cache-Control': 'no-cache'
@@ -102,7 +89,6 @@ export const useGitHubDataSource = () => {
           return null;
         }),
         fetch(GITHUB_ENDPOINTS.yargi, { 
-          timeout: 10000,
           headers: {
             'Accept': 'application/json',
             'Cache-Control': 'no-cache'
