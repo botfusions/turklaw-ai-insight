@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -7,8 +8,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, User, Bell, Search, Sparkles, Menu } from "lucide-react";
+import { LogOut, Settings, User, Search, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { MobileNavigation } from "@/components/mobile/MobileNavigation";
 
 interface DashboardHeaderProps {
   onMenuClick?: () => void;
@@ -31,16 +34,7 @@ export function DashboardHeader({ onMenuClick, showMenuButton = false }: Dashboa
           {/* Sol: Enhanced Logo + Dashboard */}
           <div className="flex items-center gap-3 sm:gap-6">
             {/* Mobile Menu Button */}
-            {showMenuButton && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onMenuClick}
-                className="lg:hidden text-foreground hover:bg-accent/10 p-2"
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-            )}
+            <MobileNavigation />
             
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -72,14 +66,7 @@ export function DashboardHeader({ onMenuClick, showMenuButton = false }: Dashboa
             </Button>
 
             {/* Notifications */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="relative p-2 hover:bg-accent/10 transition-colors"
-            >
-              <Bell className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-              <span className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full animate-pulse"></span>
-            </Button>
+            <NotificationBell />
 
             {/* User Profile Dropdown */}
             <DropdownMenu>

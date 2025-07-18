@@ -6,17 +6,20 @@ import { AppRoutes } from "@/components/routing/RouteConfig";
 import { AccessibilityProvider } from "@/components/accessibility/AccessibilityProvider";
 import { NetworkStatus } from "@/components/layout/NetworkStatus";
 import { AccessibilitySettings } from "@/components/accessibility/AccessibilitySettings";
+import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
 
 const App = () => (
-  <AccessibilityProvider>
-    <TooltipProvider>
-      <NetworkStatus />
-      <Toaster />
-      <Sonner />
-      <AppRoutes />
-      <AccessibilitySettings />
-    </TooltipProvider>
-  </AccessibilityProvider>
+  <ErrorBoundary>
+    <AccessibilityProvider>
+      <TooltipProvider>
+        <NetworkStatus />
+        <Toaster />
+        <Sonner />
+        <AppRoutes />
+        <AccessibilitySettings />
+      </TooltipProvider>
+    </AccessibilityProvider>
+  </ErrorBoundary>
 );
 
 export default App;
