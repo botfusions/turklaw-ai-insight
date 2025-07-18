@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, AuthResult, AuthContextType } from '@/types/auth';
@@ -26,16 +26,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [profileError, setProfileError] = useState<string | null>(null);
 
   // Error management functions
-  const clearAuthError = () => setAuthError(null);
-  const clearProfileError = () => setProfileError(null);
+  const clearAuthError = useCallback(() => setAuthError(null), []);
+  const clearProfileError = useCallback(() => setProfileError(null), []);
 
-  // Optimized profile fetch with dedicated loading state
-  const fetchProfile = async (userId: string) => {
+  // Non-blocking profile fetch with retry mechanism
+  const fetchProfile = useCallback(async (userId: string, retryCount = 0) => {
     try {
       setProfileLoading(true);
       setProfileError(null);
       
-      console.log('AuthContext: Starting optimized profile fetch for user:', userId);
+      console.log('AuthContext: Fetching profile for user:', userId, 'retry:', retryCount);
       
       const { data, error } = await supabase
         .from('profiles')
@@ -45,6 +45,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) {
         console.error('AuthContext: Profile fetch error:', error);
+        if (retryCount < 2) {
+          // Retry after delay
+          setTimeout(() => fetchProfile(userId, retryCount + 1), 1000 * (retryCount + 1));
+          return;
+        }
         setProfileError('Profil bilgileri yüklenemedi');
         setProfile(null);
         return;
@@ -55,22 +60,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setProfileError(null);
     } catch (error: any) {
       console.error('AuthContext: Profile fetch exception:', error);
+      if (retryCount < 2) {
+        setTimeout(() => fetchProfile(userId, retryCount + 1), 1000 * (retryCount + 1));
+        return;
+      }
       setProfileError('Profil bilgileri yüklenirken hata oluştu');
       setProfile(null);
     } finally {
       setProfileLoading(false);
     }
-  };
+  }, []);
 
   // Refresh profile with proper loading state management
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (user) {
       await fetchProfile(user.id);
     }
-  };
+  }, [user, fetchProfile]);
 
   // Enhanced error message handling
-  const getErrorMessage = (error: any): string => {
+  const getErrorMessage = useCallback((error: any): string => {
     if (!error?.message) return 'Bilinmeyen bir hata oluştu';
     
     const message = error.message.toLowerCase();
@@ -89,10 +98,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
     
     return error.message;
-  };
+  }, []);
 
   // Optimized auth actions with proper loading states
-  const signUp = async (email: string, password: string, fullName?: string): Promise<AuthResult> => {
+  const signUp = useCallback(async (email: string, password: string, fullName?: string): Promise<AuthResult> => {
     try {
       setActionLoading(true);
       setAuthError(null);
@@ -123,9 +132,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setActionLoading(false);
     }
-  };
+  }, [getErrorMessage]);
 
-  const signIn = async (email: string, password: string): Promise<AuthResult> => {
+  const signIn = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     try {
       setActionLoading(true);
       setAuthError(null);
@@ -148,9 +157,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setActionLoading(false);
     }
-  };
+  }, [getErrorMessage]);
 
-  const signOut = async (): Promise<void> => {
+  const signOut = useCallback(async (): Promise<void> => {
     try {
       setActionLoading(true);
       setAuthError(null);
@@ -161,9 +170,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setActionLoading(false);
     }
-  };
+  }, []);
 
-  const resetPassword = async (email: string): Promise<AuthResult> => {
+  const resetPassword = useCallback(async (email: string): Promise<AuthResult> => {
     try {
       setActionLoading(true);
       setAuthError(null);
@@ -187,9 +196,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setActionLoading(false);
     }
-  };
+  }, [getErrorMessage]);
 
-  const updateProfile = async (updates: Partial<Profile>): Promise<AuthResult> => {
+  const updateProfile = useCallback(async (updates: Partial<Profile>): Promise<AuthResult> => {
     if (!user) {
       const errorMessage = 'Kullanıcı oturum açmamış';
       setProfileError(errorMessage);
@@ -220,9 +229,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setActionLoading(false);
     }
-  };
+  }, [user, refreshProfile, getErrorMessage]);
 
-  const resendConfirmation = async (email: string): Promise<AuthResult> => {
+  const resendConfirmation = useCallback(async (email: string): Promise<AuthResult> => {
     try {
       setActionLoading(true);
       setAuthError(null);
@@ -249,9 +258,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setActionLoading(false);
     }
-  };
+  }, [getErrorMessage]);
 
-  // Optimized auth initialization with state machine pattern
+  // Optimized auth initialization with improved state machine
   useEffect(() => {
     let mounted = true;
     let authSubscription: any = null;
@@ -264,15 +273,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Set up auth state listener first
         authSubscription = supabase.auth.onAuthStateChange(
-          async (event, session) => {
-            if (!mounted) {
-              console.log('AuthContext: Component unmounted during auth state change');
-              return;
-            }
+          (event, session) => {
+            if (!mounted) return;
             
             console.log('AuthContext: Auth state changed:', event, session?.user?.id);
             
-            // Clear any existing auth errors on successful auth change
+            // Clear auth errors on successful auth change
             if (session?.user) {
               setAuthError(null);
             }
@@ -280,7 +286,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // Update user state immediately
             setUser(session?.user ?? null);
             
-            // Handle profile fetch separately with dedicated loading state
+            // Non-blocking profile fetch
             if (session?.user && mounted) {
               // Small delay to prevent race conditions
               setTimeout(() => {
@@ -291,6 +297,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             } else {
               setProfile(null);
               setProfileError(null);
+              setProfileLoading(false);
             }
           }
         );
@@ -303,17 +310,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setAuthError('Oturum kontrol edilemedi');
         }
         
-        if (!mounted) {
-          console.log('AuthContext: Component unmounted during session fetch');
-          return;
-        }
+        if (!mounted) return;
         
         console.log('AuthContext: Initial session loaded:', session?.user?.id);
         
         // Set initial user state
         setUser(session?.user ?? null);
         
-        // Fetch initial profile if user exists
+        // Non-blocking profile fetch for initial session
         if (session?.user && mounted) {
           setTimeout(() => {
             if (mounted) {
@@ -322,11 +326,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }, 50);
         }
         
-        // Mark as initialized
+        // Mark as initialized (always happens regardless of profile loading)
         if (mounted) {
           setInitialized(true);
           setAuthLoading(false);
-          console.log('AuthContext: Optimized initialization completed');
+          console.log('AuthContext: Initialization completed');
         }
       } catch (error) {
         console.error('AuthContext: Initialization error:', error);
@@ -343,7 +347,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Cleanup function
     return () => {
-      console.log('AuthContext: Cleaning up optimized auth...');
+      console.log('AuthContext: Cleaning up auth...');
       mounted = false;
       
       // Unsubscribe from auth changes
@@ -351,7 +355,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         authSubscription.data.subscription.unsubscribe();
       }
     };
-  }, []); // Empty dependency array - run only once
+  }, [fetchProfile]);
 
   const value: AuthContextType = {
     // State

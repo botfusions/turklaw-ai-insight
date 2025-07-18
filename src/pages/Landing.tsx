@@ -1,14 +1,18 @@
 
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { DashboardPreview } from '@/components/dashboard/DashboardPreview';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { AuthInitLoading } from '@/components/ui/AuthInitLoading';
+import { AuthErrorRecovery } from '@/components/ui/AuthErrorRecovery';
+import { ActionLoadingIndicator } from '@/components/ui/ActionLoadingIndicator';
+import { ProfileLoadingIndicator } from '@/components/ui/ProfileLoadingIndicator';
 import { 
   Search, 
   Zap, 
@@ -23,106 +27,63 @@ import {
   TrendingUp,
   Award,
   Sparkles,
-  AlertTriangle,
-  RefreshCw
+  AlertTriangle
 } from 'lucide-react';
 import { subscriptionPlans } from '@/constants';
-
-// Optimized loading component with granular feedback
-const OptimizedLoading = ({ authLoading, profileLoading }: { authLoading: boolean; profileLoading: boolean }) => (
-  <div className="min-h-screen bg-background">
-    <Header />
-    <section className="relative py-20 overflow-hidden">
-      <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          <Skeleton className="h-8 w-96 mx-auto" />
-          <Skeleton className="h-16 w-full max-w-2xl mx-auto" />
-          <div className="flex justify-center gap-4">
-            <Skeleton className="h-12 w-32" />
-            <Skeleton className="h-12 w-32" />
-          </div>
-          {/* Granular loading feedback */}
-          <div className="mt-8 text-sm text-muted-foreground">
-            {authLoading && <p>Yetkilendirme kontrol ediliyor...</p>}
-            {profileLoading && <p>Profil bilgileri yükleniyor...</p>}
-          </div>
-        </div>
-      </div>
-    </section>
-    <Footer />
-  </div>
-);
 
 export default function Landing() {
   const navigate = useNavigate();
   
-  // Use optimized auth state with granular loading and error states
-  const { 
-    user, 
-    profile, 
-    authLoading, 
-    actionLoading, 
-    profileLoading, 
-    initialized,
+  // Use optimized auth hook with smart loading states
+  const {
+    // Optimized states
+    isInitializing,
+    isReady,
+    hasAuthError,
+    isUserAuthenticated,
+    isProfileLoading,
+    isActionInProgress,
+    canRenderApp,
+    // Original auth context
     authError,
     profileError,
     clearAuthError,
-    clearProfileError
-  } = useAuth();
+    clearProfileError,
+    refreshProfile
+  } = useOptimizedAuth();
 
-  console.log('Landing: Optimized auth state:', { 
-    user: !!user, 
-    profile: !!profile, 
-    authLoading, 
-    actionLoading, 
-    profileLoading, 
-    initialized,
-    authError,
-    profileError
+  console.log('Landing: Optimized auth states:', { 
+    isInitializing,
+    isReady,
+    hasAuthError,
+    isUserAuthenticated,
+    isProfileLoading,
+    isActionInProgress,
+    canRenderApp
   });
 
   // Show loading only during auth initialization
-  if (!initialized || authLoading) {
-    console.log('Landing: Showing optimized loading state');
-    return <OptimizedLoading authLoading={authLoading} profileLoading={profileLoading} />;
+  if (isInitializing) {
+    console.log('Landing: Showing auth initialization loading');
+    return <AuthInitLoading />;
   }
 
-  // Show auth error with recovery option
-  if (authError) {
+  // Show auth error with recovery options
+  if (hasAuthError && authError) {
+    console.log('Landing: Showing auth error recovery:', authError);
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <section className="relative py-20">
-          <div className="container mx-auto px-4">
-            <div className="max-w-md mx-auto">
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription className="mt-2">
-                  {authError}
-                </AlertDescription>
-              </Alert>
-              <div className="flex gap-2 mt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={clearAuthError}
-                  className="flex-1"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Tekrar Dene
-                </Button>
-                <Button 
-                  onClick={() => navigate('/login')}
-                  className="flex-1"
-                >
-                  Giriş Yap
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
-        <Footer />
-      </div>
+      <AuthErrorRecovery
+        error={authError}
+        onRetry={refreshProfile}
+        onClearError={clearAuthError}
+      />
     );
+  }
+
+  // Can't render app due to critical issues
+  if (!canRenderApp) {
+    console.log('Landing: Cannot render app, showing fallback');
+    return <AuthInitLoading />;
   }
 
   // Static data
@@ -170,9 +131,7 @@ export default function Landing() {
     }
   ];
 
-  // Check if user is authenticated
-  const isAuthenticated = user && profile;
-  console.log('Landing: User authenticated:', isAuthenticated);
+  console.log('Landing: Rendering main content. User authenticated:', isUserAuthenticated);
 
   return (
     <div className="min-h-screen bg-background">
@@ -198,17 +157,12 @@ export default function Landing() {
         </div>
       )}
       
-      {/* Show loading indicator for action loading */}
-      {actionLoading && (
-        <div className="fixed top-4 right-4 z-50">
-          <div className="bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg flex items-center gap-2">
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
-            İşlem yapılıyor...
-          </div>
-        </div>
+      {/* Show action loading indicator */}
+      {isActionInProgress && (
+        <ActionLoadingIndicator message="İşlem yapılıyor..." />
       )}
       
-      {isAuthenticated ? (
+      {isUserAuthenticated ? (
         // Authenticated User View
         <>
           <section className="relative py-20 overflow-hidden">
@@ -219,7 +173,11 @@ export default function Landing() {
                   <Badge variant="secondary" className="mb-4">
                     <TrendingUp className="h-4 w-4 mr-2" />
                     Aktif Kullanıcı Dashboard
-                    {profileLoading && <span className="ml-2 animate-spin">⟳</span>}
+                    {isProfileLoading && (
+                      <span className="ml-2">
+                        <ProfileLoadingIndicator />
+                      </span>
+                    )}
                   </Badge>
                   
                   <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
@@ -296,17 +254,17 @@ export default function Landing() {
                   <Button 
                     size="lg" 
                     onClick={() => navigate('/register')}
-                    disabled={actionLoading}
+                    disabled={isActionInProgress}
                     className="bg-primary hover:bg-primary/90 text-lg px-8 py-6"
                   >
-                    {actionLoading ? 'İşlem yapılıyor...' : 'Ücretsiz Deneyin'}
-                    {!actionLoading && <ArrowRight className="ml-2 h-5 w-5" />}
+                    {isActionInProgress ? 'İşlem yapılıyor...' : 'Ücretsiz Deneyin'}
+                    {!isActionInProgress && <ArrowRight className="ml-2 h-5 w-5" />}
                   </Button>
                   <Button 
                     variant="outline" 
                     size="lg"
                     onClick={() => navigate('/search')}
-                    disabled={actionLoading}
+                    disabled={isActionInProgress}
                     className="text-lg px-8 py-6"
                   >
                     Demo İzle
@@ -404,9 +362,9 @@ export default function Landing() {
                         className="w-full mt-6"
                         variant={plan.popular ? "default" : "outline"}
                         onClick={() => navigate('/register')}
-                        disabled={actionLoading}
+                        disabled={isActionInProgress}
                       >
-                        {actionLoading ? 'İşlem yapılıyor...' : 'Başlayın'}
+                        {isActionInProgress ? 'İşlem yapılıyor...' : 'Başlayın'}
                       </Button>
                     </CardContent>
                   </Card>
@@ -460,11 +418,11 @@ export default function Landing() {
                 <Button 
                   size="lg"
                   onClick={() => navigate('/register')}
-                  disabled={actionLoading}
+                  disabled={isActionInProgress}
                   className="bg-primary hover:bg-primary/90 text-lg px-8 py-6"
                 >
-                  {actionLoading ? 'İşlem yapılıyor...' : 'Hemen Başlayın - Ücretsiz'}
-                  {!actionLoading && <ArrowRight className="ml-2 h-5 w-5" />}
+                  {isActionInProgress ? 'İşlem yapılıyor...' : 'Hemen Başlayın - Ücretsiz'}
+                  {!isActionInProgress && <ArrowRight className="ml-2 h-5 w-5" />}
                 </Button>
               </div>
             </div>
