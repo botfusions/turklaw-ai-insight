@@ -73,4 +73,21 @@ export interface MevzuatSearchProps {
   onSearchComplete?: (results: MevzuatResult[]) => void;
   filters?: SearchFilters;
   className?: string;
+  compact?: boolean;
+  showFilters?: boolean;
+  autoSearch?: boolean;
+  placeholder?: string;
+  onSearchStart?: (query: string) => void;
+  onError?: (error: string) => void;
+  requireAuth?: boolean;
+  showLimitWarning?: boolean;
+  showDataSource?: boolean;
+  showHistory?: boolean;
+  cacheEnabled?: boolean;
+  primaryTimeout?: number;
+  fallbackEnabled?: boolean;
+  cacheFirst?: boolean;
+  showPerformanceInfo?: boolean;
+  showCacheControls?: boolean;
+  debugMode?: boolean;
 }

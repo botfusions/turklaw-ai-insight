@@ -15,7 +15,14 @@ export const useMevzuatSearch = () => {
       cacheHit: false,
       apiAttempts: 0,
       dataSource: 'primary'
-    }
+    },
+    filters: {},
+    totalPages: 0,
+    currentPage: 1,
+    pageSize: 10,
+    cacheSize: 0,
+    historySize: 0,
+    lastCacheCleared: null
   });
 
   const searchMevzuat = useCallback(async (query: string, maxResults: number = 10) => {
