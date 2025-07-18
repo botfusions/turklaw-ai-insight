@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     // Production optimizations
-    minify: 'terser',
+    minify: 'esbuild', // Changed from 'terser' to 'esbuild'
     sourcemap: false,
     rollupOptions: {
       output: {
@@ -34,13 +34,6 @@ export default defineConfig(({ mode }) => ({
     },
     // Optimize chunk size
     chunkSizeWarningLimit: 1000,
-    // Remove console logs in production
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
   },
   // Optimize dependencies
   optimizeDeps: {
