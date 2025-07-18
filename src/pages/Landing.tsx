@@ -25,8 +25,31 @@ import { subscriptionPlans } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Landing() {
+  console.log('Landing component rendering...'); // Debug log
+  
   const navigate = useNavigate();
-  const { user, profile, loading } = useAuth();
+  
+  // Auth hook'u güvenli şekilde kullan
+  let user = null;
+  let profile = null;
+  let loading = false;
+  
+  try {
+    const authData = useAuth();
+    console.log('Landing useAuth data:', { 
+      user: !!authData.user, 
+      profile: !!authData.profile, 
+      loading: authData.loading 
+    });
+    
+    user = authData.user;
+    profile = authData.profile;
+    loading = authData.loading;
+  } catch (error) {
+    console.error('Landing useAuth error:', error);
+    // Auth başarısız olsa bile sayfayı göster
+    loading = false;
+  }
 
   const features = [
     {
@@ -90,7 +113,11 @@ export default function Landing() {
     }
   ];
 
+  console.log('Landing about to render JSX...'); // Debug log
+
+  // Loading state için basit skeleton
   if (loading) {
+    console.log('Landing showing loading state');
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -102,6 +129,8 @@ export default function Landing() {
     );
   }
 
+  console.log('Landing rendering main content, user:', !!user, 'profile:', !!profile);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -111,7 +140,7 @@ export default function Landing() {
         <>
           {/* Personalized Hero Section */}
           <section className="relative py-20 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-hero opacity-5"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 opacity-50"></div>
             <div className="container mx-auto px-4 relative">
               <div className="max-w-6xl mx-auto">
                 <div className="text-center mb-12">
@@ -152,7 +181,7 @@ export default function Landing() {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {advancedFeatures.map((feature, index) => (
-                  <Card key={index} className="bg-card shadow-card hover:shadow-hover transition-all duration-300">
+                  <Card key={index} className="bg-card shadow-lg hover:shadow-xl transition-all duration-300">
                     <CardHeader className="text-center">
                       <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                         <feature.icon className="h-8 w-8 text-primary" />
@@ -184,11 +213,11 @@ export default function Landing() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {testimonials.slice(0, 2).map((testimonial, index) => (
-                  <Card key={index} className="bg-card shadow-card">
+                  <Card key={index} className="bg-card shadow-lg">
                     <CardContent className="p-6">
                       <div className="flex items-center mb-4">
                         {[...Array(testimonial.rating)].map((_, i) => (
-                          <Star key={i} className="h-4 w-4 text-secondary fill-current" />
+                          <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
                         ))}
                       </div>
                       <p className="text-foreground mb-4 italic">"{testimonial.content}"</p>
@@ -208,7 +237,7 @@ export default function Landing() {
         <>
           {/* Hero Section */}
           <section className="relative py-20 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-hero opacity-5"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 opacity-50"></div>
             <div className="container mx-auto px-4 relative">
               <div className="max-w-4xl mx-auto text-center">
                 <Badge variant="secondary" className="mb-6">
@@ -246,15 +275,15 @@ export default function Landing() {
                 
                 <div className="flex items-center justify-center space-x-8 mt-12 text-sm text-muted-foreground">
                   <div className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-success mr-2" />
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
                     7 gün ücretsiz deneme
                   </div>
                   <div className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-success mr-2" />
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
                     Anında aktivasyon
                   </div>
                   <div className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-success mr-2" />
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
                     İptal etmek istediğinizde
                   </div>
                 </div>
@@ -276,7 +305,7 @@ export default function Landing() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {features.map((feature, index) => (
-                  <Card key={index} className="bg-card shadow-card hover:shadow-hover transition-all duration-300">
+                  <Card key={index} className="bg-card shadow-lg hover:shadow-xl transition-all duration-300">
                     <CardHeader className="text-center">
                       <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                         <feature.icon className="h-8 w-8 text-primary" />
@@ -310,12 +339,12 @@ export default function Landing() {
                 {subscriptionPlans.map((plan) => (
                   <Card 
                     key={plan.id} 
-                    className={`relative bg-card shadow-card hover:shadow-hover transition-all duration-300 ${
-                      plan.popular ? 'border-primary shadow-premium scale-105' : ''
+                    className={`relative bg-card shadow-lg hover:shadow-xl transition-all duration-300 ${
+                      plan.popular ? 'border-primary shadow-2xl scale-105' : ''
                     }`}
                   >
                     {plan.popular && (
-                      <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-secondary text-secondary-foreground">
+                      <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground">
                         En Popüler
                       </Badge>
                     )}
@@ -329,7 +358,7 @@ export default function Landing() {
                     <CardContent className="space-y-4">
                       {plan.features.map((feature, index) => (
                         <div key={index} className="flex items-center">
-                          <CheckCircle className="h-4 w-4 text-success mr-3" />
+                          <CheckCircle className="h-4 w-4 text-green-600 mr-3" />
                           <span className="text-sm">{feature}</span>
                         </div>
                       ))}
@@ -361,11 +390,11 @@ export default function Landing() {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {testimonials.map((testimonial, index) => (
-                  <Card key={index} className="bg-card shadow-card">
+                  <Card key={index} className="bg-card shadow-lg">
                     <CardContent className="p-6">
                       <div className="flex items-center mb-4">
                         {[...Array(testimonial.rating)].map((_, i) => (
-                          <Star key={i} className="h-4 w-4 text-secondary fill-current" />
+                          <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
                         ))}
                       </div>
                       <p className="text-foreground mb-4 italic">"{testimonial.content}"</p>
@@ -381,21 +410,20 @@ export default function Landing() {
           </section>
 
           {/* CTA Section */}
-          <section className="py-20 bg-gradient-hero">
+          <section className="py-20 bg-gradient-to-r from-primary/20 to-secondary/20">
             <div className="container mx-auto px-4 text-center">
               <div className="max-w-3xl mx-auto">
-                <Scale className="h-16 w-16 text-white mx-auto mb-6" />
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                <Scale className="h-16 w-16 text-primary mx-auto mb-6" />
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
                   Hukuki Araştırmalarınızda Devrim Yaratın
                 </h2>
-                <p className="text-xl text-white/90 mb-8">
+                <p className="text-xl text-muted-foreground mb-8">
                   Bugün başlayın ve ilk 7 gün ücretsiz olarak TurkLaw AI'ın gücünü keşfedin
                 </p>
                 <Button 
                   size="lg"
-                  variant="secondary"
                   onClick={() => navigate('/register')}
-                  className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6"
+                  className="bg-primary hover:bg-primary/90 text-lg px-8 py-6"
                 >
                   Hemen Başlayın - Ücretsiz
                   <ArrowRight className="ml-2 h-5 w-5" />

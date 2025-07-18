@@ -26,8 +26,6 @@ import { UserAvatar } from './UserAvatar';
 import { ThemeToggle } from './ThemeToggle';
 import { NotificationCenter } from './NotificationCenter';
 import { MobileMenu } from './MobileMenu';
-// Temporarily disabled DataStatusIndicator to prevent page crashes
-// import { DataStatusIndicator } from './DataStatusIndicator';
 import { useHeader } from '@/hooks/useHeader';
 import { cn } from '@/lib/utils';
 
@@ -40,6 +38,33 @@ export function Header({}: HeaderProps) {
   
   console.log('Header rendering...'); // Debug log
   
+  // useHeader'ı güvenli şekilde kullan
+  let headerData;
+  try {
+    headerData = useHeader();
+    console.log('Header useHeader success:', { 
+      user: !!headerData.user, 
+      loading: headerData.loading 
+    });
+  } catch (error) {
+    console.error('Header useHeader error:', error);
+    // Fallback değerler
+    headerData = {
+      user: null,
+      profile: null,
+      signOut: async () => {},
+      loading: false,
+      displayName: 'Kullanıcı',
+      userInitials: 'KU',
+      unreadCount: 0,
+      mobileMenuOpen: false,
+      toggleMobileMenu: () => {},
+      closeMobileMenu: () => {},
+      scrolled: false,
+      isHeaderVisible: true,
+    };
+  }
+
   const {
     user,
     profile,
@@ -47,20 +72,24 @@ export function Header({}: HeaderProps) {
     loading,
     displayName,
     userInitials,
-    
     unreadCount,
     mobileMenuOpen,
     toggleMobileMenu,
     closeMobileMenu,
     scrolled,
     isHeaderVisible,
-  } = useHeader();
+  } = headerData;
 
-  console.log('Header useHeader data:', { user: !!user, profile: !!profile, loading }); // Debug log
+  console.log('Header using data:', { user: !!user, profile: !!profile, loading });
 
   const handleLogout = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Header logout error:', error);
+      navigate('/');
+    }
   };
 
   const isPremiumUser = profile && !['free', 'basic'].includes(profile.plan);
@@ -71,8 +100,8 @@ export function Header({}: HeaderProps) {
         className={cn(
           'fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300 ease-in-out',
           scrolled 
-            ? 'glass-effect border-border/50 shadow-sm h-14' 
-            : 'bg-card/95 border-border h-16',
+            ? 'bg-background/80 backdrop-blur-md border-border/50 shadow-sm h-14' 
+            : 'bg-background border-border h-16',
           isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
         )}
       >
@@ -82,7 +111,7 @@ export function Header({}: HeaderProps) {
             to="/" 
             className="flex items-center space-x-3 hover:opacity-80 transition-opacity group"
           >
-            <div className="bg-gradient-hero p-2 rounded-xl shadow-lg group-hover:shadow-xl transition-shadow">
+            <div className="bg-gradient-to-r from-primary to-secondary p-2 rounded-xl shadow-lg group-hover:shadow-xl transition-shadow">
               <Scale className={cn(
                 'text-white transition-transform group-hover:scale-110',
                 scrolled ? 'h-5 w-5' : 'h-6 w-6'
@@ -145,9 +174,6 @@ export function Header({}: HeaderProps) {
                   Ara
                 </Button>
                 
-                {/* DataStatusIndicator temporarily disabled */}
-                {/* <DataStatusIndicator /> */}
-
                 {/* Theme Toggle */}
                 <ThemeToggle />
                 
@@ -196,7 +222,7 @@ export function Header({}: HeaderProps) {
                                 {profile.plan}
                               </Badge>
                               {isPremiumUser && (
-                                <Crown className="h-3 w-3 text-secondary" />
+                                <Crown className="h-3 w-3 text-yellow-500" />
                               )}
                             </div>
                           )}
@@ -273,7 +299,7 @@ export function Header({}: HeaderProps) {
                 <Button 
                   size="sm" 
                   onClick={() => navigate('/register')}
-                  className="bg-gradient-hero hover:opacity-90 transition-opacity"
+                  className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity"
                 >
                   <span className="hidden sm:inline">Ücretsiz Deneyin</span>
                   <span className="sm:hidden">Kayıt Ol</span>
