@@ -26,11 +26,15 @@ const Dashboard = () => {
   const [searchTime, setSearchTime] = useState(0);
 
   // Enhanced search with progressive loading
-  const [searchLoadingSteps, setSearchLoadingSteps] = useState([
-    { id: 'query', label: 'Sorgu analiz ediliyor...', status: 'pending' as const },
-    { id: 'database', label: 'Veritabanında aranıyor...', status: 'pending' as const },
-    { id: 'filter', label: 'Sonuçlar filtreleniyor...', status: 'pending' as const },
-    { id: 'rank', label: 'İlgi düzeyine göre sıralanıyor...', status: 'pending' as const }
+  const [searchLoadingSteps, setSearchLoadingSteps] = useState<{
+    id: string;
+    label: string;
+    status: 'pending' | 'loading' | 'completed' | 'error';
+  }[]>([
+    { id: 'query', label: 'Sorgu analiz ediliyor...', status: 'pending' },
+    { id: 'database', label: 'Veritabanında aranıyor...', status: 'pending' },
+    { id: 'filter', label: 'Sonuçlar filtreleniyor...', status: 'pending' },
+    { id: 'rank', label: 'İlgi düzeyine göre sıralanıyor...', status: 'pending' }
   ]);
 
   // Mock search results generator

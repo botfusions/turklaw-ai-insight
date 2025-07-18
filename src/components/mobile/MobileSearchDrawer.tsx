@@ -55,7 +55,7 @@ export function MobileSearchDrawer({ isOpen, onClose, onSearch }: MobileSearchDr
 
   const handleVoiceSearch = useCallback(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
       const recognition = new SpeechRecognition();
       
       recognition.lang = 'tr-TR';
