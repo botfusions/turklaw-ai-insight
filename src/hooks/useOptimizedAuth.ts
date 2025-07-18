@@ -1,5 +1,6 @@
 
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthData } from '@/contexts/AuthDataContext';
+import { useAuthActions } from '@/contexts/AuthActionsContext';
 import { useMemo } from 'react';
 
 export interface OptimizedAuthStates {
@@ -12,30 +13,31 @@ export interface OptimizedAuthStates {
   canRenderApp: boolean;
 }
 
-export const useOptimizedAuth = (): OptimizedAuthStates & ReturnType<typeof useAuth> => {
-  const auth = useAuth();
+export const useOptimizedAuth = () => {
+  const authData = useAuthData();
+  const authActions = useAuthActions();
 
   const optimizedStates = useMemo((): OptimizedAuthStates => {
-    // App is initializing if not initialized or actively loading auth
-    const isInitializing = !auth.initialized || auth.authLoading;
+    // App is initializing if not initialized
+    const isInitializing = !authData.initialized;
     
-    // App is ready when initialized and no critical auth loading
-    const isReady = auth.initialized && !auth.authLoading;
+    // App is ready when initialized
+    const isReady = authData.initialized;
     
-    // Has recoverable auth error
-    const hasAuthError = !!auth.authError && auth.initialized;
+    // No auth errors in new simplified structure
+    const hasAuthError = false;
     
     // User is properly authenticated
-    const isUserAuthenticated = isReady && !!auth.user && !!auth.profile;
+    const isUserAuthenticated = isReady && !!authData.user && !!authData.profile;
     
-    // Profile is loading but non-blocking
-    const isProfileLoading = auth.profileLoading;
+    // Profile loading is handled differently in new structure
+    const isProfileLoading = false;
     
-    // Action is in progress (blocking for UX feedback)
-    const isActionInProgress = auth.actionLoading;
+    // Action is in progress
+    const isActionInProgress = authActions.loading;
     
-    // Can render main app (even with profile loading or action loading)
-    const canRenderApp = isReady && !hasAuthError;
+    // Can render main app when ready
+    const canRenderApp = isReady;
 
     return {
       isInitializing,
@@ -46,18 +48,34 @@ export const useOptimizedAuth = (): OptimizedAuthStates & ReturnType<typeof useA
       isActionInProgress,
       canRenderApp,
     };
-  }, [
-    auth.initialized,
-    auth.authLoading,
-    auth.authError,
-    auth.user,
-    auth.profile,
-    auth.profileLoading,
-    auth.actionLoading,
-  ]);
+  }, [authData, authActions]);
 
-  return {
-    ...auth,
+  // Combine all auth functionality for backward compatibility
+  const combinedAuth = useMemo(() => ({
+    // Original auth context structure
+    user: authData.user,
+    profile: authData.profile,
+    initialized: authData.initialized,
+    authLoading: !authData.initialized,
+    actionLoading: authActions.loading,
+    profileLoading: false,
+    authError: null,
+    profileError: null,
+    
+    // Actions
+    signUp: authActions.signUp,
+    signIn: authActions.signIn,
+    signOut: authActions.signOut,
+    resetPassword: authActions.resetPassword,
+    updateProfile: authActions.updateProfile,
+    resendConfirmation: authActions.resendConfirmation,
+    refreshProfile: authData.refreshProfile,
+    clearAuthError: () => {},
+    clearProfileError: () => {},
+    
+    // Optimized states
     ...optimizedStates,
-  };
+  }), [authData, authActions, optimizedStates]);
+
+  return combinedAuth;
 };

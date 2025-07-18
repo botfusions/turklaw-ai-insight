@@ -4,7 +4,8 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthDataProvider } from "@/contexts/AuthDataContext";
+import { AuthActionsProvider } from "@/contexts/AuthActionsContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { Toaster } from "@/components/ui/toaster";
@@ -28,14 +29,16 @@ createRoot(rootElement).render(
     <ErrorBoundary>
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <ThemeProvider>
-              <NotificationProvider>
-                <App />
-                <Toaster />
-              </NotificationProvider>
-            </ThemeProvider>
-          </AuthProvider>
+          <AuthDataProvider>
+            <AuthActionsProvider>
+              <ThemeProvider>
+                <NotificationProvider>
+                  <App />
+                  <Toaster />
+                </NotificationProvider>
+              </ThemeProvider>
+            </AuthActionsProvider>
+          </AuthDataProvider>
         </QueryClientProvider>
       </BrowserRouter>
     </ErrorBoundary>
