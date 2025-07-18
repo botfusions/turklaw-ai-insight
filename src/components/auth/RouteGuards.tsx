@@ -26,8 +26,9 @@ export const useRouteGuards = () => {
     }
 
     const planHierarchy: Record<PlanType, number> = {
-      basic: 0,
-      premium: 1
+      free: 0,
+      basic: 1,
+      premium: 2
     };
 
     const userPlanLevel = planHierarchy[profile.plan as PlanType] || 0;

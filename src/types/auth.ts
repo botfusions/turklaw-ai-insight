@@ -4,7 +4,7 @@ export interface Profile {
   id: string;
   email: string;
   full_name: string | null;
-  plan: 'basic' | 'premium';
+  plan: 'free' | 'basic' | 'premium';
   created_at: string | null;
   updated_at: string | null;
 }

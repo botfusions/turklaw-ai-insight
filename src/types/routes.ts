@@ -8,7 +8,7 @@ export enum RouteProtectionLevel {
   ADMIN_ONLY = 'admin_only'
 }
 
-export type PlanType = 'basic' | 'premium';
+export type PlanType = 'free' | 'basic' | 'premium';
 
 export interface RouteConfig {
   path: string;

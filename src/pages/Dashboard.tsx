@@ -187,19 +187,19 @@ const Dashboard = () => {
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
                         {currentPlan === 'free' && <Zap className="h-5 w-5 text-blue-500" />}
+                        {currentPlan === 'basic' && <Zap className="h-5 w-5 text-green-500" />}
                         {currentPlan === 'premium' && <Crown className="h-5 w-5 text-yellow-500" />}
-                        {currentPlan === 'enterprise' && <Building className="h-5 w-5 text-purple-500" />}
                         <span className="font-medium">
                           {currentPlan === 'free' && 'Ücretsiz Plan'}
+                          {currentPlan === 'basic' && 'Temel Plan'}
                           {currentPlan === 'premium' && 'Premium Plan'}
-                          {currentPlan === 'enterprise' && 'Kurumsal Plan'}
                         </span>
                       </div>
                       
                       <div className="text-sm text-muted-foreground">
                         {currentPlan === 'free' && 'Temel özelliklere erişim'}
+                        {currentPlan === 'basic' && 'Gelişmiş özellikler'}
                         {currentPlan === 'premium' && 'Gelişmiş özellikler ve sınırsız arama'}
-                        {currentPlan === 'enterprise' && 'Tüm özellikler ve özel destek'}
                       </div>
                       
                       <Button 

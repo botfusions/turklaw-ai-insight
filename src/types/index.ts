@@ -2,7 +2,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  plan: 'basic' | 'premium';
+  plan: 'free' | 'basic' | 'premium';
   createdAt: Date;
 }
 
