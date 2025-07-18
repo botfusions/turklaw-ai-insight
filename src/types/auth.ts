@@ -23,6 +23,7 @@ export interface AuthActions {
   resetPassword: (email: string) => Promise<AuthResult>;
   updateProfile: (updates: Partial<Profile>) => Promise<AuthResult>;
   resendConfirmation: (email: string) => Promise<AuthResult>;
+  refreshProfile: () => Promise<void>;
 }
 
 export interface AuthResult {
