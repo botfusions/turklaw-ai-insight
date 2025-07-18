@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Scale, 
@@ -25,6 +26,7 @@ import { UserAvatar } from './UserAvatar';
 import { ThemeToggle } from './ThemeToggle';
 import { NotificationCenter } from './NotificationCenter';
 import { MobileMenu } from './MobileMenu';
+import { DataStatusIndicator } from './DataStatusIndicator';
 import { useHeader } from '@/hooks/useHeader';
 import { cn } from '@/lib/utils';
 
@@ -137,6 +139,8 @@ export function Header({}: HeaderProps) {
                   Ara
                 </Button>
                 
+                {/* Data Status Indicator */}
+                <DataStatusIndicator />
 
                 {/* Theme Toggle */}
                 <ThemeToggle />

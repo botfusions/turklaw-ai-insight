@@ -1,64 +1,32 @@
-export interface MevzuatSearchProps {
-  // Görsel özelleştirme
-  className?: string;
-  compact?: boolean;
-  showFilters?: boolean;
-  
-  // Fonksiyonel özelleştirme
-  maxResults?: number;
-  autoSearch?: boolean;
-  placeholder?: string;
-  
-  // Callbacks
-  onSearchStart?: (query: string) => void;
-  onSearchComplete?: (results: MevzuatResult[]) => void;
-  onError?: (error: string) => void;
-  
-  // Auth kontrolü
-  requireAuth?: boolean;
-  showLimitWarning?: boolean;
-  
-  // Hibrit özellikler
-  showDataSource?: boolean;
-  showHistory?: boolean;
-  cacheEnabled?: boolean;
-  primaryTimeout?: number;
-  fallbackEnabled?: boolean;
-  cacheFirst?: boolean;
-  showPerformanceInfo?: boolean;
-  showCacheControls?: boolean;
-  debugMode?: boolean;
-}
 
 export interface MevzuatResult {
   id: string;
   title: string;
   content: string;
-  date?: string;
+  date: string;
   type: string;
   url?: string;
   relevance?: number;
+  source?: 'primary' | 'fallback' | 'cache' | 'github' | 'static';
 }
 
-export interface MevzuatSearchState {
-  query: string;
-  results: MevzuatResult[];
-  loading: boolean;
-  error: string | null;
-  hasSearched: boolean;
-  dataSource: DataSource;
-  searchHistory: SearchHistoryItem[];
-  performanceInfo: PerformanceInfo;
-}
+export type DataSource = 'primary' | 'fallback' | 'cache' | 'github' | 'static' | 'error';
 
 export interface SearchFilters {
-  type: string;
-  dateFrom: Date | null;
-  dateTo: Date | null;
-  category: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+  court?: string;
+  department?: string;
+  legalField?: string;
+  documentType?: string;
 }
 
-export type DataSource = 'primary' | 'fallback' | 'cache' | 'error';
+export interface PerformanceInfo {
+  responseTime: number;
+  cacheHit: boolean;
+  apiAttempts: number;
+  dataSource: DataSource;
+}
 
 export interface SearchHistoryItem {
   id: string;
@@ -77,15 +45,32 @@ export interface CacheEntry {
   expiresAt: number;
 }
 
-export interface PerformanceInfo {
-  responseTime: number;
-  cacheHit: boolean;
-  apiAttempts: number;
+export interface HybridSearchState {
+  query: string;
+  results: MevzuatResult[];
+  loading: boolean;
+  error: string | null;
+  hasSearched: boolean;
   dataSource: DataSource;
-}
-
-export interface HybridSearchState extends MevzuatSearchState {
+  searchHistory: SearchHistoryItem[];
+  performanceInfo: PerformanceInfo;
   cacheSize: number;
   historySize: number;
   lastCacheCleared: number | null;
+  githubDataStatus?: 'active' | 'loading' | 'error';
+}
+
+export interface MevzuatSearchState extends HybridSearchState {
+  filters: SearchFilters;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+export interface MevzuatSearchProps {
+  initialQuery?: string;
+  maxResults?: number;
+  onSearchComplete?: (results: MevzuatResult[]) => void;
+  filters?: SearchFilters;
+  className?: string;
 }

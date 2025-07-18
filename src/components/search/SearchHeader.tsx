@@ -1,9 +1,10 @@
+
 import React from 'react';
-import { Scale, Database, Server, FileText, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Scale, Database, Server, FileText, AlertTriangle, RefreshCw, Github } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface SearchHeaderProps {
-  dataSource: 'cache' | 'api' | 'static' | 'error';
+  dataSource: 'cache' | 'api' | 'static' | 'error' | 'primary' | 'fallback' | 'github';
 }
 
 const getDataSourceConfig = (source: string) => {
@@ -13,16 +14,25 @@ const getDataSourceConfig = (source: string) => {
         label: 'Cache Verisi', 
         icon: Database,
         className: 'bg-success/10 text-success border-success/20 hover:bg-success/20',
-        pulseClass: 'animate-pulse'
+        pulseClass: ''
       };
     case 'api':
+    case 'primary':
       return { 
         label: 'Canlı API', 
         icon: Server,
         className: 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20',
-        pulseClass: 'animate-pulse'
+        pulseClass: ''
+      };
+    case 'github':
+      return { 
+        label: 'GitHub Data', 
+        icon: Github,
+        className: 'bg-blue-500/10 text-blue-600 border-blue-500/20 hover:bg-blue-500/20',
+        pulseClass: ''
       };
     case 'static':
+    case 'fallback':
       return { 
         label: 'Statik Veri', 
         icon: FileText,

@@ -1,6 +1,8 @@
+
 import { useState, useCallback } from 'react';
 import { HybridSearchState, MevzuatResult, DataSource, PerformanceInfo } from '../types';
 import { useSearchHistory } from './useSearchHistory';
+import { useGitHubDataSource } from '@/hooks/useGitHubDataSource';
 import { getCacheEntry, setCacheEntry, clearCache, getCacheSize } from '../utils/cacheUtils';
 import { fetchPrimaryAPI, fetchFallbackJSON, searchInFallbackData } from '../utils/apiUtils';
 
@@ -9,15 +11,18 @@ export const useHybridMevzuatSearch = (options: {
   primaryTimeout?: number;
   fallbackEnabled?: boolean;
   cacheFirst?: boolean;
+  githubEnabled?: boolean;
 } = {}) => {
   const {
     cacheEnabled = true,
     primaryTimeout = 5000,
     fallbackEnabled = true,
-    cacheFirst = false
+    cacheFirst = false,
+    githubEnabled = true
   } = options;
   
   const { addToHistory, searchHistory, clearHistory, getHistorySize } = useSearchHistory();
+  const { searchInGitHubData, dataStatus: githubDataStatus } = useGitHubDataSource();
   
   const [state, setState] = useState<HybridSearchState>({
     query: '',
@@ -104,40 +109,98 @@ export const useHybridMevzuatSearch = (options: {
       } catch (primaryError) {
         console.warn('Primary API hatası:', primaryError);
         
-        // 3. Fallback JSON'u dene
-        if (fallbackEnabled) {
+        // 3. GitHub Actions data'sını dene (YENİ FALLBACK)
+        if (githubEnabled && githubDataStatus === 'active') {
           try {
-            apiAttempts++;
-            const fallbackData = await fetchFallbackJSON();
-            finalResults = searchInFallbackData(fallbackData, query, maxResults);
-            finalDataSource = 'fallback';
-            
-            // Fallback sonucunu da cache'e kaydet
-            if (cacheEnabled && finalResults.length > 0) {
-              setCacheEntry(query, finalResults, finalDataSource, maxResults);
-            }
-            
-          } catch (fallbackError) {
-            console.warn('Fallback API hatası:', fallbackError);
-            
-            // 4. Son çare olarak cache'deki eski veriyi kullan
-            if (cacheEnabled && !cacheHit) {
-              const cached = getCacheEntry(query, maxResults);
-              if (cached) {
-                finalResults = cached.results.slice(0, maxResults);
-                finalDataSource = 'cache';
-                cacheHit = true;
+            finalResults = searchInGitHubData(query, maxResults);
+            if (finalResults.length > 0) {
+              finalDataSource = 'github';
+              
+              // GitHub sonucunu da cache'e kaydet
+              if (cacheEnabled) {
+                setCacheEntry(query, finalResults, finalDataSource, maxResults);
               }
+              
+              console.log(`GitHub data used: ${finalResults.length} results found`);
+            } else {
+              throw new Error('GitHub data\'da sonuç bulunamadı');
             }
             
-            // Hiçbir şey bulunamadıysa hata fırlat
-            if (finalResults.length === 0) {
-              finalDataSource = 'error';
-              throw new Error('Tüm veri kaynakları başarısız oldu');
+          } catch (githubError) {
+            console.warn('GitHub data arama hatası:', githubError);
+            
+            // 4. Fallback JSON'u dene
+            if (fallbackEnabled) {
+              try {
+                apiAttempts++;
+                const fallbackData = await fetchFallbackJSON();
+                finalResults = searchInFallbackData(fallbackData, query, maxResults);
+                finalDataSource = 'fallback';
+                
+                // Fallback sonucunu da cache'e kaydet
+                if (cacheEnabled && finalResults.length > 0) {
+                  setCacheEntry(query, finalResults, finalDataSource, maxResults);
+                }
+                
+              } catch (fallbackError) {
+                console.warn('Fallback API hatası:', fallbackError);
+                
+                // 5. Son çare olarak cache'deki eski veriyi kullan
+                if (cacheEnabled && !cacheHit) {
+                  const cached = getCacheEntry(query, maxResults);
+                  if (cached) {
+                    finalResults = cached.results.slice(0, maxResults);
+                    finalDataSource = 'cache';
+                    cacheHit = true;
+                  }
+                }
+                
+                // Hiçbir şey bulunamadıysa hata fırlat
+                if (finalResults.length === 0) {
+                  finalDataSource = 'error';
+                  throw new Error('Tüm veri kaynakları başarısız oldu');
+                }
+              }
+            } else {
+              throw githubError;
             }
           }
         } else {
-          throw primaryError;
+          // GitHub data kullanılamıyorsa doğrudan fallback'e geç
+          if (fallbackEnabled) {
+            try {
+              apiAttempts++;
+              const fallbackData = await fetchFallbackJSON();
+              finalResults = searchInFallbackData(fallbackData, query, maxResults);
+              finalDataSource = 'fallback';
+              
+              // Fallback sonucunu da cache'e kaydet
+              if (cacheEnabled && finalResults.length > 0) {
+                setCacheEntry(query, finalResults, finalDataSource, maxResults);
+              }
+              
+            } catch (fallbackError) {
+              console.warn('Fallback API hatası:', fallbackError);
+              
+              // Son çare olarak cache'deki eski veriyi kullan
+              if (cacheEnabled && !cacheHit) {
+                const cached = getCacheEntry(query, maxResults);
+                if (cached) {
+                  finalResults = cached.results.slice(0, maxResults);
+                  finalDataSource = 'cache';
+                  cacheHit = true;
+                }
+              }
+              
+              // Hiçbir şey bulunamadıysa hata fırlat
+              if (finalResults.length === 0) {
+                finalDataSource = 'error';
+                throw new Error('Tüm veri kaynakları başarısız oldu');
+              }
+            }
+          } else {
+            throw primaryError;
+          }
         }
       }
       
@@ -189,7 +252,7 @@ export const useHybridMevzuatSearch = (options: {
       
       throw error;
     }
-  }, [cacheEnabled, primaryTimeout, fallbackEnabled, cacheFirst, addToHistory, searchHistory, getHistorySize]);
+  }, [cacheEnabled, primaryTimeout, fallbackEnabled, cacheFirst, githubEnabled, addToHistory, searchHistory, getHistorySize, searchInGitHubData, githubDataStatus]);
   
   const setQuery = useCallback((query: string) => {
     setState(prev => ({ ...prev, query }));
@@ -239,6 +302,7 @@ export const useHybridMevzuatSearch = (options: {
     clearResults,
     clearError,
     clearSearchCache,
-    clearSearchHistory
+    clearSearchHistory,
+    githubDataStatus
   };
 };
