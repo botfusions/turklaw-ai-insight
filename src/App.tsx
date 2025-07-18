@@ -12,25 +12,32 @@ import { MemoryManagementProvider } from "@/contexts/MemoryManagementContext";
 import { LoadingPerformanceMonitor } from "@/components/ui/LoadingPerformanceMonitor";
 import ProfileDebugPanel from "@/components/debug/ProfileDebugPanel";
 import MemoryDebugPanel from "@/components/debug/MemoryDebugPanel";
+import { ErrorMonitoringProvider } from "@/components/system/ErrorMonitoringSystem";
+import ErrorDebugPanel from "@/components/debug/ErrorDebugPanel";
+import NetworkMonitor from "@/components/system/NetworkMonitor";
 
 const App = () => (
   <ErrorBoundary>
-    <MemoryManagementProvider>
-      <SmartLoadingProvider>
-        <AccessibilityProvider>
-          <TooltipProvider>
-            <NetworkStatus />
-            <Toaster />
-            <Sonner />
-            <AppRoutes />
-            <AccessibilitySettings />
-            <LoadingPerformanceMonitor />
-            <ProfileDebugPanel />
-            <MemoryDebugPanel />
-          </TooltipProvider>
-        </AccessibilityProvider>
-      </SmartLoadingProvider>
-    </MemoryManagementProvider>
+    <ErrorMonitoringProvider>
+      <MemoryManagementProvider>
+        <SmartLoadingProvider>
+          <AccessibilityProvider>
+            <TooltipProvider>
+              <NetworkStatus />
+              <NetworkMonitor />
+              <Toaster />
+              <Sonner />
+              <AppRoutes />
+              <AccessibilitySettings />
+              <LoadingPerformanceMonitor />
+              <ProfileDebugPanel />
+              <MemoryDebugPanel />
+              <ErrorDebugPanel />
+            </TooltipProvider>
+          </AccessibilityProvider>
+        </SmartLoadingProvider>
+      </MemoryManagementProvider>
+    </ErrorMonitoringProvider>
   </ErrorBoundary>
 );
 

@@ -17,6 +17,7 @@ class ErrorTrackingService {
   private isDevelopment = import.meta.env.DEV;
   private errors: Array<{ error: Error; context: ErrorContext; timestamp: number }> = [];
   private metrics: PerformanceMetric[] = [];
+  private maxErrors = 100; // Limit stored errors to prevent memory issues
 
   logError(error: Error | string, context: ErrorContext = {}) {
     const errorObj = typeof error === 'string' ? new Error(error) : error;
@@ -27,6 +28,11 @@ class ErrorTrackingService {
     };
 
     this.errors.push(logEntry);
+
+    // Limit stored errors to prevent memory issues
+    if (this.errors.length > this.maxErrors) {
+      this.errors = this.errors.slice(-this.maxErrors);
+    }
 
     if (this.isDevelopment) {
       console.error('🚨 Error:', errorObj.message, context);
@@ -63,6 +69,11 @@ class ErrorTrackingService {
 
     this.metrics.push(metric);
 
+    // Limit stored metrics to prevent memory issues
+    if (this.metrics.length > this.maxErrors) {
+      this.metrics = this.metrics.slice(-this.maxErrors);
+    }
+
     if (this.isDevelopment) {
       console.log(`⏱️ Performance: ${name} took ${metric.value}ms`, context);
     }
@@ -81,6 +92,39 @@ class ErrorTrackingService {
   clearLogs() {
     this.errors = [];
     this.metrics = [];
+  }
+
+  // Get error statistics
+  getErrorStats() {
+    const now = Date.now();
+    const last24Hours = now - (24 * 60 * 60 * 1000);
+    const lastHour = now - (60 * 60 * 1000);
+    
+    return {
+      total: this.errors.length,
+      last24Hours: this.errors.filter(e => e.timestamp > last24Hours).length,
+      lastHour: this.errors.filter(e => e.timestamp > lastHour).length,
+      components: this.getComponentStats(),
+      actions: this.getActionStats()
+    };
+  }
+
+  private getComponentStats() {
+    const stats: Record<string, number> = {};
+    this.errors.forEach(error => {
+      const component = error.context.component || 'unknown';
+      stats[component] = (stats[component] || 0) + 1;
+    });
+    return stats;
+  }
+
+  private getActionStats() {
+    const stats: Record<string, number> = {};
+    this.errors.forEach(error => {
+      const action = error.context.action || 'unknown';
+      stats[action] = (stats[action] || 0) + 1;
+    });
+    return stats;
   }
 }
 

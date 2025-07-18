@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode, useCa
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, AuthResult, AuthContextType } from '@/types/auth';
+import { errorTracker } from '@/services/errorTracking';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -45,6 +46,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) {
         console.error('AuthContext: Profile fetch error:', error);
+        
+        // Log the error to the tracking service
+        errorTracker.logError(error, {
+          component: 'AuthContext',
+          action: 'fetchProfile',
+          userId,
+          metadata: { retryCount }
+        });
+        
         if (retryCount < 2) {
           // Retry after delay
           setTimeout(() => fetchProfile(userId, retryCount + 1), 1000 * (retryCount + 1));
@@ -60,6 +70,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setProfileError(null);
     } catch (error: any) {
       console.error('AuthContext: Profile fetch exception:', error);
+      
+      // Log the exception to the tracking service
+      errorTracker.logError(error, {
+        component: 'AuthContext',
+        action: 'fetchProfile',
+        userId,
+        metadata: { retryCount, isException: true }
+      });
+      
       if (retryCount < 2) {
         setTimeout(() => fetchProfile(userId, retryCount + 1), 1000 * (retryCount + 1));
         return;
@@ -125,6 +144,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       const errorMessage = getErrorMessage(error);
       setAuthError(errorMessage);
+      
+      // Log the error to the tracking service
+      errorTracker.logError(error as Error, {
+        component: 'AuthContext',
+        action: 'signUp',
+        metadata: { email }
+      });
+      
       return { 
         success: false, 
         error: errorMessage
@@ -150,6 +177,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       const errorMessage = getErrorMessage(error);
       setAuthError(errorMessage);
+      
+      // Log the error to the tracking service
+      errorTracker.logError(error as Error, {
+        component: 'AuthContext',
+        action: 'signIn',
+        metadata: { email }
+      });
+      
       return { 
         success: false, 
         error: errorMessage
@@ -307,6 +342,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (error) {
           console.error('AuthContext: Session fetch error:', error);
+          
+          // Log the error to the tracking service
+          errorTracker.logError(error, {
+            component: 'AuthContext',
+            action: 'getSession',
+            metadata: { url: window.location.href }
+          });
+          
           setAuthError('Oturum kontrol edilemedi');
         }
         
@@ -334,6 +377,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.error('AuthContext: Initialization error:', error);
+        
+        // Log the error to the tracking service
+        errorTracker.logError(error as Error, {
+          component: 'AuthContext',
+          action: 'initializeAuth',
+          metadata: { 
+            url: window.location.href,
+            mounted,
+            timestamp: Date.now()
+          }
+        });
+        
         if (mounted) {
           setAuthError('Sistem başlatılırken hata oluştu');
           setInitialized(true);
