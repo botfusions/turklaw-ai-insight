@@ -53,6 +53,12 @@ export const mockProfile = {
   updated_at: new Date().toISOString()
 };
 
+// Application Configuration
+export const APP_CONFIG = {
+  name: 'TurkLaw AI',
+  description: 'AI Destekli Hukuk Araştırma Platformu'
+};
+
 // Application Constants
 export const APP_NAME = 'TurkLaw AI';
 export const APP_DESCRIPTION = 'AI Destekli Hukuk Araştırma Platformu';
