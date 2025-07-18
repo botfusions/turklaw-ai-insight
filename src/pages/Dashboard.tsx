@@ -37,7 +37,15 @@ const Dashboard = () => {
   };
 
   // Search handler
-  const handleSearch = async (query: string, filters: { court?: string; department?: string; dateRange?: string }) => {
+  const handleSearch = async (query: string, filters: { 
+    court?: string; 
+    department?: string; 
+    dateRange?: string;
+    legalField?: string;
+    documentType?: string;
+    dateFrom?: Date;
+    dateTo?: Date;
+  }) => {
     if (!query.trim()) {
       toast.error('Lütfen bir arama terimi girin');
       return;
