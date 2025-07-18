@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Crown, Zap, Building } from "lucide-react";
 
 const Dashboard = () => {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, authLoading, actionLoading } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
@@ -84,7 +84,7 @@ const Dashboard = () => {
   };
 
   // Loading state
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">

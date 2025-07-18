@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const clearProfileError = () => setProfileError(null);
 
   // Optimized profile fetch with dedicated loading state
-  const fetchProfile = async (userId: string, signal?: AbortSignal) => {
+  const fetchProfile = async (userId: string) => {
     try {
       setProfileLoading(true);
       setProfileError(null);
@@ -41,14 +41,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle()
-        .abortSignal(signal || new AbortController().signal);
-
-      // Check if request was aborted
-      if (signal?.aborted) {
-        console.log('AuthContext: Profile fetch aborted');
-        return;
-      }
+        .maybeSingle();
 
       if (error) {
         console.error('AuthContext: Profile fetch error:', error);
@@ -61,23 +54,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setProfile(data as Profile);
       setProfileError(null);
     } catch (error: any) {
-      if (!signal?.aborted) {
-        console.error('AuthContext: Profile fetch exception:', error);
-        setProfileError('Profil bilgileri yüklenirken hata oluştu');
-        setProfile(null);
-      }
+      console.error('AuthContext: Profile fetch exception:', error);
+      setProfileError('Profil bilgileri yüklenirken hata oluştu');
+      setProfile(null);
     } finally {
-      if (!signal?.aborted) {
-        setProfileLoading(false);
-      }
+      setProfileLoading(false);
     }
   };
 
   // Refresh profile with proper loading state management
   const refreshProfile = async () => {
     if (user) {
-      const controller = new AbortController();
-      await fetchProfile(user.id, controller.signal);
+      await fetchProfile(user.id);
     }
   };
 
@@ -267,7 +255,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     let mounted = true;
     let authSubscription: any = null;
-    const abortController = new AbortController();
 
     const initializeAuth = async () => {
       try {
@@ -294,11 +281,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(session?.user ?? null);
             
             // Handle profile fetch separately with dedicated loading state
-            if (session?.user && !abortController.signal.aborted) {
+            if (session?.user && mounted) {
               // Small delay to prevent race conditions
               setTimeout(() => {
-                if (mounted && !abortController.signal.aborted) {
-                  fetchProfile(session.user.id, abortController.signal);
+                if (mounted) {
+                  fetchProfile(session.user.id);
                 }
               }, 50);
             } else {
@@ -327,10 +314,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(session?.user ?? null);
         
         // Fetch initial profile if user exists
-        if (session?.user && !abortController.signal.aborted) {
+        if (session?.user && mounted) {
           setTimeout(() => {
-            if (mounted && !abortController.signal.aborted) {
-              fetchProfile(session.user.id, abortController.signal);
+            if (mounted) {
+              fetchProfile(session.user.id);
             }
           }, 50);
         }
@@ -358,9 +345,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       console.log('AuthContext: Cleaning up optimized auth...');
       mounted = false;
-      
-      // Abort any ongoing requests
-      abortController.abort();
       
       // Unsubscribe from auth changes
       if (authSubscription?.data?.subscription) {

@@ -15,7 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 export default function Register() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signUp, user, loading } = useAuth();
+  const { signUp, user, actionLoading } = useAuth();
   const [isSuccess, setIsSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -342,9 +342,9 @@ export default function Register() {
                     <Button 
                       type="submit" 
                       className="w-full" 
-                      disabled={loading || isSubmitting || !formData.agreedToTerms || passwordStrength < 50}
+                      disabled={actionLoading || isSubmitting || !formData.agreedToTerms || passwordStrength < 50}
                     >
-                      {(loading || isSubmitting) ? (
+                      {(actionLoading || isSubmitting) ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Hesap Oluşturuluyor...

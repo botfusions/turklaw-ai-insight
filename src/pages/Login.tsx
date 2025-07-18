@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn, user, loading, resendConfirmation } = useAuth();
+  const { signIn, user, actionLoading, resendConfirmation } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailError, setEmailError] = useState('');
@@ -255,9 +256,9 @@ export default function Login() {
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={loading || isSubmitting || !!emailError}
+                    disabled={actionLoading || isSubmitting || !!emailError}
                   >
-                    {(loading || isSubmitting) ? (
+                    {(actionLoading || isSubmitting) ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Giriş Yapılıyor...

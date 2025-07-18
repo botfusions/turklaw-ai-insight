@@ -8,8 +8,8 @@ export function useHeader() {
   console.log('useHeader called...'); // Debug log
   
   try {
-    const { user, profile, signOut, loading } = useAuth();
-    console.log('useHeader auth data:', { user: !!user, profile: !!profile, loading }); // Debug log
+    const { user, profile, signOut, authLoading, actionLoading } = useAuth();
+    console.log('useHeader auth data:', { user: !!user, profile: !!profile, authLoading, actionLoading }); // Debug log
     
     const { notifications, unreadCount } = useNotifications();
     const { scrolled, scrollDirection } = useScrollEffect({ threshold: 20 });
@@ -53,7 +53,7 @@ export function useHeader() {
       user,
       profile,
       signOut,
-      loading,
+      loading: authLoading || actionLoading, // Combine loading states for backward compatibility
       displayName,
       userInitials,
       

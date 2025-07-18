@@ -36,7 +36,7 @@ describe('useAuth', () => {
 
     expect(result.current.user).toBeNull();
     expect(result.current.profile).toBeNull();
-    expect(result.current.loading).toBe(true);
+    expect(result.current.authLoading).toBe(true);
     expect(result.current.initialized).toBe(false);
   });
 

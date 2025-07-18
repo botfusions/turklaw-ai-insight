@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { User, Mail, Shield, Calendar } from 'lucide-react';
 
 export default function Profile() {
-  const { user, profile, updateProfile, loading } = useAuth();
+  const { user, profile, updateProfile, actionLoading } = useAuth();
   const { toast } = useToast();
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [isEditing, setIsEditing] = useState(false);
@@ -118,9 +118,9 @@ export default function Profile() {
                       <>
                         <Button 
                           type="submit" 
-                          disabled={loading}
+                          disabled={actionLoading}
                         >
-                          {loading ? 'Kaydediliyor...' : 'Kaydet'}
+                          {actionLoading ? 'Kaydediliyor...' : 'Kaydet'}
                         </Button>
                         <Button
                           type="button"
