@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,10 +8,9 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { DashboardPreview } from '@/components/dashboard/DashboardPreview';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
-import { AuthInitLoading } from '@/components/ui/AuthInitLoading';
-import { AuthErrorRecovery } from '@/components/ui/AuthErrorRecovery';
-import { ActionLoadingIndicator } from '@/components/ui/ActionLoadingIndicator';
-import { ProfileLoadingIndicator } from '@/components/ui/ProfileLoadingIndicator';
+import { useSmartLoading } from '@/contexts/SmartLoadingContext';
+import { SmartLoader } from '@/components/ui/SmartLoader';
+import { AuthSkeleton, DashboardSkeleton } from '@/components/ui/SkeletonLoaders';
 import { 
   Search, 
   Zap, 
@@ -52,6 +50,8 @@ export default function Landing() {
     refreshProfile
   } = useOptimizedAuth();
 
+  const { isCriticalLoading, isBackgroundLoading } = useSmartLoading();
+
   console.log('Landing: Optimized auth states:', { 
     isInitializing,
     isReady,
@@ -59,31 +59,93 @@ export default function Landing() {
     isUserAuthenticated,
     isProfileLoading,
     isActionInProgress,
-    canRenderApp
+    canRenderApp,
+    isCriticalLoading: isCriticalLoading(),
+    isBackgroundLoading: isBackgroundLoading()
   });
 
-  // Show loading only during auth initialization
-  if (isInitializing) {
-    console.log('Landing: Showing auth initialization loading');
-    return <AuthInitLoading />;
+  // Show smart loading for critical operations
+  if (isCriticalLoading()) {
+    console.log('Landing: Showing critical loading with Smart Loader');
+    return (
+      <SmartLoader
+        type="auth"
+        skeleton={<AuthSkeleton />}
+        progressBar={true}
+        timeout={8000}
+        onTimeout={() => console.log('Auth loading timed out')}
+        onRetry={() => {
+          console.log('Retrying auth...');
+          refreshProfile();
+        }}
+      />
+    );
   }
 
   // Show auth error with recovery options
   if (hasAuthError && authError) {
     console.log('Landing: Showing auth error recovery:', authError);
     return (
-      <AuthErrorRecovery
-        error={authError}
-        onRetry={refreshProfile}
-        onClearError={clearAuthError}
-      />
+      <div className="min-h-screen bg-background">
+        <Header />
+        <section className="relative py-20">
+          <div className="container mx-auto px-4">
+            <div className="max-w-md mx-auto space-y-6">
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="mt-2">
+                  {authError}
+                </AlertDescription>
+              </Alert>
+              
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => {
+                    clearAuthError();
+                    refreshProfile();
+                  }}
+                  className="w-full"
+                  variant="default"
+                >
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  Tekrar Dene
+                </Button>
+                
+                <Button 
+                  onClick={() => navigate('/login')}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Giriş Yap
+                </Button>
+                
+                <Button 
+                  onClick={clearAuthError}
+                  className="w-full"
+                  variant="ghost"
+                >
+                  Devam Et
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <Footer />
+      </div>
     );
   }
 
   // Can't render app due to critical issues
   if (!canRenderApp) {
-    console.log('Landing: Cannot render app, showing fallback');
-    return <AuthInitLoading />;
+    console.log('Landing: Cannot render app, showing smart loading fallback');
+    return (
+      <SmartLoader
+        type="auth"
+        skeleton={<AuthSkeleton />}
+        timeout={10000}
+        fallback="error"
+      />
+    );
   }
 
   // Static data
@@ -157,10 +219,13 @@ export default function Landing() {
         </div>
       )}
       
-      {/* Show action loading indicator */}
-      {isActionInProgress && (
-        <ActionLoadingIndicator message="İşlem yapılıyor..." />
-      )}
+      {/* Show smart loading for actions */}
+      <SmartLoader
+        type="action"
+        progressBar={true}
+        showNetworkStatus={true}
+        className="fixed top-4 right-4 z-50"
+      />
       
       {isUserAuthenticated ? (
         // Authenticated User View
@@ -175,7 +240,10 @@ export default function Landing() {
                     Aktif Kullanıcı Dashboard
                     {isProfileLoading && (
                       <span className="ml-2">
-                        <ProfileLoadingIndicator />
+                        <SmartLoader 
+                          type="profile" 
+                          className="inline-flex items-center text-xs"
+                        />
                       </span>
                     )}
                   </Badge>
@@ -191,7 +259,14 @@ export default function Landing() {
                 </div>
 
                 <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-8 border border-border shadow-2xl">
-                  <DashboardPreview />
+                  <SmartLoader
+                    type="data"
+                    skeleton={<DashboardSkeleton />}
+                    progressBar={true}
+                    showNetworkStatus={false}
+                  >
+                    <DashboardPreview />
+                  </SmartLoader>
                 </div>
               </div>
             </div>
@@ -230,7 +305,7 @@ export default function Landing() {
           </section>
         </>
       ) : (
-        // Guest User View
+        // Guest User View with Smart Loading
         <>
           <section className="relative py-20 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 opacity-50"></div>

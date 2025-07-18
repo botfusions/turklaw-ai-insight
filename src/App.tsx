@@ -7,18 +7,23 @@ import { AccessibilityProvider } from "@/components/accessibility/AccessibilityP
 import { NetworkStatus } from "@/components/layout/NetworkStatus";
 import { AccessibilitySettings } from "@/components/accessibility/AccessibilitySettings";
 import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
+import { SmartLoadingProvider } from "@/contexts/SmartLoadingContext";
+import { LoadingPerformanceMonitor } from "@/components/ui/LoadingPerformanceMonitor";
 
 const App = () => (
   <ErrorBoundary>
-    <AccessibilityProvider>
-      <TooltipProvider>
-        <NetworkStatus />
-        <Toaster />
-        <Sonner />
-        <AppRoutes />
-        <AccessibilitySettings />
-      </TooltipProvider>
-    </AccessibilityProvider>
+    <SmartLoadingProvider>
+      <AccessibilityProvider>
+        <TooltipProvider>
+          <NetworkStatus />
+          <Toaster />
+          <Sonner />
+          <AppRoutes />
+          <AccessibilitySettings />
+          <LoadingPerformanceMonitor />
+        </TooltipProvider>
+      </AccessibilityProvider>
+    </SmartLoadingProvider>
   </ErrorBoundary>
 );
 
