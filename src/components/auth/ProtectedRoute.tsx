@@ -4,8 +4,6 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { RouteProtectionLevel } from '@/types/routes';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { RouteErrorDisplay } from '@/components/ui/RouteErrorDisplay';
-import { ErrorBoundary } from '@/components/performance/ErrorBoundary';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,20 +11,19 @@ interface ProtectedRouteProps {
   fallbackRoute?: string;
 }
 
-const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({ 
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children,
   protection = RouteProtectionLevel.AUTHENTICATED,
   fallbackRoute = '/login'
 }) => {
   const location = useLocation();
 
-  // Safe auth context access with comprehensive error handling
+  // Safe auth context access
   let authState = {
     user: null,
     initialized: false,
     loading: false,
-    error: false,
-    errorMessage: ''
+    error: false
   };
 
   try {
@@ -35,24 +32,28 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
       user: auth.user,
       initialized: auth.initialized,
       loading: auth.loading,
-      error: false,
-      errorMessage: ''
+      error: false
     };
   } catch (error) {
     console.error('ProtectedRoute: Auth context error:', error);
     authState.error = true;
-    authState.errorMessage = error instanceof Error ? error.message : 'Auth context hatası';
   }
 
   // Show error state if auth context failed
   if (authState.error) {
     return (
-      <RouteErrorDisplay
-        title="Yetkilendirme Hatası"
-        message={`Kullanıcı oturumu kontrol edilemiyor: ${authState.errorMessage}`}
-        redirectTo="/login"
-        redirectText="Giriş Yap"
-      />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Yetkilendirme Hatası</h2>
+          <p className="text-muted-foreground mb-4">Kullanıcı oturumu kontrol edilemiyor</p>
+          <button 
+            onClick={() => window.location.href = '/login'}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+          >
+            Giriş Yap
+          </button>
+        </div>
+      </div>
     );
   }
 
@@ -81,12 +82,4 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
     default:
       return <>{children}</>;
   }
-};
-
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = (props) => {
-  return (
-    <ErrorBoundary>
-      <ProtectedRouteContent {...props} />
-    </ErrorBoundary>
-  );
 };

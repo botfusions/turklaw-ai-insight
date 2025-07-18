@@ -1,4 +1,3 @@
-
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,8 +23,8 @@ import {
 } from 'lucide-react';
 import { subscriptionPlans } from '@/constants';
 
-// Comprehensive loading skeleton component
-const LoadingSkeleton = () => (
+// Simple loading component
+const SimpleLoading = () => (
   <div className="min-h-screen bg-background">
     <Header />
     <section className="relative py-20 overflow-hidden">
@@ -33,7 +32,6 @@ const LoadingSkeleton = () => (
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <Skeleton className="h-8 w-96 mx-auto" />
           <Skeleton className="h-16 w-full max-w-2xl mx-auto" />
-          <Skeleton className="h-6 w-full max-w-3xl mx-auto" />
           <div className="flex justify-center gap-4">
             <Skeleton className="h-12 w-32" />
             <Skeleton className="h-12 w-32" />
@@ -45,60 +43,19 @@ const LoadingSkeleton = () => (
   </div>
 );
 
-// Robust error fallback component
-const ErrorFallback = ({ error }: { error?: string }) => (
-  <div className="min-h-screen bg-background">
-    <Header />
-    <section className="relative py-20 overflow-hidden">
-      <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-            Türk Hukukunda
-            <span className="text-primary block">AI Destekli Araştırma</span>
-          </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Yargıtay, Danıştay ve Emsal kararlarını saniyeler içinde bulun. 
-            100,000+ karar, AI destekli analiz, mobil uyumlu platform.
-          </p>
-          {error && (
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
-              <p className="text-destructive text-sm">
-                Yükleme hatası: {error}
-              </p>
-            </div>
-          )}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              onClick={() => window.location.href = '/register'}
-              className="bg-primary hover:bg-primary/90 text-lg px-8 py-6"
-            >
-              Ücretsiz Deneyin
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    </section>
-    <Footer />
-  </div>
-);
-
 export default function Landing() {
   const navigate = useNavigate();
   
-  // Enhanced auth state access with robust error handling
+  // Safe auth state access
   let authState = {
     user: null,
     profile: null,
     loading: false,
     initialized: false,
-    error: false,
-    errorMessage: ''
+    error: false
   };
 
   try {
-    // Dynamically import auth to prevent crashes
     const { useAuth } = require('@/hooks/useAuth');
     const auth = useAuth();
     authState = {
@@ -106,26 +63,19 @@ export default function Landing() {
       profile: auth.profile,
       loading: auth.loading,
       initialized: auth.initialized,
-      error: false,
-      errorMessage: ''
+      error: false
     };
   } catch (error) {
     console.error('Landing: Auth context error:', error);
     authState.error = true;
-    authState.errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
   }
 
-  // Show loading skeleton while auth is initializing
+  // Show loading while auth is initializing
   if (!authState.error && (!authState.initialized || authState.loading)) {
-    return <LoadingSkeleton />;
+    return <SimpleLoading />;
   }
 
-  // Show error fallback if auth context failed
-  if (authState.error) {
-    return <ErrorFallback error={authState.errorMessage} />;
-  }
-
-  // Static data for components
+  // Static data
   const features = [
     {
       icon: Search,
@@ -170,8 +120,8 @@ export default function Landing() {
     }
   ];
 
-  // Check if user is authenticated
-  const isAuthenticated = authState.user && authState.profile;
+  // Check if user is authenticated (only if auth context is working)
+  const isAuthenticated = !authState.error && authState.user && authState.profile;
 
   return (
     <div className="min-h-screen bg-background">
@@ -180,7 +130,6 @@ export default function Landing() {
       {isAuthenticated ? (
         // Authenticated User View
         <>
-          {/* Personalized Hero Section */}
           <section className="relative py-20 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 opacity-50"></div>
             <div className="container mx-auto px-4 relative">
@@ -201,7 +150,6 @@ export default function Landing() {
                   </p>
                 </div>
 
-                {/* Dashboard Preview */}
                 <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-8 border border-border shadow-2xl">
                   <DashboardPreview />
                 </div>
@@ -209,7 +157,6 @@ export default function Landing() {
             </div>
           </section>
 
-          {/* Success Stories Section */}
           <section className="py-20">
             <div className="container mx-auto px-4">
               <div className="text-center mb-16">
@@ -243,9 +190,8 @@ export default function Landing() {
           </section>
         </>
       ) : (
-        // Guest User View - Original Landing Page
+        // Guest User View
         <>
-          {/* Hero Section */}
           <section className="relative py-20 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 opacity-50"></div>
             <div className="container mx-auto px-4 relative">

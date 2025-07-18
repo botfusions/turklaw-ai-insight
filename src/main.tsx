@@ -28,18 +28,14 @@ createRoot(rootElement).render(
     <ErrorBoundary>
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
-          <ErrorBoundary>
-            <AuthProvider>
-              <ErrorBoundary>
-                <ThemeProvider>
-                  <NotificationProvider>
-                    <App />
-                    <Toaster />
-                  </NotificationProvider>
-                </ThemeProvider>
-              </ErrorBoundary>
-            </AuthProvider>
-          </ErrorBoundary>
+          <AuthProvider>
+            <ThemeProvider>
+              <NotificationProvider>
+                <App />
+                <Toaster />
+              </NotificationProvider>
+            </ThemeProvider>
+          </AuthProvider>
         </QueryClientProvider>
       </BrowserRouter>
     </ErrorBoundary>

@@ -6,15 +6,31 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://wdowdibcidirhizpqiki.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indkb3dkaWJjaWRpcmhpenBxaWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIzMjI3OTYsImV4cCI6MjA2Nzg5ODc5Nn0.qV5gMR-bkAbRXpDu18PmgOziCQ0PEf3y6FWFet09FfU";
 
-// Browser environment check
-const isBrowser = typeof window !== 'undefined';
+// Enhanced browser environment check
+const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
+
+// Safe localStorage check
+const getStorage = () => {
+  if (!isBrowser) return undefined;
+  
+  try {
+    // Test localStorage availability
+    const testKey = '__supabase_test__';
+    window.localStorage.setItem(testKey, 'test');
+    window.localStorage.removeItem(testKey);
+    return window.localStorage;
+  } catch (e) {
+    console.warn('localStorage not available, falling back to memory storage');
+    return undefined;
+  }
+};
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: isBrowser ? localStorage : undefined,
+    storage: getStorage(),
     persistSession: isBrowser,
     autoRefreshToken: isBrowser,
     detectSessionInUrl: isBrowser
