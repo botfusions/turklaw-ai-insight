@@ -1,419 +1,326 @@
-
-import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef
+} from 'react';
+import {
+  Session,
+  User,
+  AuthChangeEvent,
+} from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { Profile, AuthResult, AuthContextType } from '@/types/auth';
+import {
+  OptimizedAuthState,
+  AuthActions,
+  AuthContextType,
+  Profile,
+  AuthResult
+} from '@/types/auth';
+import { ErrorBoundary } from '@/components/performance/ErrorBoundary';
 import { errorTracker } from '@/services/errorTracking';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  // Core auth state
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  
-  // Granular loading states
-  const [authLoading, setAuthLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [initialized, setInitialized] = useState(false);
-  
-  // Error states
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
+  const [actionLoading, setActionLoading] = useState<boolean>(false);
+  const [profileLoading, setProfileLoading] = useState<boolean>(false);
+  const [initialized, setInitialized] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
+  
+  const mounted = useRef<boolean>(false);
 
-  // Error management functions
-  const clearAuthError = useCallback(() => setAuthError(null), []);
-  const clearProfileError = useCallback(() => setProfileError(null), []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
-  // Non-blocking profile fetch with retry mechanism
-  const fetchProfile = useCallback(async (userId: string, retryCount = 0) => {
+  // Utility function to safely update state
+  const safeSetState = useCallback(<T>(setState: React.Dispatch<React.SetStateAction<T>>, value: T) => {
+    if (mounted.current) {
+      setState(value);
+    }
+  }, []);
+
+  // Enhanced error handling with types
+  const handleAuthError = useCallback((error: unknown, action: string): string => {
+    let errorMessage: string;
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    } else if (error && typeof error === 'object' && 'message' in error) {
+      errorMessage = (error as { message: string }).message;
+    } else {
+      errorMessage = 'Bilinmeyen bir hata oluştu';
+    }
+
+    // Enhanced error tracking with proper typing
+    errorTracker.logError(new Error(errorMessage), {
+      component: 'AuthContext',
+      action,
+      metadata: {
+        timestamp: Date.now(),
+        url: window.location.href,
+        userAgent: navigator.userAgent
+      }
+    });
+
+    console.error(`Auth error in ${action}:`, error);
+    return errorMessage;
+  }, []);
+
+  const clearAuthError = useCallback(() => {
+    safeSetState(setAuthError, null);
+  }, [safeSetState]);
+
+  const clearProfileError = useCallback(() => {
+    safeSetState(setProfileError, null);
+  }, [safeSetState]);
+
+  const signUp = useCallback(
+    async (email: string, password: string, fullName?: string): Promise<AuthResult> => {
+      setActionLoading(true);
+      clearAuthError();
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+            },
+          },
+        });
+
+        if (error) {
+          const errorMessage = handleAuthError(error, 'signUp');
+          safeSetState(setAuthError, errorMessage);
+          return { success: false, error: errorMessage };
+        }
+
+        console.log('Sign up successful', data);
+        return { success: true, user: data.user };
+      } catch (err) {
+        const errorMessage = handleAuthError(err, 'signUp');
+        safeSetState(setAuthError, errorMessage);
+        return { success: false, error: errorMessage };
+      } finally {
+        setActionLoading(false);
+      }
+    },
+    [handleAuthError, safeSetState]
+  );
+
+  const signIn = useCallback(
+    async (email: string, password: string): Promise<AuthResult> => {
+      setActionLoading(true);
+      clearAuthError();
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          const errorMessage = handleAuthError(error, 'signIn');
+          safeSetState(setAuthError, errorMessage);
+          return { success: false, error: errorMessage };
+        }
+
+        console.log('Sign in successful', data);
+        return { success: true, user: data.user };
+      } catch (err) {
+        const errorMessage = handleAuthError(err, 'signIn');
+        safeSetState(setAuthError, errorMessage);
+        return { success: false, error: errorMessage };
+      } finally {
+        setActionLoading(false);
+      }
+    },
+    [handleAuthError, safeSetState]
+  );
+
+  const signOut = useCallback(async (): Promise<void> => {
+    setActionLoading(true);
+    clearAuthError();
     try {
-      setProfileLoading(true);
-      setProfileError(null);
-      
-      console.log('AuthContext: Fetching profile for user:', userId, 'retry:', retryCount);
-      
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        const errorMessage = handleAuthError(error, 'signOut');
+        safeSetState(setAuthError, errorMessage);
+      } else {
+        console.log('Sign out successful');
+      }
+    } catch (err) {
+      const errorMessage = handleAuthError(err, 'signOut');
+      safeSetState(setAuthError, errorMessage);
+    } finally {
+      safeSetState(setUser, null);
+      safeSetState(setProfile, null);
+      setActionLoading(false);
+    }
+  }, [handleAuthError, safeSetState]);
+
+  const resetPassword = useCallback(
+    async (email: string): Promise<AuthResult> => {
+      setActionLoading(true);
+      clearAuthError();
+      try {
+        const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/update-password`,
+        });
+
+        if (error) {
+          const errorMessage = handleAuthError(error, 'resetPassword');
+          safeSetState(setAuthError, errorMessage);
+          return { success: false, error: errorMessage };
+        }
+
+        console.log('Password reset email sent', data);
+        return { success: true };
+      } catch (err) {
+        const errorMessage = handleAuthError(err, 'resetPassword');
+        safeSetState(setAuthError, errorMessage);
+        return { success: false, error: errorMessage };
+      } finally {
+        setActionLoading(false);
+      }
+    },
+    [handleAuthError, safeSetState]
+  );
+
+  const updateProfile = useCallback(
+    async (updates: Partial<Profile>): Promise<AuthResult> => {
+      setActionLoading(true);
+      clearProfileError();
+      try {
+        if (!user?.id) {
+          throw new Error('User ID is missing');
+        }
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .update(updates)
+          .eq('id', user.id)
+          .select()
+          .single();
+
+        if (error) {
+          const errorMessage = handleAuthError(error, 'updateProfile');
+          safeSetState(setProfileError, errorMessage);
+          return { success: false, error: errorMessage };
+        }
+
+        console.log('Profile updated successfully', data);
+        safeSetState(setProfile, data);
+        return { success: true, user };
+      } catch (err) {
+        const errorMessage = handleAuthError(err, 'updateProfile');
+        safeSetState(setProfileError, errorMessage);
+        return { success: false, error: errorMessage };
+      } finally {
+        setActionLoading(false);
+      }
+    },
+    [user?.id, handleAuthError, safeSetState]
+  );
+
+  const resendConfirmation = useCallback(
+    async (email: string): Promise<AuthResult> => {
+      setActionLoading(true);
+      clearAuthError();
+      try {
+        const { data, error } = await supabase.auth.resend({
+          type: 'signup',
+          email,
+        });
+
+        if (error) {
+          const errorMessage = handleAuthError(error, 'resendConfirmation');
+          safeSetState(setAuthError, errorMessage);
+          return { success: false, error: errorMessage };
+        }
+
+        console.log('Confirmation email resent', data);
+        return { success: true };
+      } catch (err) {
+        const errorMessage = handleAuthError(err, 'resendConfirmation');
+        safeSetState(setAuthError, errorMessage);
+        return { success: false, error: errorMessage };
+      } finally {
+        setActionLoading(false);
+      }
+    },
+    [handleAuthError, safeSetState]
+  );
+
+  const refreshProfile = useCallback(async () => {
+    if (!user?.id) return;
+
+    safeSetState(setProfileLoading, true);
+    clearProfileError();
+
+    try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+        .eq('id', user.id)
+        .single();
 
       if (error) {
-        console.error('AuthContext: Profile fetch error:', error);
-        
-        // Log the error to the tracking service
-        errorTracker.logError(error, {
-          component: 'AuthContext',
-          action: 'fetchProfile',
-          userId,
-          metadata: { retryCount }
-        });
-        
-        if (retryCount < 2) {
-          // Retry after delay
-          setTimeout(() => fetchProfile(userId, retryCount + 1), 1000 * (retryCount + 1));
-          return;
-        }
-        setProfileError('Profil bilgileri yüklenemedi');
-        setProfile(null);
-        return;
+        const errorMessage = handleAuthError(error, 'refreshProfile');
+        safeSetState(setProfileError, errorMessage);
+      } else {
+        safeSetState(setProfile, data);
       }
-      
-      console.log('AuthContext: Profile fetched successfully:', data);
-      setProfile(data as Profile);
-      setProfileError(null);
-    } catch (error: any) {
-      console.error('AuthContext: Profile fetch exception:', error);
-      
-      // Log the exception to the tracking service
-      errorTracker.logError(error, {
-        component: 'AuthContext',
-        action: 'fetchProfile',
-        userId,
-        metadata: { retryCount, isException: true }
-      });
-      
-      if (retryCount < 2) {
-        setTimeout(() => fetchProfile(userId, retryCount + 1), 1000 * (retryCount + 1));
-        return;
-      }
-      setProfileError('Profil bilgileri yüklenirken hata oluştu');
-      setProfile(null);
+    } catch (err) {
+      const errorMessage = handleAuthError(err, 'refreshProfile');
+      safeSetState(setProfileError, errorMessage);
     } finally {
-      setProfileLoading(false);
+      safeSetState(setProfileLoading, false);
     }
-  }, []);
+  }, [user?.id, handleAuthError, safeSetState]);
 
-  // Refresh profile with proper loading state management
-  const refreshProfile = useCallback(async () => {
-    if (user) {
-      await fetchProfile(user.id);
-    }
-  }, [user, fetchProfile]);
-
-  // Enhanced error message handling
-  const getErrorMessage = useCallback((error: any): string => {
-    if (!error?.message) return 'Bilinmeyen bir hata oluştu';
-    
-    const message = error.message.toLowerCase();
-    
-    if (message.includes('email not confirmed')) {
-      return 'E-posta adresiniz doğrulanmamış. Lütfen e-postanızı kontrol edin.';
-    }
-    if (message.includes('invalid login credentials')) {
-      return 'Geçersiz e-posta veya şifre.';
-    }
-    if (message.includes('user already registered')) {
-      return 'Bu e-posta adresi zaten kayıtlı.';
-    }
-    if (message.includes('password')) {
-      return 'Şifre en az 6 karakter olmalıdır.';
-    }
-    
-    return error.message;
-  }, []);
-
-  // Optimized auth actions with proper loading states
-  const signUp = useCallback(async (email: string, password: string, fullName?: string): Promise<AuthResult> => {
-    try {
-      setActionLoading(true);
-      setAuthError(null);
-      
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: fullName || ''
-          }
-        }
-      });
-      
-      if (error) throw error;
-      
-      return { success: true, user: data.user };
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      setAuthError(errorMessage);
-      
-      // Log the error to the tracking service
-      errorTracker.logError(error as Error, {
-        component: 'AuthContext',
-        action: 'signUp',
-        metadata: { email }
-      });
-      
-      return { 
-        success: false, 
-        error: errorMessage
-      };
-    } finally {
-      setActionLoading(false);
-    }
-  }, [getErrorMessage]);
-
-  const signIn = useCallback(async (email: string, password: string): Promise<AuthResult> => {
-    try {
-      setActionLoading(true);
-      setAuthError(null);
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) throw error;
-      
-      return { success: true, user: data.user };
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      setAuthError(errorMessage);
-      
-      // Log the error to the tracking service
-      errorTracker.logError(error as Error, {
-        component: 'AuthContext',
-        action: 'signIn',
-        metadata: { email }
-      });
-      
-      return { 
-        success: false, 
-        error: errorMessage
-      };
-    } finally {
-      setActionLoading(false);
-    }
-  }, [getErrorMessage]);
-
-  const signOut = useCallback(async (): Promise<void> => {
-    try {
-      setActionLoading(true);
-      setAuthError(null);
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-      setAuthError('Çıkış yapılırken hata oluştu');
-    } finally {
-      setActionLoading(false);
-    }
-  }, []);
-
-  const resetPassword = useCallback(async (email: string): Promise<AuthResult> => {
-    try {
-      setActionLoading(true);
-      setAuthError(null);
-      
-      const redirectUrl = `${window.location.origin}/reset-password`;
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl,
-      });
-      
-      if (error) throw error;
-      
-      return { success: true };
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      setAuthError(errorMessage);
-      return { 
-        success: false, 
-        error: errorMessage
-      };
-    } finally {
-      setActionLoading(false);
-    }
-  }, [getErrorMessage]);
-
-  const updateProfile = useCallback(async (updates: Partial<Profile>): Promise<AuthResult> => {
-    if (!user) {
-      const errorMessage = 'Kullanıcı oturum açmamış';
-      setProfileError(errorMessage);
-      return { success: false, error: errorMessage };
-    }
-
-    try {
-      setActionLoading(true);
-      setProfileError(null);
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      await refreshProfile();
-      
-      return { success: true };
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      setProfileError(errorMessage);
-      return { 
-        success: false, 
-        error: errorMessage
-      };
-    } finally {
-      setActionLoading(false);
-    }
-  }, [user, refreshProfile, getErrorMessage]);
-
-  const resendConfirmation = useCallback(async (email: string): Promise<AuthResult> => {
-    try {
-      setActionLoading(true);
-      setAuthError(null);
-      
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/email-verification`
-        }
-      });
-
-      if (error) {
-        const errorMessage = getErrorMessage(error);
-        setAuthError(errorMessage);
-        return { success: false, error: errorMessage };
-      }
-
-      return { success: true };
-    } catch (error: any) {
-      const errorMessage = getErrorMessage(error);
-      setAuthError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setActionLoading(false);
-    }
-  }, [getErrorMessage]);
-
-  // Optimized auth initialization with improved state machine
   useEffect(() => {
-    let mounted = true;
-    let authSubscription: any = null;
-
-    const initializeAuth = async () => {
-      try {
-        console.log('AuthContext: Starting optimized initialization...');
-        setAuthLoading(true);
-        setAuthError(null);
+    const { data: { subscription: authListener } } = supabase.auth.onAuthStateChange(
+      async (event: AuthChangeEvent, session: Session | null) => {
+        safeSetState(setAuthLoading, true);
         
-        // Set up auth state listener first
-        authSubscription = supabase.auth.onAuthStateChange(
-          (event, session) => {
-            if (!mounted) return;
-            
-            console.log('AuthContext: Auth state changed:', event, session?.user?.id);
-            
-            // Clear auth errors on successful auth change
-            if (session?.user) {
-              setAuthError(null);
-            }
-            
-            // Update user state immediately
-            setUser(session?.user ?? null);
-            
-            // Non-blocking profile fetch
-            if (session?.user && mounted) {
-              // Small delay to prevent race conditions
-              setTimeout(() => {
-                if (mounted) {
-                  fetchProfile(session.user.id);
-                }
-              }, 50);
-            } else {
-              setProfile(null);
-              setProfileError(null);
-              setProfileLoading(false);
-            }
+        if (session?.user) {
+          safeSetState(setUser, session.user);
+          try {
+            await refreshProfile();
+          } catch (profileErr) {
+            const errorMessage = handleAuthError(profileErr, 'onAuthStateChange - refreshProfile');
+            safeSetState(setProfileError, errorMessage);
           }
-        );
-
-        // Get initial session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('AuthContext: Session fetch error:', error);
-          
-          // Log the error to the tracking service
-          errorTracker.logError(error, {
-            component: 'AuthContext',
-            action: 'getSession',
-            metadata: { url: window.location.href }
-          });
-          
-          setAuthError('Oturum kontrol edilemedi');
+        } else {
+          safeSetState(setUser, null);
+          safeSetState(setProfile, null);
         }
-        
-        if (!mounted) return;
-        
-        console.log('AuthContext: Initial session loaded:', session?.user?.id);
-        
-        // Set initial user state
-        setUser(session?.user ?? null);
-        
-        // Non-blocking profile fetch for initial session
-        if (session?.user && mounted) {
-          setTimeout(() => {
-            if (mounted) {
-              fetchProfile(session.user.id);
-            }
-          }, 50);
-        }
-        
-        // Mark as initialized (always happens regardless of profile loading)
-        if (mounted) {
-          setInitialized(true);
-          setAuthLoading(false);
-          console.log('AuthContext: Initialization completed');
-        }
-      } catch (error) {
-        console.error('AuthContext: Initialization error:', error);
-        
-        // Log the error to the tracking service
-        errorTracker.logError(error as Error, {
-          component: 'AuthContext',
-          action: 'initializeAuth',
-          metadata: { 
-            url: window.location.href,
-            mounted,
-            timestamp: Date.now()
-          }
-        });
-        
-        if (mounted) {
-          setAuthError('Sistem başlatılırken hata oluştu');
-          setInitialized(true);
-          setAuthLoading(false);
-        }
+        safeSetState(setAuthLoading, false);
+        safeSetState(setInitialized, true);
       }
-    };
+    );
 
-    // Start initialization
-    initializeAuth();
-
-    // Cleanup function
     return () => {
-      console.log('AuthContext: Cleaning up auth...');
-      mounted = false;
-      
-      // Unsubscribe from auth changes
-      if (authSubscription?.data?.subscription) {
-        authSubscription.data.subscription.unsubscribe();
-      }
+      authListener?.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, [refreshProfile, handleAuthError, safeSetState]);
 
-  const value: AuthContextType = {
-    // State
+  const value: AuthContextType = useMemo(() => ({
     user,
     profile,
     authLoading,
@@ -422,25 +329,68 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initialized,
     authError,
     profileError,
-    
-    // Actions
-    refreshProfile,
     signUp,
     signIn,
     signOut,
     resetPassword,
     updateProfile,
     resendConfirmation,
+    refreshProfile,
     clearAuthError,
     clearProfileError
-  };
+  }), [
+    user,
+    profile,
+    authLoading,
+    actionLoading,
+    profileLoading,
+    initialized,
+    authError,
+    profileError,
+    signUp,
+    signIn,
+    signOut,
+    resetPassword,
+    updateProfile,
+    resendConfirmation,
+    refreshProfile,
+    clearAuthError,
+    clearProfileError
+  ]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <ErrorBoundary
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Card className="max-w-md w-full">
+            <CardHeader>
+              <CardTitle className="text-center">Kimlik Doğrulama Hatası</CardTitle>
+              <CardDescription className="text-center">
+                Kimlik doğrulama sistemi başlatılamadı. Lütfen sayfayı yenileyin.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => window.location.reload()} 
+                className="w-full"
+              >
+                Sayfayı Yenile
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      }
+    >
+      <AuthContext.Provider value={value}>
+        {children}
+      </AuthContext.Provider>
+    </ErrorBoundary>
+  );
 };
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

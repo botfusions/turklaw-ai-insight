@@ -1,62 +1,53 @@
 
 import { useState, useCallback } from 'react';
-import { UseApiStateReturn } from '@/types/hooks';
+import { UseApiStateReturn, UseApiStateOptions } from '@/types/hooks';
+import { ApiResponse } from '@/types/api';
+import { useErrorHandler } from './useErrorHandler';
 
-export interface ApiState<T> {
-  data: T | null;
-  loading: boolean;
-  error: string | null;
-  success: boolean;
-}
-
-export interface ApiActions<T> {
-  execute: (promise: Promise<T>) => Promise<T>;
-  reset: () => void;
-  setData: (data: T | null) => void;
-  setError: (error: string | null) => void;
-}
-
-export function useApiState<T = unknown>(initialData: T | null = null): ApiState<T> & ApiActions<T> {
+export function useTypedApiState<T>(
+  initialData: T | null = null,
+  options: UseApiStateOptions = {}
+): UseApiStateReturn<T> {
   const [data, setData] = useState<T | null>(initialData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const { handleError } = useErrorHandler();
 
   const execute = useCallback(async (promise: Promise<T>): Promise<T> => {
     try {
       setLoading(true);
       setError(null);
-      setSuccess(false);
       
       const result = await promise;
       setData(result);
-      setSuccess(true);
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
       setError(errorMessage);
-      setSuccess(false);
+      
+      handleError(err as Error, {
+        component: 'useTypedApiState',
+        action: 'execute',
+        showToast: true
+      });
+      
       throw err;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [handleError]);
 
   const reset = useCallback(() => {
     setData(initialData);
     setLoading(false);
     setError(null);
-    setSuccess(false);
   }, [initialData]);
 
   return {
     data,
     loading,
     error,
-    success,
     execute,
-    reset,
-    setData,
-    setError
+    reset
   };
 }

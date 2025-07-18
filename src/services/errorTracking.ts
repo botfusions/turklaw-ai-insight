@@ -1,30 +1,36 @@
 
+import { ErrorLog } from '@/types/api';
+
 interface ErrorContext {
   component?: string;
   action?: string;
   userId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface PerformanceMetric {
   name: string;
   value: number;
   timestamp: number;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 class ErrorTrackingService {
   private isDevelopment = import.meta.env.DEV;
-  private errors: Array<{ error: Error; context: ErrorContext; timestamp: number }> = [];
+  private errors: ErrorLog[] = [];
   private metrics: PerformanceMetric[] = [];
   private maxErrors = 100; // Limit stored errors to prevent memory issues
 
-  logError(error: Error | string, context: ErrorContext = {}) {
+  logError(error: Error | string, context: ErrorContext = {}): void {
     const errorObj = typeof error === 'string' ? new Error(error) : error;
-    const logEntry = {
-      error: errorObj,
+    const logEntry: ErrorLog = {
+      id: `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      level: 'error',
+      message: errorObj.message,
+      stack: errorObj.stack,
       context,
-      timestamp: Date.now()
+      userId: context.userId
     };
 
     this.errors.push(logEntry);
@@ -42,7 +48,16 @@ class ErrorTrackingService {
     // Example: Sentry, LogRocket, or custom endpoint
   }
 
-  logInfo(message: string, context: ErrorContext = {}) {
+  logInfo(message: string, context: ErrorContext = {}): void {
+    const logEntry: ErrorLog = {
+      id: `info_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      level: 'info',
+      message,
+      context,
+      userId: context.userId
+    };
+
     if (this.isDevelopment) {
       console.log('ℹ️ Info:', message, context);
     }
@@ -51,7 +66,16 @@ class ErrorTrackingService {
     // to your logging service
   }
 
-  logWarning(message: string, context: ErrorContext = {}) {
+  logWarning(message: string, context: ErrorContext = {}): void {
+    const logEntry: ErrorLog = {
+      id: `warn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      level: 'warn',
+      message,
+      context,
+      userId: context.userId
+    };
+
     if (this.isDevelopment) {
       console.warn('⚠️ Warning:', message, context);
     }
@@ -59,7 +83,7 @@ class ErrorTrackingService {
     // In production, send warnings to logging service
   }
 
-  trackPerformance(name: string, startTime: number, context: Record<string, any> = {}) {
+  trackPerformance(name: string, startTime: number, context: Record<string, unknown> = {}): void {
     const metric: PerformanceMetric = {
       name,
       value: Date.now() - startTime,
@@ -81,21 +105,27 @@ class ErrorTrackingService {
     // In production, send to analytics service
   }
 
-  getErrors() {
-    return this.errors;
+  getErrors(): ErrorLog[] {
+    return [...this.errors];
   }
 
-  getMetrics() {
-    return this.metrics;
+  getMetrics(): PerformanceMetric[] {
+    return [...this.metrics];
   }
 
-  clearLogs() {
+  clearLogs(): void {
     this.errors = [];
     this.metrics = [];
   }
 
   // Get error statistics
-  getErrorStats() {
+  getErrorStats(): {
+    total: number;
+    last24Hours: number;
+    lastHour: number;
+    components: Record<string, number>;
+    actions: Record<string, number>;
+  } {
     const now = Date.now();
     const last24Hours = now - (24 * 60 * 60 * 1000);
     const lastHour = now - (60 * 60 * 1000);
@@ -109,19 +139,19 @@ class ErrorTrackingService {
     };
   }
 
-  private getComponentStats() {
+  private getComponentStats(): Record<string, number> {
     const stats: Record<string, number> = {};
     this.errors.forEach(error => {
-      const component = error.context.component || 'unknown';
+      const component = error.context?.component as string || 'unknown';
       stats[component] = (stats[component] || 0) + 1;
     });
     return stats;
   }
 
-  private getActionStats() {
+  private getActionStats(): Record<string, number> {
     const stats: Record<string, number> = {};
     this.errors.forEach(error => {
-      const action = error.context.action || 'unknown';
+      const action = error.context?.action as string || 'unknown';
       stats[action] = (stats[action] || 0) + 1;
     });
     return stats;

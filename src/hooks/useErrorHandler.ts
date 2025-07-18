@@ -1,16 +1,9 @@
+
 import { useCallback } from 'react';
-import { useErrorMonitoring, ErrorType } from '@/components/system/ErrorMonitoringSystem';
+import { useErrorMonitoring } from '@/components/system/ErrorMonitoringSystem';
 import { errorTracker } from '@/services/errorTracking';
 import { useToast } from '@/hooks/use-toast';
-
-interface ErrorHandlerOptions {
-  showToast?: boolean;
-  component?: string;
-  action?: string;
-  metadata?: Record<string, any>;
-  autoRetry?: boolean;
-  retryDelay?: number;
-}
+import { UseErrorHandlerOptions } from '@/types/hooks';
 
 export const useErrorHandler = () => {
   const { reportError } = useErrorMonitoring();
@@ -18,15 +11,13 @@ export const useErrorHandler = () => {
 
   const handleError = useCallback((
     error: Error | string,
-    options: ErrorHandlerOptions = {}
+    options: UseErrorHandlerOptions = {}
   ) => {
     const {
       showToast = true,
       component = 'Unknown',
       action = 'unknown',
-      metadata = {},
-      autoRetry = false,
-      retryDelay = 3000
+      metadata = {}
     } = options;
 
     // Create error object if string is passed
@@ -59,32 +50,25 @@ export const useErrorHandler = () => {
         variant: "destructive",
       });
     }
-
-    // Auto-retry functionality
-    if (autoRetry && typeof options.retryDelay === 'number') {
-      setTimeout(() => {
-        // This would need to be implemented based on the specific use case
-        console.log('Auto-retry mechanism triggered');
-      }, retryDelay);
-    }
   }, [reportError, toast]);
 
-  const handleAsyncError = useCallback(async (
-    asyncOperation: () => Promise<any>,
-    options: ErrorHandlerOptions = {}
-  ) => {
+  const handleAsyncError = useCallback(async <T>(
+    asyncOperation: () => Promise<T>,
+    options: UseErrorHandlerOptions = {}
+  ): Promise<{ success: boolean; data: T | null; error: Error | null }> => {
     try {
       const result = await asyncOperation();
       return { success: true, data: result, error: null };
     } catch (error) {
-      handleError(error as Error, options);
-      return { success: false, data: null, error: error as Error };
+      const err = error as Error;
+      handleError(err, options);
+      return { success: false, data: null, error: err };
     }
   }, [handleError]);
 
   const handleNetworkError = useCallback((
     error: Error | string,
-    options: Omit<ErrorHandlerOptions, 'component'> = {}
+    options: Omit<UseErrorHandlerOptions, 'component'> = {}
   ) => {
     handleError(error, {
       ...options,
@@ -99,7 +83,7 @@ export const useErrorHandler = () => {
 
   const handleAuthError = useCallback((
     error: Error | string,
-    options: Omit<ErrorHandlerOptions, 'component'> = {}
+    options: Omit<UseErrorHandlerOptions, 'component'> = {}
   ) => {
     handleError(error, {
       ...options,
@@ -114,7 +98,7 @@ export const useErrorHandler = () => {
   const handleValidationError = useCallback((
     error: Error | string,
     fieldName?: string,
-    options: Omit<ErrorHandlerOptions, 'component'> = {}
+    options: Omit<UseErrorHandlerOptions, 'component'> = {}
   ) => {
     handleError(error, {
       ...options,
