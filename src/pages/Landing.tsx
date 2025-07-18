@@ -1,3 +1,4 @@
+
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { DashboardPreview } from '@/components/dashboard/DashboardPreview';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   Search, 
   Zap, 
@@ -46,32 +48,14 @@ const SimpleLoading = () => (
 export default function Landing() {
   const navigate = useNavigate();
   
-  // Safe auth state access
-  let authState = {
-    user: null,
-    profile: null,
-    loading: false,
-    initialized: false,
-    error: false
-  };
+  // Call useAuth hook properly at top level - this is critical for React Rules of Hooks
+  const { user, profile, loading, initialized } = useAuth();
 
-  try {
-    const { useAuth } = require('@/hooks/useAuth');
-    const auth = useAuth();
-    authState = {
-      user: auth.user,
-      profile: auth.profile,
-      loading: auth.loading,
-      initialized: auth.initialized,
-      error: false
-    };
-  } catch (error) {
-    console.error('Landing: Auth context error:', error);
-    authState.error = true;
-  }
+  console.log('Landing: Auth state:', { user: !!user, profile: !!profile, loading, initialized });
 
   // Show loading while auth is initializing
-  if (!authState.error && (!authState.initialized || authState.loading)) {
+  if (!initialized || loading) {
+    console.log('Landing: Showing loading state');
     return <SimpleLoading />;
   }
 
@@ -120,8 +104,9 @@ export default function Landing() {
     }
   ];
 
-  // Check if user is authenticated (only if auth context is working)
-  const isAuthenticated = !authState.error && authState.user && authState.profile;
+  // Check if user is authenticated
+  const isAuthenticated = user && profile;
+  console.log('Landing: User authenticated:', isAuthenticated);
 
   return (
     <div className="min-h-screen bg-background">
