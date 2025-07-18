@@ -9,9 +9,17 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    hmr: {
+      overlay: false // Reduce overlay noise in development
+    }
   },
   plugins: [
-    react(),
+    react({
+      // Enable Fast Refresh
+      fastRefresh: true,
+      // Reduce bundle size
+      jsxImportSource: '@emotion/react'
+    }),
     mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
@@ -20,6 +28,8 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    // Optimize for production
+    minify: mode === 'production' ? 'esbuild' : false,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -32,7 +42,10 @@ export default defineConfig(({ mode }) => ({
       }
     },
     chunkSizeWarningLimit: 1000,
-    sourcemap: false
+    sourcemap: mode === 'development',
+    // Optimize build performance
+    target: 'esnext',
+    cssCodeSplit: true
   },
   optimizeDeps: {
     include: [
@@ -41,9 +54,21 @@ export default defineConfig(({ mode }) => ({
       'react-router-dom',
       '@supabase/supabase-js',
       'lucide-react'
-    ]
+    ],
+    // Force optimization of problematic packages
+    force: mode === 'development'
   },
   esbuild: {
-    logOverride: { 'this-is-undefined-in-esm': 'silent' }
+    // Optimize for both development and production
+    logOverride: { 
+      'this-is-undefined-in-esm': 'silent',
+      'empty-import-meta': 'silent'
+    },
+    target: 'esnext',
+    format: 'esm'
+  },
+  // Add error handling for development
+  define: {
+    __DEV__: mode === 'development'
   }
 }));

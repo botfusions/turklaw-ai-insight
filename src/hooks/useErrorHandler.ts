@@ -1,12 +1,11 @@
 
 import { useCallback } from 'react';
-import { useErrorMonitoring } from '@/components/system/ErrorMonitoringSystem';
-import { errorTracker } from '@/services/errorTracking';
+import { centralErrorHandler } from '@/services/centralErrorHandler';
 import { useToast } from '@/hooks/use-toast';
 import { UseErrorHandlerOptions } from '@/types/hooks';
+import { ErrorType, ErrorSeverity } from '@/components/system/ErrorMonitoringSystem';
 
 export const useErrorHandler = () => {
-  const { reportError } = useErrorMonitoring();
   const { toast } = useToast();
 
   const handleError = useCallback((
@@ -20,103 +19,52 @@ export const useErrorHandler = () => {
       metadata = {}
     } = options;
 
-    // Create error object if string is passed
-    const errorObj = typeof error === 'string' ? new Error(error) : error;
-    
-    // Log to error tracking service
-    errorTracker.logError(errorObj, {
+    const result = centralErrorHandler.handleError(error, {
       component,
       action,
-      metadata: {
-        ...metadata,
-        timestamp: Date.now(),
-        url: window.location.href,
-        userAgent: navigator.userAgent
-      }
-    });
-
-    // Report to error monitoring system
-    reportError(errorObj, undefined, {
-      component,
-      action,
-      ...metadata
+      metadata,
+      showToast
     });
 
     // Show toast notification if enabled
     if (showToast) {
       toast({
         title: "Hata",
-        description: typeof error === 'string' ? error : error.message,
+        description: result.error,
         variant: "destructive",
       });
     }
-  }, [reportError, toast]);
+
+    return result;
+  }, [toast]);
 
   const handleAsyncError = useCallback(async <T>(
     asyncOperation: () => Promise<T>,
     options: UseErrorHandlerOptions = {}
   ): Promise<{ success: boolean; data: T | null; error: Error | null }> => {
-    try {
-      const result = await asyncOperation();
-      return { success: true, data: result, error: null };
-    } catch (error) {
-      const err = error as Error;
-      handleError(err, options);
-      return { success: false, data: null, error: err };
+    const result = await centralErrorHandler.handleAsyncOperation(asyncOperation, {
+      component: options.component || 'useErrorHandler',
+      action: options.action || 'execute',
+      metadata: options.metadata
+    });
+
+    if (!result.success && options.showToast !== false) {
+      toast({
+        title: "Hata",
+        description: result.error || 'Bir hata oluştu',
+        variant: "destructive",
+      });
     }
-  }, [handleError]);
 
-  const handleNetworkError = useCallback((
-    error: Error | string,
-    options: Omit<UseErrorHandlerOptions, 'component'> = {}
-  ) => {
-    handleError(error, {
-      ...options,
-      component: 'NetworkRequest',
-      metadata: {
-        ...options.metadata,
-        type: 'network',
-        online: navigator.onLine
-      }
-    });
-  }, [handleError]);
-
-  const handleAuthError = useCallback((
-    error: Error | string,
-    options: Omit<UseErrorHandlerOptions, 'component'> = {}
-  ) => {
-    handleError(error, {
-      ...options,
-      component: 'Authentication',
-      metadata: {
-        ...options.metadata,
-        type: 'auth'
-      }
-    });
-  }, [handleError]);
-
-  const handleValidationError = useCallback((
-    error: Error | string,
-    fieldName?: string,
-    options: Omit<UseErrorHandlerOptions, 'component'> = {}
-  ) => {
-    handleError(error, {
-      ...options,
-      component: 'Validation',
-      showToast: false, // Validation errors usually show in forms
-      metadata: {
-        ...options.metadata,
-        type: 'validation',
-        field: fieldName
-      }
-    });
-  }, [handleError]);
+    return {
+      success: result.success,
+      data: result.data,
+      error: result.error ? new Error(result.error) : null
+    };
+  }, [toast]);
 
   return {
     handleError,
-    handleAsyncError,
-    handleNetworkError,
-    handleAuthError,
-    handleValidationError
+    handleAsyncError
   };
 };

@@ -6,18 +6,15 @@ import { AppRoutes } from "@/components/routing/RouteConfig";
 import { AccessibilityProvider } from "@/components/accessibility/AccessibilityProvider";
 import { NetworkStatus } from "@/components/layout/NetworkStatus";
 import { AccessibilitySettings } from "@/components/accessibility/AccessibilitySettings";
-import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
+import { SimplifiedErrorBoundary } from "@/components/ui/SimplifiedErrorBoundary";
 import { SmartLoadingProvider } from "@/contexts/SmartLoadingContext";
 import { MemoryManagementProvider } from "@/contexts/MemoryManagementContext";
 import { LoadingPerformanceMonitor } from "@/components/ui/LoadingPerformanceMonitor";
-import ProfileDebugPanel from "@/components/debug/ProfileDebugPanel";
-import MemoryDebugPanel from "@/components/debug/MemoryDebugPanel";
 import { ErrorMonitoringProvider } from "@/components/system/ErrorMonitoringSystem";
-import ErrorDebugPanel from "@/components/debug/ErrorDebugPanel";
 import NetworkMonitor from "@/components/system/NetworkMonitor";
 
 const App = () => (
-  <ErrorBoundary>
+  <SimplifiedErrorBoundary>
     <ErrorMonitoringProvider>
       <MemoryManagementProvider>
         <SmartLoadingProvider>
@@ -30,15 +27,19 @@ const App = () => (
               <AppRoutes />
               <AccessibilitySettings />
               <LoadingPerformanceMonitor />
-              <ProfileDebugPanel />
-              <MemoryDebugPanel />
-              <ErrorDebugPanel />
+              {import.meta.env.DEV && (
+                <>
+                  <ProfileDebugPanel />
+                  <MemoryDebugPanel />
+                  <ErrorDebugPanel />
+                </>
+              )}
             </TooltipProvider>
           </AccessibilityProvider>
         </SmartLoadingProvider>
       </MemoryManagementProvider>
     </ErrorMonitoringProvider>
-  </ErrorBoundary>
+  </SimplifiedErrorBoundary>
 );
 
 export default App;

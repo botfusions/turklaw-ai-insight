@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useState,
@@ -44,8 +45,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => { mounted.current = false; };
   }, []);
 
-  // Utility function to safely update state
-  const safeSetState = useCallback(<T extends any>(setState: React.Dispatch<React.SetStateAction<T>>, value: T) => {
+  // Simplified safe state update function
+  const safeSetState = useCallback((setState: (value: any) => void, value: any) => {
     if (mounted.current) {
       setState(value);
     }
