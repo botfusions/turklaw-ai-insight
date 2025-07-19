@@ -7,7 +7,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 // Removed unnecessary lazy loader imports since we use direct React.lazy
 
 // Critical Pages - Eager Import (needed for initial load)
-import Landing from '@/pages/Landing';
+import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -41,7 +41,7 @@ export const AppRoutes: React.FC = () => {
         path="/" 
         element={
           <ProtectedRoute protection={RouteProtectionLevel.PUBLIC}>
-            <Landing />
+            <Index />
           </ProtectedRoute>
         } 
       />
