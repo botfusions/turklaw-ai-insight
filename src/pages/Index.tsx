@@ -13,18 +13,7 @@ const Index = () => {
     loading
   });
 
-  // Auth durumuna göre yönlendirme
-  useEffect(() => {
-    console.log('🏠 Index: useEffect triggered', { 
-      initialized, 
-      hasUser: !!user 
-    });
-    
-    if (initialized && user) {
-      console.log('🏠 Index: Redirecting to dashboard');
-      navigate('/dashboard', { replace: true });
-    }
-  }, [initialized, user, navigate]);
+  // Otomatik yönlendirme kaldırıldı - kullanıcı ana sayfayı görebilmeli
 
   // Auth yüklenirken loading göster
   if (!initialized) {
