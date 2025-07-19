@@ -20,6 +20,8 @@ import {
 } from "@/components/dashboard/LazyDashboardComponents";
 
 const Dashboard = () => {
+  // DEĞİŞİKLİK: authLoading yerine initialized kullanıyoruz
+  // Bu, yetkilendirme kontrol hatalarını önler
   const { user, profile, initialized } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -130,7 +132,8 @@ const Dashboard = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Loading state
+  // DEĞİŞİKLİK: Loading state kontrolü !initialized kullanıyor
+  // Bu, auth sisteminin tam olarak hazır olmasını bekler
   if (!initialized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
