@@ -89,11 +89,11 @@ export const AppRoutes: React.FC = () => {
       <Route 
         path="/dashboard" 
         element={
-          <ProtectedRoute protection={RouteProtectionLevel.AUTHENTICATED}>
-            <Suspense fallback={<RouteLoadingFallback message="Dashboard hazırlanıyor..." />}>
+          <Suspense fallback={<RouteLoadingFallback message="Dashboard hazırlanıyor..." />}>
+            <ProtectedRoute protection={RouteProtectionLevel.AUTHENTICATED}>
               <Dashboard />
-            </Suspense>
-          </ProtectedRoute>
+            </ProtectedRoute>
+          </Suspense>
         } 
       />
 
