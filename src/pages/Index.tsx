@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Download, AlertCircle, Menu } from 'lucide-react';
-import { useLegalSearchHybrid } from '../hooks/useLegalSearchHybrid';
+import { useLegalSearchHybrid } from '@/hooks/useLegalSearchHybrid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
