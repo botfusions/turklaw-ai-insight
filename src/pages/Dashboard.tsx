@@ -20,8 +20,8 @@ import {
 
 // Fixed: Complete Dashboard component with proper default export for lazy loading
 const Dashboard: React.FC = () => {
-  const { user, profile, initialized } = useAuth();
-  const navigate = useNavigate();
+  const { profile, initialized } = useAuth(); // profile subscription için gerekli
+  const navigate = useNavigate(); // subscription button için gerekli
   const isMobile = useIsMobile();
 
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -43,19 +43,6 @@ const Dashboard: React.FC = () => {
     { id: 'filter', label: 'Sonuçlar filtreleniyor...', status: 'pending' },
     { id: 'rank', label: 'İlgi düzeyine göre sıralanıyor...', status: 'pending' }
   ]);
-
-  // YENİ VE DOĞRU YÖNTEM: useEffect ile yetkilendirme kontrolü
-  useEffect(() => {
-    // 1. Auth hook'unun işini bitirmesini bekle (initialized === true)
-    if (initialized) {
-      // 2. İş bittikten sonra kullanıcı var mı diye kontrol et
-      if (!user) {
-        // 3. Kullanıcı yoksa güvenli bir şekilde yönlendir
-        toast.info("Lütfen giriş yapın.");
-        navigate('/login');
-      }
-    }
-  }, [initialized, user, navigate]); // Bu effect, bu değerler değiştiğinde tekrar çalışır
 
   // Preload components on mount
   useEffect(() => {
@@ -143,20 +130,15 @@ const Dashboard: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Loading state (Yükleme durumu) - Kullanıcının gördüğü metni güncelledik
+  // ✅ CENTRALIZED AUTH: ProtectedRoute zaten auth kontrolü yaptığı için burada sadece loading kontrolü yeterli
   if (!initialized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="text-lg font-medium">Yetkilendirme kontrol ediliyor...</div>
+          <div className="text-lg font-medium">Dashboard hazırlanıyor...</div>
         </div>
       </div>
     );
-  }
-
-  // Guard clause - useEffect yönlendirmesi çalışana kadar titremeyi önler
-  if (!user) {
-    return null; // veya <LoadingSpinner /> gibi bir bileşen
   }
 
   const resultsPerPage = 6;
