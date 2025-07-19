@@ -136,6 +136,13 @@ export function Header({}: HeaderProps) {
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-6">
             <Link 
+              to="/hybrid-search" 
+              className="text-foreground hover:text-primary transition-colors relative group"
+            >
+              🚀 Hibrit Arama
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+            </Link>
+            <Link 
               to="/pricing" 
               className="text-foreground hover:text-primary transition-colors relative group"
             >

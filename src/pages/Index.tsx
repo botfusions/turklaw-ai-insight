@@ -77,6 +77,15 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button 
                 size="lg" 
+                onClick={() => navigate('/hybrid-search')}
+                className="px-8 py-3 text-base font-semibold bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+              >
+                🚀 Hibrit Arama Demo
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              
+              <Button 
+                size="lg" 
                 onClick={() => navigate('/search')}
                 className="px-8 py-3 text-base font-semibold"
               >
