@@ -71,7 +71,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Show loading only during auth initialization
-  if (!authState.initialized || authState.authLoading) {
+  if (!authState.initialized) {
     console.log('ProtectedRoute: Showing auth loading state');
     return <LoadingSpinner message="Yetkilendirme kontrol ediliyor..." />;
   }
