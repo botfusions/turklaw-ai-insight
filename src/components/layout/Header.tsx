@@ -36,10 +36,16 @@ interface HeaderProps {
 export function Header({}: HeaderProps) {
   const navigate = useNavigate();
   
+  console.log('Header rendering...'); // Debug log
+  
   // useHeader'ı güvenli şekilde kullan
   let headerData;
   try {
     headerData = useHeader();
+    console.log('Header useHeader success:', { 
+      user: !!headerData.user, 
+      loading: headerData.loading 
+    });
   } catch (error) {
     console.error('Header useHeader error:', error);
     // Fallback değerler
@@ -74,6 +80,7 @@ export function Header({}: HeaderProps) {
     isHeaderVisible,
   } = headerData;
 
+  console.log('Header using data:', { user: !!user, profile: !!profile, loading });
 
   const handleLogout = async () => {
     try {

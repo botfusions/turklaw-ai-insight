@@ -1,297 +1,208 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Download, AlertCircle, Menu } from 'lucide-react';
-import { useLegalSearchHybrid } from '@/hooks/useLegalSearchHybrid';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ThemeToggle } from '@/components/layout/ThemeToggle';
-import { SearchSuggestions } from '@/components/search/SearchSuggestions';
-import { SearchResultsSkeleton } from '@/components/search/SearchSkeletons';
-import jsPDF from 'jspdf';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
+import { Search, Scale, BookOpen, Users, ArrowRight, CheckCircle } from 'lucide-react';
+import { APP_CONFIG } from '@/constants';
 
 const Index = () => {
-  const {
-    results,
-    loading,
-    error,
-    dataSource,
-    responseTime,
-    searchHybrid
-  } = useLegalSearchHybrid();
+  const navigate = useNavigate();
 
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<'yargi' | 'mevzuat'>('yargi');
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  // Popular suggestions based on category
-  const getPopularSuggestions = (cat: 'yargi' | 'mevzuat') => {
-    const suggestions = {
-      yargi: [
-        'iş hukuku',
-        'boşanma davası',
-        'tazminat',
-        'kira sözleşmesi',
-        'miras hukuku'
-      ],
-      mevzuat: [
-        'borçlar kanunu',
-        'medeni kanun',
-        'iş kanunu',
-        'ceza kanunu',
-        'vergi kanunu'
-      ]
-    };
-    return suggestions[cat] || [];
-  };
-
-  // Load recent searches from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('recent-searches');
-    if (saved) {
-      try {
-        setRecentSearches(JSON.parse(saved));
-      } catch (error) {
-        console.error('Error loading recent searches:', error);
-      }
+  const features = [
+    {
+      icon: Search,
+      title: 'Gelişmiş Arama',
+      description: 'AI destekli akıllı arama ile binlerce hukuki karara hızlıca ulaşın.'
+    },
+    {
+      icon: Scale,
+      title: 'Yargıtay Kararları',
+      description: 'Güncel Yargıtay kararlarını kategorize edilmiş şekilde inceleyin.'
+    },
+    {
+      icon: BookOpen,
+      title: 'Mevzuat Veritabanı',
+      description: 'Kapsamlı mevzuat veritabanı ile yasalara kolayca erişin.'
+    },
+    {
+      icon: Users,
+      title: 'Uzman Analizi',
+      description: 'AI analizi ile karmaşık hukuki metinleri basit dilde açıklama.'
     }
-  }, []);
+  ];
 
-  // Save search to recent searches
-  const saveRecentSearch = (searchQuery: string) => {
-    const updated = [searchQuery, ...recentSearches.filter(s => s !== searchQuery)].slice(0, 5);
-    setRecentSearches(updated);
-    localStorage.setItem('recent-searches', JSON.stringify(updated));
-  };
+  const stats = [
+    { label: 'Hukuki Karar', value: '50,000+' },
+    { label: 'Aktif Kullanıcı', value: '5,000+' },
+    { label: 'Mevzuat Maddesi', value: '100,000+' },
+    { label: 'Günlük Arama', value: '10,000+' }
+  ];
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) {
-      searchHybrid(query.trim(), category);
-      saveRecentSearch(query.trim());
-      setShowSuggestions(false);
-    }
-  };
-
-  const handleSuggestionSelect = (suggestion: string) => {
-    setQuery(suggestion);
-    searchHybrid(suggestion, category);
-    saveRecentSearch(suggestion);
-    setShowSuggestions(false);
-  };
-
-  const downloadPDF = (result: any) => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text(result.title, 20, 30);
-    doc.setFontSize(12);
-    doc.text(`Mahkeme: ${result.court}`, 20, 50);
-    doc.text(`Tarih: ${result.date}`, 20, 65);
-    doc.setFontSize(10);
-    const splitText = doc.splitTextToSize(result.summary, 170);
-    doc.text(splitText, 20, 80);
-    doc.save(`${result.id}-karar.pdf`);
-  };
+  const benefits = [
+    'Zaman tasarrufu sağlayan akıllı arama',
+    'Güncel ve doğrulanmış hukuki içerik',
+    'Kullanıcı dostu arayüz tasarımı',
+    'Mobil uyumlu responsive tasarım',
+    '7/24 erişilebilir platform',
+    'Güvenli ve şifreli veri koruması'
+  ];
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile-first Header */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg sm:text-2xl font-bold truncate">
-              🏛️ TurkLaw AI
+      <Header />
+      
+      {/* Hero Section */}
+      <section className="relative pt-20 pb-16 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center space-y-8">
+            <Badge variant="secondary" className="px-4 py-2">
+              🚀 Yapay Zeka Destekli Hukuki Araştırma Platformu
+            </Badge>
+            
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+              <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                {APP_CONFIG.name}
+              </span>
             </h1>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <Button variant="ghost" size="sm" className="md:hidden">
-                <Menu className="w-4 h-4" />
+            
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              Türkiye'nin en kapsamlı hukuki veritabanında AI destekli arama yapın. 
+              Yargıtay kararları, mevzuat ve içtihatları saniyeler içinde bulun.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Button 
+                size="lg" 
+                onClick={() => navigate('/search')}
+                className="px-8 py-3 text-base font-semibold"
+              >
+                Aramaya Başla
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="lg"
+                onClick={() => navigate('/pricing')}
+                className="px-8 py-3 text-base"
+              >
+                Fiyatları İncele
               </Button>
             </div>
           </div>
         </div>
-      </header>
+      </section>
 
-      <div className="container mx-auto px-4 py-4 sm:py-8 max-w-6xl">
-        {/* Hero Section - Mobile Optimized */}
-        <div className="text-center mb-6 sm:mb-8">
-          <h2 className="text-2xl sm:text-4xl font-bold mb-2 sm:mb-4">
-            Hukuki Arama
-          </h2>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Yargıtay kararları ve mevzuat araması
-          </p>
-        </div>
-
-        {/* Search Form - Responsive */}
-        <Card className="mb-6 sm:mb-8">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg sm:text-xl">Arama</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Category Buttons - Stack on mobile */}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                type="button"
-                variant={category === 'yargi' ? 'default' : 'outline'}
-                onClick={() => {
-                  setCategory('yargi');
-                  setShowSuggestions(false);
-                }}
-                className="flex-1 sm:flex-none"
-              >
-                🏛️ Yargı
-              </Button>
-              <Button
-                type="button"
-                variant={category === 'mevzuat' ? 'default' : 'outline'}
-                onClick={() => {
-                  setCategory('mevzuat');
-                  setShowSuggestions(false);
-                }}
-                className="flex-1 sm:flex-none"
-              >
-                📚 Mevzuat
-              </Button>
-            </div>
-
-            {/* Search Input with Suggestions */}
-            <form onSubmit={handleSearch} className="relative">
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Input
-                    ref={searchInputRef}
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onFocus={() => setShowSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                    placeholder={`${category === 'yargi' ? 'Yargı' : 'Mevzuat'} araması yapın...`}
-                    className="w-full"
-                  />
-                  
-                  {/* Search Suggestions */}
-                  <SearchSuggestions
-                    suggestions={getPopularSuggestions(category)}
-                    recentSearches={recentSearches}
-                    onSelectSuggestion={handleSuggestionSelect}
-                    visible={showSuggestions && (query.length === 0 || query.length > 0)}
-                  />
+      {/* Stats Section */}
+      <section className="py-16 bg-muted/50">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 max-w-4xl mx-auto">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center">
+                <div className="text-3xl font-bold text-primary mb-2">
+                  {stat.value}
                 </div>
-
-                <Button 
-                  type="submit" 
-                  disabled={loading}
-                  className="shrink-0"
-                >
-                  <Search className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">
-                    {loading ? 'Arıyor...' : 'Ara'}
-                  </span>
-                </Button>
+                <div className="text-muted-foreground">
+                  {stat.label}
+                </div>
               </div>
-            </form>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            {/* Status Bar - Responsive */}
-            {results.length > 0 && (
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-muted-foreground">
-                <span>{results.length} sonuç • {responseTime}ms</span>
-                <Badge variant="outline" className="w-fit">
-                  {dataSource}
-                </Badge>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Error Display */}
-        {error && (
-          <Card className="mb-6 border-destructive/50 bg-destructive/10">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-2 text-destructive">
-                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span className="text-sm">{error}</span>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Loading Skeleton */}
-        {loading && <SearchResultsSkeleton />}
-
-        {/* Results - Mobile Optimized */}
-        {!loading && results.length > 0 && (
-          <div className="space-y-4">
-            {results.map((result) => (
-              <Card key={result.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base sm:text-lg leading-tight">
-                    {result.title}
-                  </CardTitle>
-                  <div className="flex flex-wrap gap-1 sm:gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {result.court}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {result.date}
-                    </Badge>
-                    {result.type && (
-                      <Badge className="text-xs">{result.type}</Badge>
-                    )}
+      {/* Features Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-4">
+              Neden {APP_CONFIG.name}?
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Modern teknoloji ile hukuki araştırmanızı hızlandırın ve daha etkili sonuçlar elde edin.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <Card key={index} className="border-0 shadow-md hover:shadow-lg transition-shadow">
+                <CardHeader className="text-center">
+                  <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full w-fit">
+                    <feature.icon className="h-6 w-6 text-primary" />
                   </div>
+                  <CardTitle className="text-lg">{feature.title}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {result.summary}
-                  </p>
-                  
-                  {/* Action Buttons - Stack on small screens */}
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    {result.url && result.url !== '#' && (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1 sm:flex-none text-xs sm:text-sm"
-                        asChild
-                      >
-                        <a href={result.url} target="_blank" rel="noopener noreferrer">
-                          🔗 Kaynağı Görüntüle
-                        </a>
-                      </Button>
-                    )}
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => downloadPDF(result)}
-                      className="flex-1 sm:flex-none text-xs sm:text-sm"
-                    >
-                      <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                      PDF İndir
-                    </Button>
-                  </div>
+                <CardContent>
+                  <CardDescription className="text-center">
+                    {feature.description}
+                  </CardDescription>
                 </CardContent>
               </Card>
             ))}
           </div>
-        )}
+        </div>
+      </section>
 
-        {/* No Results */}
-        {!loading && results.length === 0 && query && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center py-8">
-                <h3 className="text-lg font-medium mb-2">Sonuç Bulunamadı</h3>
-                <p className="text-muted-foreground text-sm">
-                  "{query}" için {category} araması sonuç vermedi.
-                </p>
+      {/* Benefits Section */}
+      <section className="py-20 bg-muted/30 px-4">
+        <div className="container mx-auto max-w-4xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Platform Avantajları</h2>
+            <p className="text-muted-foreground">
+              Hukuki araştırmanızda size sağladığımız değerli avantajlar
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {benefits.map((benefit, index) => (
+              <div key={index} className="flex items-center gap-3">
+                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                <span>{benefit}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-4xl text-center">
+          <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-blue-50">
+            <CardHeader>
+              <CardTitle className="text-2xl md:text-3xl">
+                Hukuki Araştırmanızı Bugün Başlatın
+              </CardTitle>
+              <CardDescription className="text-lg">
+                Ücretsiz hesabınızı oluşturun ve platformun tüm özelliklerini keşfedin.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  size="lg"
+                  onClick={() => navigate('/register')}
+                  className="px-8 py-3"
+                >
+                  Ücretsiz Hesap Oluştur
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => navigate('/about')}
+                  className="px-8 py-3"
+                >
+                  Daha Fazla Bilgi
+                </Button>
               </div>
             </CardContent>
           </Card>
-        )}
-      </div>
+        </div>
+      </section>
+
+      <Footer />
     </div>
   );
 };
