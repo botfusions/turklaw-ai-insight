@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { SearchHeader } from '@/components/search/SearchHeader';
-import { CategorySidebar } from '@/components/search/CategorySidebar';
-import { SearchContent } from '@/components/search/SearchContent';
+import { CategorySidebarLazy, SearchContentLazy, preloadSearchComponents } from '@/components/search/LazySearchComponents';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
@@ -12,6 +12,10 @@ export default function SearchPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dataSource, setDataSource] = useState<'cache' | 'api' | 'static' | 'error'>('cache');
   
+  // Preload components on mount for better UX
+  useEffect(() => {
+    preloadSearchComponents();
+  }, []);
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -41,7 +45,7 @@ export default function SearchPage() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-80 bg-white">
-            <CategorySidebar
+            <CategorySidebarLazy
               selectedCategory={selectedCategory}
               selectedSubcategory={selectedSubcategory}
               onCategorySelect={handleCategorySelect}
@@ -52,7 +56,7 @@ export default function SearchPage() {
 
         {/* Desktop Sidebar */}
         <div className="hidden md:block w-80 flex-shrink-0">
-          <CategorySidebar
+          <CategorySidebarLazy
             selectedCategory={selectedCategory}
             selectedSubcategory={selectedSubcategory}
             onCategorySelect={handleCategorySelect}
@@ -61,7 +65,7 @@ export default function SearchPage() {
         </div>
 
         {/* Main Content */}
-        <SearchContent 
+        <SearchContentLazy 
           selectedCategory={selectedCategory}
           selectedSubcategory={selectedSubcategory}
           onDataSourceChange={setDataSource}

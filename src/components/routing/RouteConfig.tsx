@@ -1,31 +1,53 @@
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { RouteProtectionLevel } from '@/types/routes';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { 
+  LazyDashboard,
+  LazySearchPage,
+  LazyProfile,
+  LazySavedCases,
+  LazySubscription,
+  LazyMevzuatExample,
+  LazyAbout,
+  LazyContact,
+  LazyPricing,
+  withLazyLoading
+} from '@/components/performance/LazyLoader';
 
-// Essential Pages Only
+// Critical Pages - Eager Import (needed for initial load)
 import Landing from '@/pages/Landing';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import EmailVerification from '@/pages/EmailVerification';
 import ResetPassword from '@/pages/ResetPassword';
-import Dashboard from '@/pages/Dashboard';
-import Profile from '@/pages/Profile';
-import SearchPage from '@/pages/SearchPage';
-import SavedCases from '@/pages/SavedCases';
-import Subscription from '@/pages/Subscription';
-import MevzuatExample from '@/pages/MevzuatExample';
-import About from '@/pages/About';
-import Contact from '@/pages/Contact';
-import Pricing from '@/pages/Pricing';
 import NotFound from '@/pages/NotFound';
+
+// Lazy Components with custom loading messages
+const Dashboard = withLazyLoading(LazyDashboard, undefined, "Dashboard yükleniyor...");
+const SearchPage = withLazyLoading(LazySearchPage, undefined, "Arama sayfası hazırlanıyor...");
+const Profile = withLazyLoading(LazyProfile, undefined, "Profil yükleniyor...");
+const SavedCases = withLazyLoading(LazySavedCases, undefined, "Kaydedilen davalar yükleniyor...");
+const Subscription = withLazyLoading(LazySubscription, undefined, "Abonelik sayfası yükleniyor...");
+const MevzuatExample = withLazyLoading(LazyMevzuatExample, undefined, "Mevzuat örneği yükleniyor...");
+const About = withLazyLoading(LazyAbout, undefined, "Hakkımızda sayfası yükleniyor...");
+const Contact = withLazyLoading(LazyContact, undefined, "İletişim sayfası yükleniyor...");
+const Pricing = withLazyLoading(LazyPricing, undefined, "Fiyatlandırma yükleniyor...");
+
+// Custom loading fallback for route-level loading
+const RouteLoadingFallback = ({ message }: { message?: string }) => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <LoadingSpinner size="lg" message={message || "Sayfa yükleniyor..."} />
+  </div>
+);
 
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* Critical Routes - Eager Loading */}
       <Route 
         path="/" 
         element={
@@ -35,7 +57,7 @@ export const AppRoutes: React.FC = () => {
         } 
       />
 
-      {/* Guest Only Routes */}
+      {/* Auth Routes - Critical for user flow */}
       <Route 
         path="/login" 
         element={
@@ -60,8 +82,6 @@ export const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         } 
       />
-
-      {/* Email Verification - Public Route */}
       <Route 
         path="/email-verification" 
         element={
@@ -70,7 +90,6 @@ export const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         } 
       />
-      
       <Route 
         path="/reset-password" 
         element={
@@ -80,107 +99,108 @@ export const AppRoutes: React.FC = () => {
         } 
       />
 
-      {/* Essential Authenticated Routes Only */}
+      {/* Non-Critical Routes - Lazy Loading */}
       <Route 
         path="/dashboard" 
         element={
-          <ProtectedRoute 
-            protection={RouteProtectionLevel.AUTHENTICATED}
-          >
-            <Dashboard />
+          <ProtectedRoute protection={RouteProtectionLevel.AUTHENTICATED}>
+            <Suspense fallback={<RouteLoadingFallback message="Dashboard hazırlanıyor..." />}>
+              <Dashboard />
+            </Suspense>
           </ProtectedRoute>
         } 
       />
 
-      {/* Profile Route */}
-      <Route 
-        path="/profile" 
-        element={
-          <ProtectedRoute 
-            protection={RouteProtectionLevel.AUTHENTICATED}
-          >
-            <Profile />
-          </ProtectedRoute>
-        } 
-      />
-
-      {/* Search Route */}
       <Route 
         path="/search" 
         element={
-          <ProtectedRoute 
-            protection={RouteProtectionLevel.AUTHENTICATED}
-          >
-            <SearchPage />
+          <ProtectedRoute protection={RouteProtectionLevel.AUTHENTICATED}>
+            <Suspense fallback={<RouteLoadingFallback message="Arama sayfası yükleniyor..." />}>
+              <SearchPage />
+            </Suspense>
           </ProtectedRoute>
         } 
       />
 
-      {/* Saved Cases Route */}
+      <Route 
+        path="/profile" 
+        element={
+          <ProtectedRoute protection={RouteProtectionLevel.AUTHENTICATED}>
+            <Suspense fallback={<RouteLoadingFallback message="Profil sayfası yükleniyor..." />}>
+              <Profile />
+            </Suspense>
+          </ProtectedRoute>
+        } 
+      />
+
       <Route 
         path="/saved-cases" 
         element={
-          <ProtectedRoute 
-            protection={RouteProtectionLevel.AUTHENTICATED}
-          >
-            <SavedCases />
+          <ProtectedRoute protection={RouteProtectionLevel.AUTHENTICATED}>
+            <Suspense fallback={<RouteLoadingFallback message="Kaydedilen davalar yükleniyor..." />}>
+              <SavedCases />
+            </Suspense>
           </ProtectedRoute>
         } 
       />
 
-      {/* Subscription Route */}
       <Route 
         path="/subscription" 
         element={
-          <ProtectedRoute 
-            protection={RouteProtectionLevel.AUTHENTICATED}
-          >
-            <Subscription />
+          <ProtectedRoute protection={RouteProtectionLevel.AUTHENTICATED}>
+            <Suspense fallback={<RouteLoadingFallback message="Abonelik yönetimi yükleniyor..." />}>
+              <Subscription />
+            </Suspense>
           </ProtectedRoute>
         } 
       />
 
-      {/* Mevzuat Example Route */}
+      {/* Public Non-Critical Routes - Lazy Loading */}
       <Route 
         path="/mevzuat-example" 
         element={
           <ProtectedRoute protection={RouteProtectionLevel.PUBLIC}>
-            <MevzuatExample />
+            <Suspense fallback={<RouteLoadingFallback message="Mevzuat örneği yükleniyor..." />}>
+              <MevzuatExample />
+            </Suspense>
           </ProtectedRoute>
         } 
       />
 
-      {/* About Route */}
       <Route 
         path="/about" 
         element={
           <ProtectedRoute protection={RouteProtectionLevel.PUBLIC}>
-            <About />
+            <Suspense fallback={<RouteLoadingFallback message="Hakkımızda sayfası yükleniyor..." />}>
+              <About />
+            </Suspense>
           </ProtectedRoute>
         } 
       />
 
-      {/* Contact Route */}
       <Route 
         path="/contact" 
         element={
           <ProtectedRoute protection={RouteProtectionLevel.PUBLIC}>
-            <Contact />
+            <Suspense fallback={<RouteLoadingFallback message="İletişim sayfası yükleniyor..." />}>
+              <Contact />
+            </Suspense>
           </ProtectedRoute>
         } 
       />
 
-      {/* Pricing Route */}
       <Route 
         path="/pricing" 
         element={
           <ProtectedRoute protection={RouteProtectionLevel.PUBLIC}>
-            <Pricing />
+            <Suspense fallback={<RouteLoadingFallback message="Fiyatlandırma yükleniyor..." />}>
+              <Pricing />
+            </Suspense>
           </ProtectedRoute>
         } 
       />
 
-      {/* Catch-all route */}
+      {/* Catch-all route - Critical */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
