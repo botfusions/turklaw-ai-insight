@@ -8,18 +8,19 @@ export interface EventListenerHandle {
 
 export const useMemorySafeEventListener = () => {
   const listenersRef = useRef<Map<string, () => void>>(new Map());
+  const isDev = import.meta.env.DEV;
 
   // Auto-cleanup on unmount
   useEffect(() => {
     return () => {
-      console.log('MemorySafeEventListener: Cleaning up all event listeners');
+      if (isDev) console.log('MemorySafeEventListener: Cleaning up all event listeners');
       listenersRef.current.forEach((cleanup, id) => {
         cleanup();
-        console.log(`MemorySafeEventListener: Removed listener ${id}`);
+        if (isDev) console.log(`MemorySafeEventListener: Removed listener ${id}`);
       });
       listenersRef.current.clear();
     };
-  }, []);
+  }, [isDev]);
 
   const addEventListener = useCallback(<K extends keyof WindowEventMap>(
     target: Window | Document | HTMLElement,
@@ -46,19 +47,19 @@ export const useMemorySafeEventListener = () => {
     
     listenersRef.current.set(listenerId, cleanup);
     
-    console.log(`MemorySafeEventListener: Added ${type} listener ${listenerId}`);
+    if (isDev) console.log(`MemorySafeEventListener: Added ${type} listener ${listenerId}`);
 
     return {
       remove: cleanup,
       isActive: () => listenersRef.current.has(listenerId)
     };
-  }, []);
+  }, [isDev]);
 
   const removeAll = useCallback(() => {
     listenersRef.current.forEach((cleanup) => cleanup());
     listenersRef.current.clear();
-    console.log('MemorySafeEventListener: Manually removed all listeners');
-  }, []);
+    if (isDev) console.log('MemorySafeEventListener: Manually removed all listeners');
+  }, [isDev]);
 
   const getActiveCount = useCallback(() => listenersRef.current.size, []);
 

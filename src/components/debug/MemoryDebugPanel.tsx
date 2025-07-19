@@ -35,9 +35,12 @@ const MemoryDebugPanel: React.FC = () => {
   const [memoryReport, setMemoryReport] = useState<any>(null);
   const [resourceCounts, setResourceCounts] = useState({ timers: 0, listeners: 0, requests: 0 });
 
-  // Update data periodically
+  // Only show in development
+  const isDev = import.meta.env.DEV;
+
+  // Update data periodically - only in development
   useEffect(() => {
-    if (!autoRefresh) return;
+    if (!isDev || !autoRefresh) return;
 
     const updateData = () => {
       setMemoryReport(getMemoryReport());
@@ -45,18 +48,17 @@ const MemoryDebugPanel: React.FC = () => {
     };
 
     updateData();
-    const interval = setInterval(updateData, 2000);
+    const interval = setInterval(updateData, 5000); // Every 5 seconds
 
     return () => clearInterval(interval);
-  }, [autoRefresh, getMemoryReport, getActiveResourceCounts]);
+  }, [autoRefresh, getMemoryReport, getActiveResourceCounts, isDev]);
 
-  // Show in development or when memory is high
+  // Show only in development
   useEffect(() => {
-    const isDev = process.env.NODE_ENV === 'development';
-    setIsVisible(isDev || isMemoryHigh);
-  }, [isMemoryHigh]);
+    setIsVisible(isDev);
+  }, [isDev]);
 
-  if (!isVisible) return null;
+  if (!isVisible || !isDev) return null;
 
   const getMemoryStatus = () => {
     if (isMemorycritical) return { color: 'destructive', icon: AlertTriangle, label: 'Kritik' };
@@ -72,7 +74,7 @@ const MemoryDebugPanel: React.FC = () => {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
             <Activity className="h-4 w-4" />
-            Memory Monitor
+            Memory Monitor (DEV)
             <Badge variant={status.color as any} className="ml-auto">
               <status.icon className="h-3 w-3 mr-1" />
               {status.label}

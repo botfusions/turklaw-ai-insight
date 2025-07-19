@@ -28,8 +28,11 @@ export const useMemoryMonitor = (componentName?: string) => {
     memoryAtRender: 0
   });
 
+  // Only enable in development
+  const isDev = import.meta.env.DEV;
+
   const getMemoryStats = useCallback((): MemoryStats | null => {
-    if (!('memory' in performance)) {
+    if (!isDev || !('memory' in performance)) {
       return null;
     }
 
@@ -44,12 +47,14 @@ export const useMemoryMonitor = (componentName?: string) => {
       isHigh: usagePercentage > 70,
       isCritical: usagePercentage > 90
     };
-  }, []);
+  }, [isDev]);
 
   const forceGarbageCollection = useCallback(() => {
+    if (!isDev) return;
+    
     if ('gc' in window && typeof (window as any).gc === 'function') {
       (window as any).gc();
-      console.log('MemoryMonitor: Forced garbage collection');
+      if (isDev) console.log('MemoryMonitor: Forced garbage collection');
     } else {
       // Fallback: trigger potential GC through memory pressure
       try {
@@ -58,29 +63,33 @@ export const useMemoryMonitor = (componentName?: string) => {
           arrays.push(new Array(1000000).fill(0));
         }
         arrays.length = 0;
-        console.log('MemoryMonitor: Attempted to trigger GC through memory pressure');
+        if (isDev) console.log('MemoryMonitor: Attempted to trigger GC through memory pressure');
       } catch (error) {
-        console.warn('MemoryMonitor: Could not trigger GC:', error);
+        if (isDev) console.warn('MemoryMonitor: Could not trigger GC:', error);
       }
     }
-  }, []);
+  }, [isDev]);
 
   const logComponentRender = useCallback(() => {
+    if (!isDev) return;
+    
     const stats = getMemoryStats();
     
     componentStatsRef.current.renderCount++;
     componentStatsRef.current.lastRender = Date.now();
     componentStatsRef.current.memoryAtRender = stats?.usedJSHeapSize || 0;
 
-    if (stats?.isHigh) {
+    if (stats?.isHigh && isDev) {
       console.warn(`MemoryMonitor: High memory usage at ${componentName} render:`, stats);
     }
-  }, [componentName, getMemoryStats]);
+  }, [componentName, getMemoryStats, isDev]);
 
   const getComponentStats = useCallback(() => componentStatsRef.current, []);
 
-  // Monitor memory usage
+  // Monitor memory usage only in development
   useEffect(() => {
+    if (!isDev) return;
+
     const interval = createInterval(() => {
       const stats = getMemoryStats();
       if (stats) {
@@ -93,14 +102,16 @@ export const useMemoryMonitor = (componentName?: string) => {
           console.warn('MemoryMonitor: High memory usage detected:', stats);
         }
       }
-    }, 5000); // Check every 5 seconds
+    }, 10000); // Check every 10 seconds instead of 5
 
     return () => interval.clear();
-  }, [createInterval, getMemoryStats, forceGarbageCollection]);
+  }, [createInterval, getMemoryStats, forceGarbageCollection, isDev]);
 
-  // Log component render
+  // Log component render only in development
   useEffect(() => {
-    logComponentRender();
+    if (isDev) {
+      logComponentRender();
+    }
   });
 
   const getFormattedMemorySize = useCallback((bytes: number): string => {
@@ -109,6 +120,8 @@ export const useMemoryMonitor = (componentName?: string) => {
   }, []);
 
   const getMemoryReport = useCallback(() => {
+    if (!isDev) return null;
+    
     const stats = getMemoryStats();
     const componentStats = getComponentStats();
     
@@ -127,10 +140,10 @@ export const useMemoryMonitor = (componentName?: string) => {
         memoryAtRender: getFormattedMemorySize(componentStats.memoryAtRender)
       }
     };
-  }, [getMemoryStats, getComponentStats, getFormattedMemorySize]);
+  }, [getMemoryStats, getComponentStats, getFormattedMemorySize, isDev]);
 
   return {
-    memoryStats,
+    memoryStats: isDev ? memoryStats : null,
     getMemoryStats,
     forceGarbageCollection,
     logComponentRender,

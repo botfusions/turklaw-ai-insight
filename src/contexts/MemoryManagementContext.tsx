@@ -24,6 +24,8 @@ interface MemoryManagementProviderProps {
 }
 
 export const MemoryManagementProvider: React.FC<MemoryManagementProviderProps> = ({ children }) => {
+  const isDev = import.meta.env.DEV;
+  
   const { 
     memoryStats, 
     forceGarbageCollection, 
@@ -34,28 +36,32 @@ export const MemoryManagementProvider: React.FC<MemoryManagementProviderProps> =
   const { removeAll: removeAllListeners, getActiveCount: getListenerCount } = useMemorySafeEventListener();
   const { cancelAll: cancelAllRequests, getActiveCount: getRequestCount } = useMemorySafeRequest();
 
-  // Auto cleanup on high memory usage
+  // Auto cleanup on high memory usage - only in development
   useEffect(() => {
+    if (!isDev) return;
+    
     if (memoryStats?.isCritical) {
       console.warn('MemoryManagement: Critical memory detected, forcing cleanup');
       forceCleanup();
     }
-  }, [memoryStats?.isCritical]);
+  }, [memoryStats?.isCritical, isDev]);
 
-  // Periodic cleanup
+  // Periodic cleanup - only in development and less frequent
   useEffect(() => {
+    if (!isDev) return;
+    
     const interval = setInterval(() => {
       if (memoryStats?.isHigh) {
         console.log('MemoryManagement: Performing periodic cleanup due to high memory');
         forceCleanup();
       }
-    }, 60000); // Every minute
+    }, 120000); // Every 2 minutes instead of 1
 
     return () => clearInterval(interval);
-  }, [memoryStats?.isHigh]);
+  }, [memoryStats?.isHigh, isDev]);
 
   const forceCleanup = useCallback(() => {
-    console.log('MemoryManagement: Starting forced cleanup');
+    if (isDev) console.log('MemoryManagement: Starting forced cleanup');
     
     // Clear all managed resources
     clearAllTimers();
@@ -65,8 +71,8 @@ export const MemoryManagementProvider: React.FC<MemoryManagementProviderProps> =
     // Force garbage collection
     forceGarbageCollection();
     
-    console.log('MemoryManagement: Cleanup completed');
-  }, [clearAllTimers, removeAllListeners, cancelAllRequests, forceGarbageCollection]);
+    if (isDev) console.log('MemoryManagement: Cleanup completed');
+  }, [clearAllTimers, removeAllListeners, cancelAllRequests, forceGarbageCollection, isDev]);
 
   const getActiveResourceCounts = useCallback(() => {
     const timerCounts = getTimerCount();
@@ -81,8 +87,8 @@ export const MemoryManagementProvider: React.FC<MemoryManagementProviderProps> =
     forceCleanup,
     getMemoryReport,
     getActiveResourceCounts,
-    isMemoryHigh: memoryStats?.isHigh || false,
-    isMemorycritical: memoryStats?.isCritical || false
+    isMemoryHigh: isDev ? (memoryStats?.isHigh || false) : false,
+    isMemorycritical: isDev ? (memoryStats?.isCritical || false) : false
   };
 
   return (

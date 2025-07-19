@@ -10,17 +10,18 @@ export interface RequestHandle {
 export const useMemorySafeRequest = () => {
   const requestsRef = useRef<Map<string, AbortController>>(new Map());
   const pendingPromisesRef = useRef<Set<Promise<any>>>(new Set());
+  const isDev = import.meta.env.DEV;
 
   // Auto-cleanup on unmount
   useEffect(() => {
     return () => {
-      console.log('MemorySafeRequest: Aborting all pending requests');
+      if (isDev) console.log('MemorySafeRequest: Aborting all pending requests');
       
       // Abort all requests
       requestsRef.current.forEach((controller, id) => {
         if (!controller.signal.aborted) {
           controller.abort();
-          console.log(`MemorySafeRequest: Aborted request ${id}`);
+          if (isDev) console.log(`MemorySafeRequest: Aborted request ${id}`);
         }
       });
       requestsRef.current.clear();
@@ -28,7 +29,7 @@ export const useMemorySafeRequest = () => {
       // Clear pending promises
       pendingPromisesRef.current.clear();
     };
-  }, []);
+  }, [isDev]);
 
   const createRequest = useCallback(<T>(
     requestFn: (signal: AbortSignal) => Promise<T>,
@@ -49,25 +50,25 @@ export const useMemorySafeRequest = () => {
         // Auto-cleanup after completion
         requestsRef.current.delete(requestId);
         pendingPromisesRef.current.delete(promise);
-        console.log(`MemorySafeRequest: Completed request ${requestId}`);
+        if (isDev) console.log(`MemorySafeRequest: Completed request ${requestId}`);
       });
 
     pendingPromisesRef.current.add(promise);
     
-    console.log(`MemorySafeRequest: Created request ${requestId}`);
+    if (isDev) console.log(`MemorySafeRequest: Created request ${requestId}`);
 
     return {
       cancel: () => {
         if (requestsRef.current.has(requestId)) {
           requestsRef.current.get(requestId)?.abort();
           requestsRef.current.delete(requestId);
-          console.log(`MemorySafeRequest: Manually canceled request ${requestId}`);
+          if (isDev) console.log(`MemorySafeRequest: Manually canceled request ${requestId}`);
         }
       },
       isCanceled: () => controller.signal.aborted,
       promise
     };
-  }, []);
+  }, [isDev]);
 
   const cancelAll = useCallback(() => {
     requestsRef.current.forEach((controller) => {
@@ -77,8 +78,8 @@ export const useMemorySafeRequest = () => {
     });
     requestsRef.current.clear();
     pendingPromisesRef.current.clear();
-    console.log('MemorySafeRequest: Manually canceled all requests');
-  }, []);
+    if (isDev) console.log('MemorySafeRequest: Manually canceled all requests');
+  }, [isDev]);
 
   const getActiveCount = useCallback(() => ({
     requests: requestsRef.current.size,

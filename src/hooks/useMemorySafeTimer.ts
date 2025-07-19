@@ -10,27 +10,28 @@ export interface TimerHandle {
 export const useMemorySafeTimer = () => {
   const timersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const intervalsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const isDev = import.meta.env.DEV;
 
   // Clear all timers and intervals on unmount
   useEffect(() => {
     return () => {
-      console.log('MemorySafeTimer: Cleaning up all timers and intervals');
+      if (isDev) console.log('MemorySafeTimer: Cleaning up all timers and intervals');
       
       // Clear all timeouts
       timersRef.current.forEach((timer, id) => {
         clearTimeout(timer);
-        console.log(`MemorySafeTimer: Cleared timeout ${id}`);
+        if (isDev) console.log(`MemorySafeTimer: Cleared timeout ${id}`);
       });
       timersRef.current.clear();
 
       // Clear all intervals
       intervalsRef.current.forEach((interval, id) => {
         clearInterval(interval);
-        console.log(`MemorySafeTimer: Cleared interval ${id}`);
+        if (isDev) console.log(`MemorySafeTimer: Cleared interval ${id}`);
       });
       intervalsRef.current.clear();
     };
-  }, []);
+  }, [isDev]);
 
   const createTimeout = useCallback((
     callback: () => void,
@@ -52,14 +53,14 @@ export const useMemorySafeTimer = () => {
 
     timersRef.current.set(timerId, timer);
     
-    console.log(`MemorySafeTimer: Created timeout ${timerId} with ${delay}ms delay`);
+    if (isDev) console.log(`MemorySafeTimer: Created timeout ${timerId} with ${delay}ms delay`);
 
     return {
       clear: () => {
         if (timersRef.current.has(timerId)) {
           clearTimeout(timersRef.current.get(timerId)!);
           timersRef.current.delete(timerId);
-          console.log(`MemorySafeTimer: Manually cleared timeout ${timerId}`);
+          if (isDev) console.log(`MemorySafeTimer: Manually cleared timeout ${timerId}`);
         }
       },
       isActive: () => timersRef.current.has(timerId),
@@ -74,7 +75,7 @@ export const useMemorySafeTimer = () => {
         timersRef.current.set(timerId, timer);
       }
     };
-  }, []);
+  }, [isDev]);
 
   const createInterval = useCallback((
     callback: () => void,
@@ -91,14 +92,14 @@ export const useMemorySafeTimer = () => {
     const interval = setInterval(callback, delay);
     intervalsRef.current.set(intervalId, interval);
     
-    console.log(`MemorySafeTimer: Created interval ${intervalId} with ${delay}ms delay`);
+    if (isDev) console.log(`MemorySafeTimer: Created interval ${intervalId} with ${delay}ms delay`);
 
     return {
       clear: () => {
         if (intervalsRef.current.has(intervalId)) {
           clearInterval(intervalsRef.current.get(intervalId)!);
           intervalsRef.current.delete(intervalId);
-          console.log(`MemorySafeTimer: Manually cleared interval ${intervalId}`);
+          if (isDev) console.log(`MemorySafeTimer: Manually cleared interval ${intervalId}`);
         }
       },
       isActive: () => intervalsRef.current.has(intervalId),
@@ -110,7 +111,7 @@ export const useMemorySafeTimer = () => {
         intervalsRef.current.set(intervalId, interval);
       }
     };
-  }, []);
+  }, [isDev]);
 
   const clearAll = useCallback(() => {
     timersRef.current.forEach((timer) => clearTimeout(timer));
@@ -119,8 +120,8 @@ export const useMemorySafeTimer = () => {
     intervalsRef.current.forEach((interval) => clearInterval(interval));
     intervalsRef.current.clear();
     
-    console.log('MemorySafeTimer: Manually cleared all timers and intervals');
-  }, []);
+    if (isDev) console.log('MemorySafeTimer: Manually cleared all timers and intervals');
+  }, [isDev]);
 
   const getActiveCount = useCallback(() => ({
     timeouts: timersRef.current.size,
