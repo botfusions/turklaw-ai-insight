@@ -1,24 +1,47 @@
 import React, { useEffect } from 'react';
+import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { LandingPage } from "@/components/landing";
 
 const Index = () => {
+  const { user, initialized } = useAuth();
   const navigate = useNavigate();
 
-  // ✅ CENTRALIZED AUTH: Basit yönlendirme - auth kontrolü ProtectedRoute'ta yapılıyor
+  // ✅ SMART ROUTING: Auth durumuna göre akıllı yönlendirme
   useEffect(() => {
-    // Anasayfa ziyaretçilerini dashboard'a yönlendir
-    // ProtectedRoute auth kontrolü yapacak ve gerekirse login'e gönderecek
-    navigate('/dashboard');
-  }, [navigate]);
+    // Auth initialized olduktan sonra kontrol et
+    if (initialized && user) {
+      // Giriş yapmış kullanıcıyı dashboard'a yönlendir
+      navigate('/dashboard');
+    }
+    // Giriş yapmamış kullanıcılar landing page'te kalır
+  }, [initialized, user, navigate]);
 
-  // Yönlendirme sırasında minimal loading
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center">
-        <div className="text-lg font-medium">Yönlendiriliyor...</div>
+  // Auth yüklenirken loading göster
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg font-medium">Yükleniyor...</div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // Giriş yapmış kullanıcı dashboard'a yönlendirilecek
+  // Giriş yapmamış kullanıcı landing page görür
+  if (user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg font-medium">Dashboard'a yönlendiriliyor...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Giriş yapmamış kullanıcılar için landing page
+  return <LandingPage />;
 };
 
 export default Index;
