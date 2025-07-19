@@ -1,53 +1,41 @@
-import React, { useState, useEffect } from 'react'; // useEffect'i import ettiğinizden emin olun
+import React, { useEffect } from 'react';
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-// ... diğer importlar
+import { toast } from "sonner";
+import { SimplifiedErrorBoundary } from "@/components/ui/SimplifiedErrorBoundary";
 
 // ...
 
-const Dashboard = () => {
-  const { user, profile, initialized } = useAuth();
+const Index = () => {
+  const { user, initialized } = useAuth();
   const navigate = useNavigate();
-  // ... diğer state'ler
 
-  // ...
-
-  // YENİ VE DOĞRU YÖNTEM: useEffect ile yetkilendirme kontrolü
+  // Auth redirection logic
   useEffect(() => {
-    // 1. Auth hook'unun işini bitirmesini bekle (initialized === true)
     if (initialized) {
-      // 2. İş bittikten sonra kullanıcı var mı diye kontrol et
-      if (!user) {
-        // 3. Kullanıcı yoksa güvenli bir şekilde yönlendir
-        toast.info("Lütfen giriş yapın.");
+      if (user) {
+        // User is authenticated, redirect to dashboard
+        navigate('/dashboard');
+      } else {
+        // User is not authenticated, redirect to login
         navigate('/login');
       }
     }
-  }, [initialized, user, navigate]); // Bu effect, bu değerler değiştiğinde tekrar çalışır
+  }, [initialized, user, navigate]);
 
-  // Loading state (Yükleme durumu)
+  // Loading state while auth is initializing
   if (!initialized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          {/* Kullanıcının gördüğü metni değiştirdik */}
-          <div className="text-lg font-medium">Yetkilendirme kontrol ediliyor...</div>
+          <div className="text-lg font-medium">Yükleniyor...</div>
         </div>
       </div>
     );
   }
 
-  veya bir yükleme iconu daha göstermek, sayfanın titremesini engeller.
-  if (!user) {
-    return null; // veya <LoadingSpinner /> gibi bir bileşen
-  }
-
-  // ... Bileşenin geri kalanı (return JSX)
-  return (
-    <SimplifiedErrorBoundary>
-      {/* ... kodun geri kalanı aynı ... */}
-    </SimplifiedErrorBoundary>
-  );
+  // This component should redirect, so return null
+  return null;
 };
 
-export default Dashboard;
+export default Index;
