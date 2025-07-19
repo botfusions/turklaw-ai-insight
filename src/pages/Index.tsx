@@ -75,24 +75,7 @@ const Dashboard = () => {
     );
   }
   
-  // ESKİ VE HATALI KODU SİLİYORUZ
-  /*
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
-  */
-
-  // 2. ADIM: Ekran titremesini (flickering) önlemek için ek koruma.
-  // `initialized` true olsa bile `useEffect` çalışana kadar geçen çok kısa sürede
-  // aşağıdaki JSX render olmasın diye bu kontrolü ekliyoruz.
-  // Eğer kullanıcı yoksa, `useEffect` zaten yönlendireceği için boş bir şey döndürmek en iyisidir.
-  if (!user) {
-    return null; // veya <LoadingSpinner /> gibi bir bileşen
-  }
-
-  // 3. ADIM: Artık buraya ulaştıysak, `initialized` true ve `user` dolu demektir.
-  // Sayfa güvenle render edilebilir.
+  
   const resultsPerPage = 6;
   const startIndex = (currentPage - 1) * resultsPerPage;
   const currentResults = searchResults.slice(startIndex, startIndex + resultsPerPage);
