@@ -53,28 +53,32 @@ export const AuthDataProvider: React.FC<AuthDataProviderProps> = ({ children }) 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('AuthDataContext: Auth state changed:', event, !!session?.user);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-          }, 0);
+          await fetchProfile(session.user.id);
         } else {
           setProfile(null);
+        }
+        
+        if (!initialized) {
+          setInitialized(true);
         }
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('AuthDataContext: Initial session check:', !!session?.user);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        await fetchProfile(session.user.id);
       }
       setInitialized(true);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [initialized]);
 
   const value: AuthDataContextType = {
     user,
