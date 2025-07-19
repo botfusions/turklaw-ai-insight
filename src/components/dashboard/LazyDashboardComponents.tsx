@@ -3,9 +3,9 @@ import { Suspense, lazy } from 'react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 // Lazy load heavy dashboard components
-const LazyDashboardSidebar = lazy(() => import('@/components/dashboard/DashboardSidebar'));
-const LazySearchResults = lazy(() => import('@/components/dashboard/SearchResults'));
-const LazyAnalyticsChart = lazy(() => import('@/components/dashboard/AnalyticsChart'));
+const LazyDashboardSidebar = lazy(() => import('@/components/dashboard/DashboardSidebar').then(module => ({ default: module.DashboardSidebar })));
+const LazySearchResults = lazy(() => import('@/components/dashboard/SearchResults').then(module => ({ default: module.SearchResults })));
+const LazyAnalyticsChart = lazy(() => import('@/components/dashboard/AnalyticsChart').then(module => ({ default: module.AnalyticsChart })));
 
 // Component loading fallbacks
 const SidebarLoadingFallback = () => (

@@ -3,8 +3,8 @@ import { Suspense, lazy } from 'react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 // Lazy load heavy search components
-const LazyCategorySidebar = lazy(() => import('@/components/search/CategorySidebar'));
-const LazySearchContent = lazy(() => import('@/components/search/SearchContent'));
+const LazyCategorySidebar = lazy(() => import('@/components/search/CategorySidebar').then(module => ({ default: module.CategorySidebar })));
+const LazySearchContent = lazy(() => import('@/components/search/SearchContent').then(module => ({ default: module.SearchContent })));
 
 // Component loading fallbacks
 const CategorySidebarLoadingFallback = () => (
