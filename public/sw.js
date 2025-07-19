@@ -1,39 +1,22 @@
 
-const CACHE_NAME = 'turklaw-ai-v1';
-const STATIC_CACHE = 'turklaw-static-v1';
-const DYNAMIC_CACHE = 'turklaw-dynamic-v1';
+const CACHE_NAME = 'turklaw-ai-v2';
+const STATIC_CACHE = 'turklaw-static-v2';
+const DYNAMIC_CACHE = 'turklaw-dynamic-v2';
 
-const STATIC_URLS = [
-  '/',
-  '/static/css/main.css',
-  '/static/js/main.js',
-  '/favicon.ico',
-  '/manifest.json'
-];
-
-// Install event
+// Simple cache-first strategy for performance
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing...');
-  event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then((cache) => {
-        console.log('Caching static files');
-        return cache.addAll(STATIC_URLS);
-      })
-      .catch((error) => {
-        console.error('Error caching static files:', error);
-      })
-  );
+  // Skip waiting to activate immediately
   self.skipWaiting();
 });
 
-// Activate event
 self.addEventListener('activate', (event) => {
   console.log('Service Worker activating...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
+          // Clear old caches
           if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
             console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
@@ -45,54 +28,59 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - Network First strategy for API calls, Cache First for static assets
+// Simplified fetch handler - only cache GET requests
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip cross-origin requests
-  if (url.origin !== location.origin) return;
-
-  // API requests - Network First
-  if (url.pathname.startsWith('/api/') || url.pathname.includes('supabase')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const responseClone = response.clone();
-          caches.open(DYNAMIC_CACHE).then((cache) => {
-            cache.put(request, responseClone);
-          });
-          return response;
-        })
-        .catch(() => {
-          return caches.match(request);
-        })
-    );
+  // Skip non-GET requests and cross-origin requests
+  if (request.method !== 'GET' || url.origin !== location.origin) {
     return;
   }
 
-  // Static assets - Cache First
+  // Skip Supabase and external API requests
+  if (url.href.includes('supabase.co') || 
+      url.href.includes('supabase.com') ||
+      url.pathname.startsWith('/api/') ||
+      url.hostname !== location.hostname) {
+    return;
+  }
+
+  // Simple network-first strategy for all local resources
   event.respondWith(
-    caches.match(request)
+    fetch(request)
       .then((response) => {
-        if (response) {
-          return response;
+        // Only cache successful responses
+        if (response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(DYNAMIC_CACHE).then((cache) => {
+            cache.put(request, responseClone).catch((error) => {
+              console.warn('Cache put failed:', error);
+            });
+          });
         }
-        return fetch(request).then((response) => {
-          if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(DYNAMIC_CACHE).then((cache) => {
-              cache.put(request, responseClone);
+        return response;
+      })
+      .catch((error) => {
+        console.warn('Fetch failed, trying cache:', error);
+        return caches.match(request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          // For navigation requests, try to return the main page
+          if (request.mode === 'navigate') {
+            return caches.match('/').then((indexResponse) => {
+              if (indexResponse) {
+                return indexResponse;
+              }
+              // If nothing is cached, return a simple offline page
+              return new Response('<!DOCTYPE html><html><head><title>Offline</title></head><body><h1>Bağlantı Yok</h1><p>Lütfen internet bağlantınızı kontrol edin.</p></body></html>', {
+                headers: { 'Content-Type': 'text/html' }
+              });
             });
           }
-          return response;
+          throw error;
         });
-      })
-      .catch(() => {
-        // Fallback for navigation requests
-        if (request.mode === 'navigate') {
-          return caches.match('/');
-        }
       })
   );
 });

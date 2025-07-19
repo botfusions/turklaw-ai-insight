@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Clock, Database, Github, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Search, Clock, Database, Github, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
+import { clearAllCaches, forceRefresh } from '@/utils/serviceWorkerUtils';
 
 export function HybridSearchDemo() {
   const [query, setQuery] = useState('');
@@ -83,6 +84,13 @@ export function HybridSearchDemo() {
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={clearCache}>
                 Cache Temizle
+              </Button>
+              <Button type="button" variant="outline" onClick={clearAllCaches}>
+                Tüm Cache Temizle
+              </Button>
+              <Button type="button" variant="outline" onClick={forceRefresh}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Force Refresh
               </Button>
               {dataSource && (
                 <Badge className={`${getDataSourceColor()} flex items-center gap-1`}>
