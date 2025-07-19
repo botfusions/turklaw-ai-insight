@@ -5,8 +5,6 @@ const DYNAMIC_CACHE = 'turklaw-dynamic-v1';
 
 const STATIC_URLS = [
   '/',
-  '/static/css/main.css',
-  '/static/js/main.js',
   '/favicon.ico',
   '/manifest.json'
 ];
