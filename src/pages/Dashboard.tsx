@@ -20,7 +20,6 @@ import {
 } from "@/components/dashboard/LazyDashboardComponents";
 
 const Dashboard = () => {
-  console.log('Dashboard render başladı');
   const { user, profile, authLoading } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();

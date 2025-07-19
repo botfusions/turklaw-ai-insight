@@ -13,7 +13,6 @@ import {
 } from "@/components/search/LazySearchComponents";
 
 const SearchPage = () => {
-  console.log('SearchPage render başladı');
   const { user, authLoading } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
