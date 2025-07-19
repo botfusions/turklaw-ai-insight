@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from "@/hooks/useAuth";
+import { useSimpleAuth } from "@/contexts/SimpleAuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -20,7 +20,7 @@ import {
 
 // Fixed: Complete Dashboard component with proper default export for lazy loading
 const Dashboard: React.FC = () => {
-  const { profile, initialized } = useAuth(); // profile subscription için gerekli
+  const { user, initialized } = useSimpleAuth();
   const navigate = useNavigate(); // subscription button için gerekli
   const isMobile = useIsMobile();
 
@@ -145,9 +145,8 @@ const Dashboard: React.FC = () => {
   const startIndex = (currentPage - 1) * resultsPerPage;
   const currentResults = searchResults.slice(startIndex, startIndex + resultsPerPage);
 
-  // Subscription upgrade prompt
-  const currentPlan = profile?.plan || 'free';
-  const isFreePlan = currentPlan === 'free';
+  // Subscription upgrade prompt - tüm kullanıcılar için basit gösterim
+  const isFreePlan = true; // Şimdilik tüm kullanıcılar free plan
 
   return (
     <SimplifiedErrorBoundary>
