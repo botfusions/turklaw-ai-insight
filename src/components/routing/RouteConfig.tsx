@@ -4,18 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { RouteProtectionLevel } from '@/types/routes';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { 
-  LazyDashboard,
-  LazySearchPage,
-  LazyProfile,
-  LazySavedCases,
-  LazySubscription,
-  LazyMevzuatExample,
-  LazyAbout,
-  LazyContact,
-  LazyPricing,
-  withLazyLoading
-} from '@/components/performance/LazyLoader';
+// Removed unnecessary lazy loader imports since we use direct React.lazy
 
 // Critical Pages - Eager Import (needed for initial load)
 import Landing from '@/pages/Landing';
@@ -26,16 +15,16 @@ import EmailVerification from '@/pages/EmailVerification';
 import ResetPassword from '@/pages/ResetPassword';
 import NotFound from '@/pages/NotFound';
 
-// Direct lazy imports - no double wrapping
-const Dashboard = React.lazy(LazyDashboard);
-const SearchPage = React.lazy(LazySearchPage);
-const Profile = React.lazy(LazyProfile);
-const SavedCases = React.lazy(LazySavedCases);
-const Subscription = React.lazy(LazySubscription);
-const MevzuatExample = React.lazy(LazyMevzuatExample);
-const About = React.lazy(LazyAbout);
-const Contact = React.lazy(LazyContact);
-const Pricing = React.lazy(LazyPricing);
+// Direct lazy imports - correct syntax
+const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
+const SearchPage = React.lazy(() => import('@/pages/SearchPage'));
+const Profile = React.lazy(() => import('@/pages/Profile'));
+const SavedCases = React.lazy(() => import('@/pages/SavedCases'));
+const Subscription = React.lazy(() => import('@/pages/Subscription'));
+const MevzuatExample = React.lazy(() => import('@/pages/MevzuatExample'));
+const About = React.lazy(() => import('@/pages/About'));
+const Contact = React.lazy(() => import('@/pages/Contact'));
+const Pricing = React.lazy(() => import('@/pages/Pricing'));
 
 // Custom loading fallback for route-level loading
 const RouteLoadingFallback = ({ message }: { message?: string }) => (
