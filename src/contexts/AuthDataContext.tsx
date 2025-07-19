@@ -62,9 +62,7 @@ export const AuthDataProvider: React.FC<AuthDataProviderProps> = ({ children }) 
           setProfile(null);
         }
         
-        if (!initialized) {
-          setInitialized(true);
-        }
+        setInitialized(true);
       }
     );
 
@@ -78,7 +76,7 @@ export const AuthDataProvider: React.FC<AuthDataProviderProps> = ({ children }) 
     });
 
     return () => subscription.unsubscribe();
-  }, [initialized]);
+  }, []);
 
   const value: AuthDataContextType = {
     user,
