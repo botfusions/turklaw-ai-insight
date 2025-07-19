@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -44,8 +44,21 @@ const Dashboard: React.FC = () => {
     { id: 'rank', label: 'İlgi düzeyine göre sıralanıyor...', status: 'pending' }
   ]);
 
+  // YENİ VE DOĞRU YÖNTEM: useEffect ile yetkilendirme kontrolü
+  useEffect(() => {
+    // 1. Auth hook'unun işini bitirmesini bekle (initialized === true)
+    if (initialized) {
+      // 2. İş bittikten sonra kullanıcı var mı diye kontrol et
+      if (!user) {
+        // 3. Kullanıcı yoksa güvenli bir şekilde yönlendir
+        toast.info("Lütfen giriş yapın.");
+        navigate('/login');
+      }
+    }
+  }, [initialized, user, navigate]); // Bu effect, bu değerler değiştiğinde tekrar çalışır
+
   // Preload components on mount
-  React.useEffect(() => {
+  useEffect(() => {
     preloadDashboardComponents();
   }, []);
 
@@ -130,21 +143,20 @@ const Dashboard: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Fixed: Use initialized instead of authLoading for loading check
+  // Loading state (Yükleme durumu) - Kullanıcının gördüğü metni güncelledik
   if (!initialized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="text-lg font-medium">Yükleniyor...</div>
+          <div className="text-lg font-medium">Yetkilendirme kontrol ediliyor...</div>
         </div>
       </div>
     );
   }
 
-  // Auth check
+  // Guard clause - useEffect yönlendirmesi çalışana kadar titremeyi önler
   if (!user) {
-    navigate('/login');
-    return null;
+    return null; // veya <LoadingSpinner /> gibi bir bileşen
   }
 
   const resultsPerPage = 6;
