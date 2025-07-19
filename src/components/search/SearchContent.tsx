@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useLegalSearchHybrid } from '@/hooks/useLegalSearchHybrid';
 import { SearchHistory } from '@/components/search/components/SearchHistory';
 import { SearchHistoryPanel } from '@/components/search/components/SearchHistoryPanel';
 import { SearchHistoryMobileDrawer } from '@/components/search/components/SearchHistoryMobileDrawer';
-import { searchService, SearchResult } from '@/components/search/HybridSearchService';
 import { useSearchHistoryDB } from './hooks/useSearchHistoryDB';
 import { SearchHistoryItem } from './types';
 import { 
@@ -26,47 +26,32 @@ import {
   History
 } from 'lucide-react';
 
-const mockResults: SearchResult[] = [
-  {
-    id: '1',
-    title: 'Yargıtay 2. Hukuk Dairesi Kararı - İş Sözleşmesi Feshi',
-    case_number: '2023/5678',
-    court: 'Yargıtay 2. Hukuk Dairesi',
-    department: 'Hukuk',
-    decision_date: '2023-06-15',
-    summary: 'İş sözleşmesinin feshinde geçerli neden bulunmaması durumunda işçinin kıdem ve ihbar tazminatı hakları...',
-    keywords: ['iş sözleşmesi', 'fesih', 'kıdem tazminatı', 'ihbar tazminatı'],
-    category: 'yargi',
-    subcategory: 'yargitay'
-  },
-  {
-    id: '2',
-    title: 'Danıştay 5. Dairesi Kararı - İdari Para Cezası',
-    case_number: '2023/1234',
-    court: 'Danıştay 5. Dairesi',
-    department: 'İdare',
-    decision_date: '2023-05-20',
-    summary: 'İdari para cezasının ölçülülük ilkesi çerçevesinde değerlendirilmesi ve iptal koşulları...',
-    keywords: ['idari para cezası', 'ölçülülük ilkesi', 'iptal'],
-    category: 'yargi',
-    subcategory: 'danistay'
-  }
-];
+// Removed mock results since we now use the hybrid hook
 
 interface SearchContentProps {
   selectedCategory?: string;
   selectedSubcategory?: string;
-  onDataSourceChange?: (source: 'cache' | 'api' | 'static' | 'error') => void;
+  onDataSourceChange?: (source: 'cache' | 'api' | 'github' | 'fallback' | 'static' | 'error') => void;
   className?: string;
 }
 
 export function SearchContent({ selectedCategory, selectedSubcategory, onDataSourceChange, className }: SearchContentProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [savedCases, setSavedCases] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Use hybrid search hook
+  const { 
+    results, 
+    loading, 
+    error, 
+    dataSource, 
+    responseTime, 
+    searchHybrid, 
+    clearCache 
+  } = useLegalSearchHybrid();
+  
+  const [savedCases, setSavedCases] = useState<Set<string>>(new Set());
   const { 
     history: searchHistory, 
     loading: historyLoading, 
@@ -100,34 +85,29 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
       return;
     }
 
-    if (!selectedCategory || !selectedSubcategory) {
-      toast({
-        title: "Uyarı",
-        description: "Lütfen bir kategori ve alt kategori seçin.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    // Map selectedCategory to search categories
+    const searchCategory = selectedCategory === 'yargi' ? 'yargi' : 'mevzuat';
+    
     try {
-      setLoading(true);
+      // Use hybrid search
+      await searchHybrid(searchQuery, searchCategory);
       
-      const response = await searchService.search(selectedCategory, selectedSubcategory, searchQuery);
-      
-      setResults(response.data.results);
-      onDataSourceChange?.(response.source);
+      // Notify parent about data source (map github to static for compatibility)
+      const mappedDataSource = dataSource === 'github' ? 'static' : 
+                               dataSource === 'fallback' ? 'error' : dataSource;
+      onDataSourceChange?.(mappedDataSource);
       
       // Save search to history
       saveSearch(
         searchQuery, 
-        response.data.results.length, 
-        response.source as any, 
-        response.responseTime || 0
+        results.length, 
+        dataSource as any, 
+        responseTime
       );
       
       toast({
         title: "Arama Tamamlandı",
-        description: `${response.data.results.length} sonuç bulundu (${response.responseTime}ms).`,
+        description: `${results.length} sonuç bulundu (${responseTime}ms) - Kaynak: ${dataSource}.`,
       });
       
     } catch (error) {
@@ -138,8 +118,6 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
         variant: "destructive",
       });
       onDataSourceChange?.('error');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -161,13 +139,24 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
     setSavedCases(newSavedCases);
   };
 
-  const downloadPDF = (result: SearchResult) => {
+  const downloadPDF = (result: any) => {
     toast({
       title: "🔐 Premium Özellik",
       description: "PDF indirme için premium hesaba yükseltme gerekiyor!",
       variant: "destructive",
     });
   };
+
+  // Show error state if hybrid search has error
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Uyarı",
+        description: error,
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   return (
     <div className={cn("flex-1 h-full overflow-hidden", className)}>
@@ -217,6 +206,20 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
                 <Building2 className="h-4 w-4 mr-2" />
                 Mahkeme
               </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={clearCache}
+                className="bg-white border-gray-200 hover:bg-gray-50"
+              >
+                Cache Temizle
+              </Button>
+              {dataSource && (
+                <Badge variant="outline" className="text-xs">
+                  Kaynak: {dataSource === 'api' ? 'Canlı API' : dataSource === 'cache' ? 'Önbellek' : dataSource === 'github' ? 'GitHub' : 'Fallback'}
+                </Badge>
+              )}
             </div>
           </form>
         </div>
@@ -273,7 +276,7 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
                         </CardTitle>
                         <div className="flex flex-wrap gap-2 mb-3">
                           <Badge variant="outline" className="text-xs bg-white/70 border-white/20">
-                            {result.case_number}
+                            {result.esas_no || result.karar_no || 'No: ' + result.id}
                           </Badge>
                           <Badge variant="secondary" className="text-xs flex items-center gap-1">
                             <Building2 className="h-3 w-3" />
@@ -281,8 +284,13 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
                           </Badge>
                           <Badge variant="outline" className="text-xs flex items-center gap-1 bg-white/70 border-white/20">
                             <Calendar className="h-3 w-3" />
-                            {new Date(result.decision_date).toLocaleDateString('tr-TR')}
+                            {result.date}
                           </Badge>
+                          {result.status && (
+                            <Badge variant={result.status === 'github_static' ? 'secondary' : 'outline'} className="text-xs">
+                              {result.status === 'github_static' ? 'GitHub' : result.status === 'hardcoded_fallback' ? 'Fallback' : result.status}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       <Button
@@ -314,11 +322,14 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
                     <div>
                       <h4 className="font-medium text-sm mb-2 text-foreground">Anahtar Kelimeler</h4>
                       <div className="flex flex-wrap gap-1">
-                        {result.keywords.map((keyword: string, index: number) => (
-                          <Badge key={index} variant="outline" className="text-xs bg-white border-gray-200">
-                            {keyword}
+                        {result.type && (
+                          <Badge variant="outline" className="text-xs bg-white border-gray-200">
+                            {result.type}
                           </Badge>
-                        ))}
+                        )}
+                        <Badge variant="outline" className="text-xs bg-white border-gray-200">
+                          {result.court}
+                        </Badge>
                       </div>
                     </div>
 
@@ -340,6 +351,17 @@ export function SearchContent({ selectedCategory, selectedSubcategory, onDataSou
                       <Button size="sm" variant="outline" className="bg-white border-gray-200 hover:bg-gray-50">
                         Benzer Kararlar
                       </Button>
+                      {result.url && result.url !== '#' && (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => window.open(result.url, '_blank')}
+                          className="bg-white border-gray-200 hover:bg-gray-50"
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Kaynak
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                     </Card>

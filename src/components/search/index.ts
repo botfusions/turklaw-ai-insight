@@ -6,6 +6,7 @@ export { SearchResults } from './SearchResults';
 export { CategorySidebar } from './CategorySidebar';
 export { SearchContent } from './SearchContent';
 export { useMevzuatSearch } from './hooks/useMevzuatSearch';
+export { useLegalSearchHybrid } from '@/hooks/useLegalSearchHybrid';
 export { useHybridMevzuatSearch } from './hooks/useHybridMevzuatSearch';
 export { useSearchHistory } from './hooks/useSearchHistory';
 export { useSearchHistoryDB } from './hooks/useSearchHistoryDB';

@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { HybridSearchDemo } from '@/components/search/HybridSearchDemo';
 import { Search, Scale, BookOpen, Users, ArrowRight, CheckCircle } from 'lucide-react';
 import { APP_CONFIG } from '@/constants';
 
@@ -164,6 +165,19 @@ const Index = () => {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Hibrit Arama Demo */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Hibrit Arama Sistemi Demo</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Güçlendirilmiş arama sistemimizi test edin. Cache, canlı API, GitHub fallback ve hardcoded fallback seviyelerini otomatik olarak yönetir.
+            </p>
+          </div>
+          <HybridSearchDemo />
         </div>
       </section>
 
