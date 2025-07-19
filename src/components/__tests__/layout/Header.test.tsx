@@ -49,18 +49,21 @@ describe('Header', () => {
     expect(screen.getByText('Saved Cases')).toBeInTheDocument();
   });
 
-  it('should handle mobile menu toggle', async () => {
+  it('should toggle mobile menu visibility', async () => {
     const user = userEvent.setup();
     render(<Header />);
     
-    // Check if mobile menu button exists (usually represented by hamburger icon)
     const mobileMenuButton = screen.getByRole('button', { name: /menu/i });
-    expect(mobileMenuButton).toBeInTheDocument();
     
+    // Başlangıçta menü linklerinin görünmez olduğunu varsayalım (örneğin Dashboard linki)
+    // queryByText, eleman bulunamazsa hata vermek yerine null döner.
+    expect(screen.queryByText('Dashboard')).not.toBeInTheDocument(); // veya .not.toBeVisible()
+
     await user.click(mobileMenuButton);
     
-    // Mobile menu should be visible
-    expect(screen.getByRole('navigation')).toBeInTheDocument();
+    // Tıkladıktan sonra menünün ve linklerin GÖRÜNÜR olmasını bekle
+    const dashboardLink = screen.getByText('Dashboard');
+    expect(dashboardLink).toBeVisible();
   });
 
   it('should display user avatar when authenticated', () => {
