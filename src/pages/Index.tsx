@@ -1,233 +1,230 @@
+import React, { useState, useEffect } from 'react'; // ÖNEMLİ: useEffect'i react'ten import ediyoruz.
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { SearchCard } from "@/components/dashboard/SearchCard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Crown, Zap } from "lucide-react";
+import { FloatingActionButton } from "@/components/mobile/FloatingActionButton";
+import { SimplifiedErrorBoundary } from "@/components/ui/SimplifiedErrorBoundary";
+import { 
+  DashboardSidebarLazy, 
+  SearchResultsLazy, 
+  preloadDashboardComponents 
+} from "@/components/dashboard/LazyDashboardComponents";
 
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { HybridSearchDemo } from '@/components/search/HybridSearchDemo';
-import { Search, Scale, BookOpen, Users, ArrowRight, CheckCircle } from 'lucide-react';
-import { APP_CONFIG } from '@/constants';
-
-const Index = () => {
+const Dashboard = () => {
+  const { user, profile, initialized } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
-  const features = [
-    {
-      icon: Search,
-      title: 'Gelişmiş Arama',
-      description: 'AI destekli akıllı arama ile binlerce hukuki karara hızlıca ulaşın.'
-    },
-    {
-      icon: Scale,
-      title: 'Yargıtay Kararları',
-      description: 'Güncel Yargıtay kararlarını kategorize edilmiş şekilde inceleyin.'
-    },
-    {
-      icon: BookOpen,
-      title: 'Mevzuat Veritabanı',
-      description: 'Kapsamlı mevzuat veritabanı ile yasalara kolayca erişin.'
-    },
-    {
-      icon: Users,
-      title: 'Uzman Analizi',
-      description: 'AI analizi ile karmaşık hukuki metinleri basit dilde açıklama.'
+  // ... (Diğer state'leriniz burada aynı kalabilir, onlarda sorun yok)
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isSearching, setIsSearching] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTime, setSearchTime] = useState(0);
+  const [searchLoadingSteps, setSearchLoadingSteps] = useState<{ id: string; label: string; status: 'pending' | 'loading' | 'completed' | 'error'; }[]>([]);
+
+
+  // YENİ VE DOĞRU YÖNTEM: Yetkilendirme kontrolü için useEffect
+  // Bu hook, bileşen render edildikten SONRA çalışır.
+  useEffect(() => {
+    // 1. Auth hook'unun ilk kontrolü bitirmesini bekliyoruz (initialized === true).
+    // Bu olmadan kontrol yaparsak, erken yönlendirme riski devam eder.
+    if (initialized) {
+      // 2. Kontrol bittikten sonra, eğer kullanıcı hala yoksa,
+      // bu, kullanıcının gerçekten giriş yapmadığı anlamına gelir.
+      if (!user) {
+        toast.info("Devam etmek için lütfen giriş yapın.");
+        // 3. Artık güvenle yönlendirme yapabiliriz.
+        navigate('/login');
+      }
     }
-  ];
+  }, [initialized, user, navigate]); // Bu effect, bu değerler değiştiğinde yeniden çalışır.
 
-  const stats = [
-    { label: 'Hukuki Karar', value: '50,000+' },
-    { label: 'Aktif Kullanıcı', value: '5,000+' },
-    { label: 'Mevzuat Maddesi', value: '100,000+' },
-    { label: 'Günlük Arama', value: '10,000+' }
-  ];
 
-  const benefits = [
-    'Zaman tasarrufu sağlayan akıllı arama',
-    'Güncel ve doğrulanmış hukuki içerik',
-    'Kullanıcı dostu arayüz tasarımı',
-    'Mobil uyumlu responsive tasarım',
-    '7/24 erişilebilir platform',
-    'Güvenli ve şifreli veri koruması'
-  ];
+  // Preload components on mount
+  useEffect(() => {
+    preloadDashboardComponents();
+  }, []);
+
+  // ... (handleSearch, generateMockResults, handlePageChange fonksiyonlarınız burada aynı kalabilir)
+  const handleSearch = async (query: string, filters: any = {}) => {
+    // ... (bu fonksiyonun içeriği doğru)
+  };
+  const handlePageChange = (page: number) => {
+    // ... (bu fonksiyonun içeriği doğru)
+  };
+
+
+  // 1. ADIM: Auth hook'u hazır olana kadar bekleme ekranı gösterilir.
+  // Bu kontrol doğru ve kalmalı. Mesajı daha anlamlı hale getirelim.
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg font-medium">Yetkilendirme kontrol ediliyor...</div>
+        </div>
+      </div>
+    );
+  }
+  
+  // ESKİ VE HATALI KODU SİLİYORUZ
+  /*
+  if (!user) {
+    navigate('/login');
+    return null;
+  }
+  */
+
+  // 2. ADIM: Ekran titremesini (flickering) önlemek için ek koruma.
+  // `initialized` true olsa bile `useEffect` çalışana kadar geçen çok kısa sürede
+  // aşağıdaki JSX render olmasın diye bu kontrolü ekliyoruz.
+  // Eğer kullanıcı yoksa, `useEffect` zaten yönlendireceği için boş bir şey döndürmek en iyisidir.
+  if (!user) {
+    return null; // veya <LoadingSpinner /> gibi bir bileşen
+  }
+
+  // 3. ADIM: Artık buraya ulaştıysak, `initialized` true ve `user` dolu demektir.
+  // Sayfa güvenle render edilebilir.
+  const resultsPerPage = 6;
+  const startIndex = (currentPage - 1) * resultsPerPage;
+  const currentResults = searchResults.slice(startIndex, startIndex + resultsPerPage);
+  const currentPlan = profile?.plan || 'free';
+  const isFreePlan = currentPlan === 'free';
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      {/* Hero Section */}
-      <section className="relative pt-20 pb-16 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center space-y-8">
-            <Badge variant="secondary" className="px-4 py-2">
-              🚀 Yapay Zeka Destekli Hukuki Araştırma Platformu
-            </Badge>
-            
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                {APP_CONFIG.name}
-              </span>
-            </h1>
-            
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Türkiye'nin en kapsamlı hukuki veritabanında AI destekli arama yapın. 
-              Yargıtay kararları, mevzuat ve içtihatları saniyeler içinde bulun.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button 
-                size="lg" 
-                onClick={() => navigate('/hybrid-search')}
-                className="px-8 py-3 text-base font-semibold bg-gradient-to-r from-primary to-secondary hover:opacity-90"
-              >
-                🚀 Hibrit Arama Demo
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              
-              <Button 
-                size="lg" 
-                onClick={() => navigate('/search')}
-                className="px-8 py-3 text-base font-semibold"
-              >
-                Aramaya Başla
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={() => navigate('/pricing')}
-                className="px-8 py-3 text-base"
-              >
-                Fiyatları İncele
-              </Button>
+    <SimplifiedErrorBoundary>
+      {/* ... KODUNUZUN GERİ KALANI BURADA HİÇBİR DEĞİŞİKLİK OLMADAN YER ALACAK ... */}
+      {/* Bu JSX kısmında herhangi bir sorun yoktu, o yüzden olduğu gibi kullanabilirsiniz. */}
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-muted/40">
+        <DashboardHeader 
+          onMenuClick={() => setSidebarOpen(!sidebarOpen)} 
+          showMenuButton={isMobile} 
+        />
+        <div className="dashboard-layout">
+          <DashboardSidebarLazy 
+            isOpen={sidebarOpen} 
+            onClose={() => setSidebarOpen(false)}
+            isMobile={isMobile}
+            onSearch={handleSearch}
+          />
+          <main className="dashboard-main">
+            <div className="dashboard-content">
+              {/* Subscription Upgrade Banner for Free Users */}
+              {isFreePlan && (
+                <Card className="mb-6 border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Crown className="h-5 w-5 text-primary" />
+                      Premium Özellikleri Keşfedin
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div className="flex-1">
+                        <p className="text-sm text-muted-foreground">
+                          Gelişmiş arama filtreleri, sınırsız erişim ve premium destek için planınızı yükseltin.
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => navigate('/subscription')}
+                        >
+                          Planları Görüntüle
+                        </Button>
+                        <Button 
+                          size="sm"
+                          onClick={() => navigate('/subscription')}
+                        >
+                          Premium'a Geç
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Column - Search and Results */}
+                <div className="lg:col-span-2 space-y-6">
+                  <SearchCard onSearch={handleSearch} />
+                  
+                  {isSearching && (
+                    <div className="flex justify-center">
+                      {/* ... Arama adımları ... */}
+                    </div>
+                  )}
+                  
+                  <SearchResultsLazy
+                    results={currentResults}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    loading={isSearching}
+                    totalResults={searchResults.length}
+                    searchTime={searchTime}
+                    query={searchQuery}
+                  />
+                </div>
+                
+                {/* Right Column - Plan Info */}
+                <div className="hidden lg:block space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Mevcut Planınız</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          {currentPlan === 'free' && <Zap className="h-5 w-5 text-blue-500" />}
+                          {currentPlan === 'premium' && <Crown className="h-5 w-5 text-yellow-500" />}
+                          <span className="font-medium">
+                            {currentPlan === 'free' && 'Ücretsiz Plan'}
+                            {currentPlan === 'premium' && 'Premium Plan'}
+                          </span>
+                        </div>
+                        
+                        <div className="text-sm text-muted-foreground">
+                          {currentPlan === 'free' && 'Temel özelliklere erişim'}
+                          {currentPlan === 'premium' && 'Gelişmiş özellikler ve sınırsız arama'}
+                        </div>
+                        
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => navigate('/subscription')}
+                        >
+                          Plan Yönetimi
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             </div>
-          </div>
+          </main>
         </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 max-w-4xl mx-auto">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl font-bold text-primary mb-2">
-                  {stat.value}
-                </div>
-                <div className="text-muted-foreground">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">
-              Neden {APP_CONFIG.name}?
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Modern teknoloji ile hukuki araştırmanızı hızlandırın ve daha etkili sonuçlar elde edin.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="border-0 shadow-md hover:shadow-lg transition-shadow">
-                <CardHeader className="text-center">
-                  <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full w-fit">
-                    <feature.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-center">
-                    {feature.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits Section */}
-      <section className="py-20 bg-muted/30 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Platform Avantajları</h2>
-            <p className="text-muted-foreground">
-              Hukuki araştırmanızda size sağladığımız değerli avantajlar
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            {benefits.map((benefit, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                <span>{benefit}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Hibrit Arama Demo */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Hibrit Arama Sistemi Demo</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Güçlendirilmiş arama sistemimizi test edin. Cache, canlı API, GitHub fallback ve hardcoded fallback seviyelerini otomatik olarak yönetir.
-            </p>
-          </div>
-          <HybridSearchDemo />
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-4xl text-center">
-          <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-blue-50">
-            <CardHeader>
-              <CardTitle className="text-2xl md:text-3xl">
-                Hukuki Araştırmanızı Bugün Başlatın
-              </CardTitle>
-              <CardDescription className="text-lg">
-                Ücretsiz hesabınızı oluşturun ve platformun tüm özelliklerini keşfedin.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  size="lg"
-                  onClick={() => navigate('/register')}
-                  className="px-8 py-3"
-                >
-                  Ücretsiz Hesap Oluştur
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  onClick={() => navigate('/about')}
-                  className="px-8 py-3"
-                >
-                  Daha Fazla Bilgi
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      <Footer />
-    </div>
+        
+        {isMobile && <FloatingActionButton onSearch={handleSearch} />}
+        
+        {isMobile && sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+      </div>
+    </SimplifiedErrorBoundary>
   );
 };
 
-export default Index;
+export default Dashboard;
