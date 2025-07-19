@@ -20,7 +20,7 @@ import {
 } from "@/components/dashboard/LazyDashboardComponents";
 
 const Dashboard = () => {
-  const { user, profile, authLoading } = useAuth();
+  const { user, profile, initialized } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
@@ -131,7 +131,7 @@ const Dashboard = () => {
   };
 
   // Loading state
-  if (authLoading) {
+  if (!initialized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
