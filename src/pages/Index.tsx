@@ -1,208 +1,178 @@
 
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Search, Download, AlertCircle } from 'lucide-react';
+import { useLegalSearchHybrid } from '../hooks/useLegalSearchHybrid';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { Search, Scale, BookOpen, Users, ArrowRight, CheckCircle } from 'lucide-react';
-import { APP_CONFIG } from '@/constants';
+import jsPDF from 'jspdf';
 
 const Index = () => {
-  const navigate = useNavigate();
+  const {
+    results,
+    loading,
+    error,
+    dataSource,
+    responseTime,
+    searchHybrid
+  } = useLegalSearchHybrid();
 
-  const features = [
-    {
-      icon: Search,
-      title: 'Gelişmiş Arama',
-      description: 'AI destekli akıllı arama ile binlerce hukuki karara hızlıca ulaşın.'
-    },
-    {
-      icon: Scale,
-      title: 'Yargıtay Kararları',
-      description: 'Güncel Yargıtay kararlarını kategorize edilmiş şekilde inceleyin.'
-    },
-    {
-      icon: BookOpen,
-      title: 'Mevzuat Veritabanı',
-      description: 'Kapsamlı mevzuat veritabanı ile yasalara kolayca erişin.'
-    },
-    {
-      icon: Users,
-      title: 'Uzman Analizi',
-      description: 'AI analizi ile karmaşık hukuki metinleri basit dilde açıklama.'
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<'yargi' | 'mevzuat'>('yargi');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) {
+      searchHybrid(query.trim(), category);
     }
-  ];
+  };
 
-  const stats = [
-    { label: 'Hukuki Karar', value: '50,000+' },
-    { label: 'Aktif Kullanıcı', value: '5,000+' },
-    { label: 'Mevzuat Maddesi', value: '100,000+' },
-    { label: 'Günlük Arama', value: '10,000+' }
-  ];
-
-  const benefits = [
-    'Zaman tasarrufu sağlayan akıllı arama',
-    'Güncel ve doğrulanmış hukuki içerik',
-    'Kullanıcı dostu arayüz tasarımı',
-    'Mobil uyumlu responsive tasarım',
-    '7/24 erişilebilir platform',
-    'Güvenli ve şifreli veri koruması'
-  ];
+  const downloadPDF = (result: any) => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(result.title, 20, 30);
+    doc.setFontSize(12);
+    doc.text(`Mahkeme: ${result.court}`, 20, 50);
+    doc.text(`Tarih: ${result.date}`, 20, 65);
+    doc.setFontSize(10);
+    const splitText = doc.splitTextToSize(result.summary, 170);
+    doc.text(splitText, 20, 80);
+    doc.save(`${result.id}-karar.pdf`);
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      {/* Hero Section */}
-      <section className="relative pt-20 pb-16 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center space-y-8">
-            <Badge variant="secondary" className="px-4 py-2">
-              🚀 Yapay Zeka Destekli Hukuki Araştırma Platformu
-            </Badge>
-            
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                {APP_CONFIG.name}
-              </span>
-            </h1>
-            
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Türkiye'nin en kapsamlı hukuki veritabanında AI destekli arama yapın. 
-              Yargıtay kararları, mevzuat ve içtihatları saniyeler içinde bulun.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button 
-                size="lg" 
-                onClick={() => navigate('/search')}
-                className="px-8 py-3 text-base font-semibold"
-              >
-                Aramaya Başla
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={() => navigate('/pricing')}
-                className="px-8 py-3 text-base"
-              >
-                Fiyatları İncele
-              </Button>
-            </div>
-          </div>
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-2">Hukuki Arama</h1>
+          <p className="text-muted-foreground">Yargıtay kararları ve mevzuat araması</p>
         </div>
-      </section>
 
-      {/* Stats Section */}
-      <section className="py-16 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 max-w-4xl mx-auto">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl font-bold text-primary mb-2">
-                  {stat.value}
-                </div>
-                <div className="text-muted-foreground">
-                  {stat.label}
-                </div>
+        {/* Search Form */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Arama</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSearch} className="space-y-4">
+              {/* Category Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={category === 'yargi' ? 'default' : 'outline'}
+                  onClick={() => setCategory('yargi')}
+                >
+                  Yargı
+                </Button>
+                <Button
+                  type="button"
+                  variant={category === 'mevzuat' ? 'default' : 'outline'}
+                  onClick={() => setCategory('mevzuat')}
+                >
+                  Mevzuat
+                </Button>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* Features Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">
-              Neden {APP_CONFIG.name}?
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Modern teknoloji ile hukuki araştırmanızı hızlandırın ve daha etkili sonuçlar elde edin.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="border-0 shadow-md hover:shadow-lg transition-shadow">
-                <CardHeader className="text-center">
-                  <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full w-fit">
-                    <feature.icon className="h-6 w-6 text-primary" />
+              {/* Search Input */}
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Arama terimi girin..."
+                  className="flex-1"
+                />
+                <Button type="submit" disabled={loading}>
+                  <Search className="w-4 h-4 mr-2" />
+                  {loading ? 'Arıyor...' : 'Ara'}
+                </Button>
+              </div>
+            </form>
+
+            {/* Status */}
+            {results.length > 0 && (
+              <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+                <span>{results.length} sonuç • {responseTime}ms</span>
+                <Badge variant="outline">{dataSource}</Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Error */}
+        {error && (
+          <Card className="mb-6 border-destructive">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 text-destructive">
+                <AlertCircle className="w-4 h-4" />
+                <span>{error}</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <Card className="mb-6">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
+                <span>Arama yapılıyor...</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Results */}
+        {!loading && results.length > 0 && (
+          <div className="space-y-4">
+            {results.map((result) => (
+              <Card key={result.id}>
+                <CardHeader>
+                  <CardTitle className="text-lg">{result.title}</CardTitle>
+                  <div className="flex gap-2">
+                    <Badge variant="secondary">{result.court}</Badge>
+                    <Badge variant="outline">{result.date}</Badge>
+                    {result.type && <Badge>{result.type}</Badge>}
                   </div>
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-center">
-                    {feature.description}
-                  </CardDescription>
+                  <p className="text-muted-foreground mb-4">{result.summary}</p>
+                  <div className="flex gap-2">
+                    {result.url && result.url !== '#' && (
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={result.url} target="_blank" rel="noopener noreferrer">
+                          Kaynağı Görüntüle
+                        </a>
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" onClick={() => downloadPDF(result)}>
+                      <Download className="w-4 h-4 mr-2" />
+                      PDF İndir
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
-        </div>
-      </section>
+        )}
 
-      {/* Benefits Section */}
-      <section className="py-20 bg-muted/30 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Platform Avantajları</h2>
-            <p className="text-muted-foreground">
-              Hukuki araştırmanızda size sağladığımız değerli avantajlar
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            {benefits.map((benefit, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                <span>{benefit}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-4xl text-center">
-          <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-blue-50">
-            <CardHeader>
-              <CardTitle className="text-2xl md:text-3xl">
-                Hukuki Araştırmanızı Bugün Başlatın
-              </CardTitle>
-              <CardDescription className="text-lg">
-                Ücretsiz hesabınızı oluşturun ve platformun tüm özelliklerini keşfedin.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  size="lg"
-                  onClick={() => navigate('/register')}
-                  className="px-8 py-3"
-                >
-                  Ücretsiz Hesap Oluştur
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  onClick={() => navigate('/about')}
-                  className="px-8 py-3"
-                >
-                  Daha Fazla Bilgi
-                </Button>
+        {/* No Results */}
+        {!loading && results.length === 0 && query && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-8">
+                <h3 className="text-lg font-medium mb-2">Sonuç Bulunamadı</h3>
+                <p className="text-muted-foreground">
+                  "{query}" için {category} araması sonuç vermedi.
+                </p>
               </div>
             </CardContent>
           </Card>
-        </div>
-      </section>
-
-      <Footer />
+        )}
+      </div>
     </div>
   );
 };
