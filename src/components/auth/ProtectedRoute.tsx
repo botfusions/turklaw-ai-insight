@@ -39,12 +39,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       error: false
     };
     
-    console.log('ProtectedRoute: Optimized auth state:', { 
+    console.log('🛡️ ProtectedRoute: Auth state for', location.pathname, ':', { 
       hasUser: !!auth.user, 
       initialized: auth.initialized, 
       authLoading: auth.authLoading,
       actionLoading: auth.actionLoading,
-      authError: auth.authError
+      authError: auth.authError,
+      protection
     });
   } catch (error) {
     console.error('ProtectedRoute: Auth context error:', error);

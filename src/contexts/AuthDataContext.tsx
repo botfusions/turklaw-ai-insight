@@ -51,31 +51,46 @@ export const AuthDataProvider: React.FC<AuthDataProviderProps> = ({ children }) 
   };
 
   useEffect(() => {
+    console.log('🔄 AuthDataContext: Setting up auth listeners');
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('AuthDataContext: Auth state changed:', event, !!session?.user);
+        console.log('🔄 AuthDataContext: Auth state changed:', event, !!session?.user);
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          console.log('👤 AuthDataContext: User found, fetching profile...');
           await fetchProfile(session.user.id);
         } else {
+          console.log('❌ AuthDataContext: No user, clearing profile');
           setProfile(null);
         }
         
+        console.log('✅ AuthDataContext: Setting initialized to true');
         setInitialized(true);
       }
     );
 
+    // Get initial session
+    console.log('🔍 AuthDataContext: Checking initial session...');
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log('AuthDataContext: Initial session check:', !!session?.user);
+      console.log('🔍 AuthDataContext: Initial session result:', !!session?.user);
       setUser(session?.user ?? null);
       if (session?.user) {
+        console.log('👤 AuthDataContext: Initial user found, fetching profile...');
         await fetchProfile(session.user.id);
       }
+      console.log('✅ AuthDataContext: Initial setup complete, setting initialized to true');
+      setInitialized(true);
+    }).catch(error => {
+      console.error('❌ AuthDataContext: Error getting initial session:', error);
       setInitialized(true);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('🧹 AuthDataContext: Cleaning up auth listeners');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const value: AuthDataContextType = {
