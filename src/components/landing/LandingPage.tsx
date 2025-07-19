@@ -1,5 +1,5 @@
 import React from 'react';
-import { Header } from "@/components/layout/Header";
+import { GuestHeader } from "@/components/layout/GuestHeader";
 import { Footer } from "@/components/layout/Footer";
 import { HeroSection } from "./HeroSection";
 import { FeaturesSection } from "./FeaturesSection";
@@ -7,7 +7,7 @@ import { FeaturesSection } from "./FeaturesSection";
 export const LandingPage = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <GuestHeader transparent />
       <main>
         <HeroSection />
         <FeaturesSection />

@@ -8,7 +8,7 @@ export const HeroSection = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-background via-muted/20 to-muted/40 py-20 lg:py-28">
+    <section className="relative overflow-hidden bg-gradient-to-br from-background via-muted/20 to-muted/40 pt-16 py-20 lg:py-28">{/* pt-16 for fixed header */}
       {/* Background decoration */}
       <div className="absolute inset-0 bg-grid-pattern opacity-5" />
       <div className="absolute top-20 right-20 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
@@ -23,7 +23,7 @@ export const HeroSection = () => {
           </Badge>
 
           {/* Main heading */}
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 animate-fade-in [animation-delay:0.1s]">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight mb-6 animate-fade-in [animation-delay:0.1s]">
             <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               Hukuki Araştırmanızı
             </span>
