@@ -14,9 +14,9 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import EmailVerification from '@/pages/EmailVerification';
 import ResetPassword from '@/pages/ResetPassword';
 import NotFound from '@/pages/NotFound';
+import Dashboard from '@/pages/Dashboard';
 
-// Direct lazy imports - correct syntax
-const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
+// Non-critical lazy imports
 const SearchPage = React.lazy(() => import('@/pages/SearchPage'));
 const Profile = React.lazy(() => import('@/pages/Profile'));
 const SavedCases = React.lazy(() => import('@/pages/SavedCases'));
@@ -93,9 +93,7 @@ export const AppRoutes: React.FC = () => {
         path="/dashboard" 
         element={
           <ProtectedRoute protection={RouteProtectionLevel.AUTHENTICATED}>
-            <Suspense fallback={<RouteLoadingFallback message="Dashboard hazırlanıyor..." />}>
-              <Dashboard />
-            </Suspense>
+            <Dashboard />
           </ProtectedRoute>
         } 
       />
