@@ -49,8 +49,8 @@ export function withLazyLoading<T extends Record<string, any>>(
 }
 
 // Optimized lazy loaders for common components with specific loading messages
-export const LazyDashboard = () => import('@/pages/Dashboard');
-export const LazySearchPage = () => import('@/pages/SearchPage');
+export const LazyDashboard = () => import('@/pages/Dashboard').then(module => ({ default: module.default }));
+export const LazySearchPage = () => import('@/pages/SearchPage').then(module => ({ default: module.default }));
 export const LazyProfile = () => import('@/pages/Profile');
 export const LazySavedCases = () => import('@/pages/SavedCases');
 export const LazySubscription = () => import('@/pages/Subscription');
