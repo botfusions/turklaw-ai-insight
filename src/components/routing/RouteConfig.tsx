@@ -26,16 +26,16 @@ import EmailVerification from '@/pages/EmailVerification';
 import ResetPassword from '@/pages/ResetPassword';
 import NotFound from '@/pages/NotFound';
 
-// Lazy Components with custom loading messages
-const Dashboard = withLazyLoading(LazyDashboard, undefined, "Dashboard yükleniyor...");
-const SearchPage = withLazyLoading(LazySearchPage, undefined, "Arama sayfası hazırlanıyor...");
-const Profile = withLazyLoading(LazyProfile, undefined, "Profil yükleniyor...");
-const SavedCases = withLazyLoading(LazySavedCases, undefined, "Kaydedilen davalar yükleniyor...");
-const Subscription = withLazyLoading(LazySubscription, undefined, "Abonelik sayfası yükleniyor...");
-const MevzuatExample = withLazyLoading(LazyMevzuatExample, undefined, "Mevzuat örneği yükleniyor...");
-const About = withLazyLoading(LazyAbout, undefined, "Hakkımızda sayfası yükleniyor...");
-const Contact = withLazyLoading(LazyContact, undefined, "İletişim sayfası yükleniyor...");
-const Pricing = withLazyLoading(LazyPricing, undefined, "Fiyatlandırma yükleniyor...");
+// Direct lazy imports - no double wrapping
+const Dashboard = React.lazy(LazyDashboard);
+const SearchPage = React.lazy(LazySearchPage);
+const Profile = React.lazy(LazyProfile);
+const SavedCases = React.lazy(LazySavedCases);
+const Subscription = React.lazy(LazySubscription);
+const MevzuatExample = React.lazy(LazyMevzuatExample);
+const About = React.lazy(LazyAbout);
+const Contact = React.lazy(LazyContact);
+const Pricing = React.lazy(LazyPricing);
 
 // Custom loading fallback for route-level loading
 const RouteLoadingFallback = ({ message }: { message?: string }) => (
