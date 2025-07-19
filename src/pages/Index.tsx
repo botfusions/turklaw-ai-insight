@@ -1,38 +1,33 @@
 import React, { useEffect } from 'react';
-import { useAuth } from "@/hooks/useAuth";
+import { useSimpleAuth } from "@/contexts/SimpleAuthContext";
 import { useNavigate } from "react-router-dom";
 import { LandingPage } from "@/components/landing";
 
 const Index = () => {
-  const auth = useAuth();
+  const { user, initialized, loading } = useSimpleAuth();
   const navigate = useNavigate();
 
   console.log('🏠 Index: Auth state:', {
-    user: !!auth.user,
-    initialized: auth.initialized,
-    authLoading: auth.authLoading,
-    actionLoading: auth.actionLoading,
-    authError: auth.authError
+    hasUser: !!user,
+    initialized,
+    loading
   });
 
-  // ✅ SMART ROUTING: Auth durumuna göre akıllı yönlendirme
+  // Auth durumuna göre yönlendirme
   useEffect(() => {
     console.log('🏠 Index: useEffect triggered', { 
-      initialized: auth.initialized, 
-      hasUser: !!auth.user 
+      initialized, 
+      hasUser: !!user 
     });
     
-    // Auth initialized olduktan sonra kontrol et
-    if (auth.initialized && auth.user) {
+    if (initialized && user) {
       console.log('🏠 Index: Redirecting to dashboard');
-      // Giriş yapmış kullanıcıyı dashboard'a yönlendir
       navigate('/dashboard', { replace: true });
     }
-    // Giriş yapmamış kullanıcılar landing page'te kalır
-  }, [auth.initialized, auth.user, navigate]);
+  }, [initialized, user, navigate]);
 
   // Auth yüklenirken loading göster
-  if (!auth.initialized) {
+  if (!initialized) {
     console.log('🏠 Index: Showing loading state');
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -44,7 +39,6 @@ const Index = () => {
   }
 
   console.log('🏠 Index: Showing landing page');
-  // Giriş yapmamış kullanıcılar için landing page
   return <LandingPage />;
 };
 
