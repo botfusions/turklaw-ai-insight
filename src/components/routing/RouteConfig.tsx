@@ -40,11 +40,7 @@ export const AppRoutes: React.FC = () => {
       {/* Critical Routes - Eager Loading */}
       <Route 
         path="/" 
-        element={
-          <ProtectedRoute protection={RouteProtectionLevel.PUBLIC}>
-            <Index />
-          </ProtectedRoute>
-        } 
+        element={<Index />} 
       />
 
       {/* Auth Routes - Critical for user flow */}
