@@ -20,6 +20,7 @@ import {
   X
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 export interface SearchResult {
   id: string;
@@ -67,21 +68,108 @@ export function SearchResults({
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
   // Handlers
-  const handleDownloadPDF = (id: string) => {
-    console.log('PDF İndir:', id);
+  const handleDownloadPDF = async (id: string) => {
+    const result = results.find(r => r.id === id);
+    if (!result) return;
+
+    try {
+      // PDF indirme işlemi başlatılıyor
+      toast.info('PDF hazırlanıyor...');
+      
+      const { jsPDF } = await import('jspdf');
+      const pdf = new jsPDF();
+      
+      // PDF içeriği
+      pdf.setFontSize(16);
+      pdf.text(result.title, 20, 30);
+      
+      pdf.setFontSize(12);
+      pdf.text(`Mahkeme: ${result.court}`, 20, 50);
+      pdf.text(`Daire: ${result.department}`, 20, 60);
+      pdf.text(`Tarih: ${result.date}`, 20, 70);
+      
+      // Özet metni için satır kaydırma
+      const splitText = pdf.splitTextToSize(result.summary, 170);
+      pdf.text(splitText, 20, 90);
+      
+      // Dosyayı indir
+      pdf.save(`${result.title.slice(0, 50)}.pdf`);
+      toast.success('PDF başarıyla indirildi!');
+    } catch (error) {
+      console.error('PDF oluşturma hatası:', error);
+      toast.error('PDF oluşturulurken hata oluştu');
+    }
   };
 
   const handleViewDetails = (id: string) => {
-    console.log('Detay Görüntüle:', id);
+    const result = results.find(r => r.id === id);
+    if (!result) return;
+    
+    // Detay sayfasına yönlendir
+    window.open(`/case/${id}`, '_blank');
   };
 
-  const handleSaveResult = (id: string) => {
-    console.log('Kaydet:', id);
+  const handleSaveResult = async (id: string) => {
+    try {
+      toast.info('Kayıt işlemi başlatılıyor...');
+      
+      // Supabase'e kaydet
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase
+        .from('saved_cases')
+        .insert({
+          case_id: id,
+          user_id: (await supabase.auth.getUser()).data.user?.id
+        });
+
+      if (error) throw error;
+      
+      toast.success('Karar başarıyla kaydedildi!');
+    } catch (error) {
+      console.error('Kaydetme hatası:', error);
+      toast.error('Kaydetme sırasında hata oluştu');
+    }
   };
 
-  const handleBulkExport = () => {
+  const handleBulkExport = async () => {
     if (selectedResults.length === 0) return;
-    console.log('Toplu Export:', selectedResults);
+    
+    try {
+      toast.info('Toplu PDF hazırlanıyor...');
+      
+      const { jsPDF } = await import('jspdf');
+      const pdf = new jsPDF();
+      
+      selectedResults.forEach((resultId, index) => {
+        const result = results.find(r => r.id === resultId);
+        if (!result) return;
+        
+        if (index > 0) {
+          pdf.addPage(); // Yeni sayfa ekle
+        }
+        
+        // PDF içeriği
+        pdf.setFontSize(16);
+        pdf.text(result.title, 20, 30);
+        
+        pdf.setFontSize(12);
+        pdf.text(`Mahkeme: ${result.court}`, 20, 50);
+        pdf.text(`Daire: ${result.department}`, 20, 60);
+        pdf.text(`Tarih: ${result.date}`, 20, 70);
+        
+        const splitText = pdf.splitTextToSize(result.summary, 170);
+        pdf.text(splitText, 20, 90);
+      });
+      
+      pdf.save(`toplu-kararlar-${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success(`${selectedResults.length} karar PDF olarak indirildi!`);
+      
+      // Seçimi temizle
+      setSelectedResults([]);
+    } catch (error) {
+      console.error('Toplu PDF oluşturma hatası:', error);
+      toast.error('Toplu PDF oluşturulurken hata oluştu');
+    }
   };
 
   const handleSelectResult = (id: string) => {

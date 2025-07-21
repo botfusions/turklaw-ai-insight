@@ -38,6 +38,31 @@ export function ResultCard({
   onSave,
   query
 }: ResultCardProps) {
+  const handleShare = async (result: SearchResult) => {
+    const url = `${window.location.origin}/case/${result.id}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: result.title,
+          text: result.summary,
+          url: url,
+        });
+      } catch (error) {
+        console.log('Paylaşım iptal edildi');
+      }
+    } else {
+      // Fallback: URL'yi panoya kopyala
+      try {
+        await navigator.clipboard.writeText(url);
+        const { toast } = await import('sonner');
+        toast.success('Link panoya kopyalandı!');
+      } catch (error) {
+        const { toast } = await import('sonner');
+        toast.error('Link kopyalanırken hata oluştu');
+      }
+    }
+  };
   const highlightText = (text: string, query?: string) => {
     if (!query || query.trim() === '') return text;
     
@@ -214,6 +239,7 @@ export function ResultCard({
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => handleShare(result)}
               className="flex items-center gap-2 group/btn"
             >
               <Share2 className="h-4 w-4 group-hover/btn:scale-110 transition-transform" />
