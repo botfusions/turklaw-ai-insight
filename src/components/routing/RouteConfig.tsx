@@ -201,7 +201,7 @@ export const AppRoutes: React.FC = () => {
       <Route 
         path="/case/:id" 
         element={
-          <ProtectedRoute protection={RouteProtectionLevel.AUTHENTICATED}>
+          <ProtectedRoute protection={RouteProtectionLevel.PUBLIC}>
             <Suspense fallback={<RouteLoadingFallback message="Karar detayları yükleniyor..." />}>
               <CaseDetail />
             </Suspense>
