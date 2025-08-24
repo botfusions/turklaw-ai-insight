@@ -6,7 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { 
   FileText, 
   Download, 
-  Print, 
+  Printer, 
   Share2, 
   Copy, 
   ZoomIn, 
@@ -298,7 +298,7 @@ export function DocumentViewer({
               onClick={handlePrint}
               className="no-print"
             >
-              <Print size={16} />
+              <Printer size={16} />
               Yazdır
             </Button>
 
