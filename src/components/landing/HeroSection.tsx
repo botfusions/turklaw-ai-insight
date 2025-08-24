@@ -71,7 +71,7 @@ export const HeroSection = () => {
               onClick={() => navigate('/unified-search')}
             >
               <BookOpen className="w-4 h-4 mr-2" />
-              🚀 Yeni: Birleşik Arama Deneyin
+              ⚖️ Tüm Mahkemelerde Ara
             </Button>
           </div>
 
