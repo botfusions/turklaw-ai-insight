@@ -27,6 +27,7 @@ const Contact = React.lazy(() => import('@/pages/Contact'));
 const Pricing = React.lazy(() => import('@/pages/Pricing'));
 const HybridSearch = React.lazy(() => import('@/pages/HybridSearch'));
 const CaseDetail = React.lazy(() => import('@/pages/CaseDetail'));
+const UnifiedSearchPage = React.lazy(() => import('@/pages/UnifiedSearchPage'));
 
 // Custom loading fallback for route-level loading
 const RouteLoadingFallback = ({ message }: { message?: string }) => (
@@ -204,6 +205,17 @@ export const AppRoutes: React.FC = () => {
           <ProtectedRoute protection={RouteProtectionLevel.PUBLIC}>
             <Suspense fallback={<RouteLoadingFallback message="Karar detayları yükleniyor..." />}>
               <CaseDetail />
+            </Suspense>
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/unified-search" 
+        element={
+          <ProtectedRoute protection={RouteProtectionLevel.AUTHENTICATED}>
+            <Suspense fallback={<RouteLoadingFallback message="Birleşik arama sayfası yükleniyor..." />}>
+              <UnifiedSearchPage />
             </Suspense>
           </ProtectedRoute>
         } 

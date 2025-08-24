@@ -40,7 +40,7 @@ export const HeroSection = () => {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 animate-fade-in [animation-delay:0.3s]">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8 animate-fade-in [animation-delay:0.3s]">
             <Button 
               size="lg" 
               className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground px-8 py-3 text-lg hover-scale"
@@ -59,6 +59,19 @@ export const HeroSection = () => {
             >
               <Gavel className="w-5 h-5 mr-2" />
               Giriş Yapın
+            </Button>
+          </div>
+
+          {/* Demo Button */}
+          <div className="flex justify-center mb-4 animate-fade-in [animation-delay:0.35s]">
+            <Button 
+              variant="secondary" 
+              size="lg" 
+              className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-2 text-base hover-scale"
+              onClick={() => navigate('/unified-search')}
+            >
+              <BookOpen className="w-4 h-4 mr-2" />
+              🚀 Yeni: Birleşik Arama Deneyin
             </Button>
           </div>
 
