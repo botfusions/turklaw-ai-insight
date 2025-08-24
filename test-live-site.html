@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turkish Legal AI - Live Site Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 4px; font-family: monospace; font-size: 12px; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; width: 300px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Turkish Legal AI - Canlı Site Test</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Test Bilgileri</h3>
+            <p><strong>Site URL:</strong> https://turklawai.com</p>
+            <p><strong>Supabase URL:</strong> https://wdowdibcidirhizpqiki.supabase.co</p>
+            <p><strong>Test Kullanıcısı:</strong> cenk.tokgoz@gmail.com</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🔌 1. Supabase Database Connection Test</h3>
+            <button onclick="testDatabase()">Database'i Test Et</button>
+            <div id="db-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🤖 2. LLM API Test (Query Enhancement)</h3>
+            <input type="text" id="query-input" placeholder="Test sorgusu (örn: iş sözleşmesi feshi)" value="iş sözleşmesi feshi">
+            <button onclick="testLLM()">LLM API'yi Test Et</button>
+            <div id="llm-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>👤 3. User Authentication Test</h3>
+            <input type="email" id="email-input" placeholder="Email" value="cenk.tokgoz@gmail.com">
+            <input type="password" id="password-input" placeholder="Password" value="Ce848005/1">
+            <button onclick="testAuth()">Giriş Yapmayı Dene</button>
+            <div id="auth-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 4. Legal Cases Data Test</h3>
+            <button onclick="testLegalCases()">Hukuki Vaka Verilerini Test Et</button>
+            <div id="cases-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 5. Search History Test</h3>
+            <button onclick="testSearchHistory()">Arama Geçmişini Test Et</button>
+            <div id="history-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase client
+        const supabaseUrl = 'https://wdowdibcidirhizpqiki.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indkb3dkaWJjaWRpcmhpenBxaWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIzMjI3OTYsImV4cCI6MjA2Nzg5ODc5Nn0.qV5gMR-bkAbRXpDu18PmgOziCQ0PEf3y6FWFet09FfU';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function testDatabase() {
+            const resultDiv = document.getElementById('db-result');
+            resultDiv.innerHTML = 'Testing database connection...';
+            
+            try {
+                // Test basic connectivity
+                const { data, error } = await supabase
+                    .from('subscription_plans')
+                    .select('id, name, price')
+                    .limit(3);
+                
+                if (error) {
+                    resultDiv.innerHTML = `<span style="color: red;">❌ Database Error: ${error.message}</span>`;
+                    resultDiv.parentElement.className = 'test-section error';
+                } else {
+                    resultDiv.innerHTML = `<span style="color: green;">✅ Database Connection OK</span><br>
+                        <strong>Subscription Plans Found:</strong><br>
+                        ${JSON.stringify(data, null, 2)}`;
+                    resultDiv.parentElement.className = 'test-section success';
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<span style="color: red;">❌ Connection Failed: ${err.message}</span>`;
+                resultDiv.parentElement.className = 'test-section error';
+            }
+        }
+
+        async function testLLM() {
+            const resultDiv = document.getElementById('llm-result');
+            const query = document.getElementById('query-input').value;
+            resultDiv.innerHTML = 'Testing LLM API (Query Enhancement)...';
+            
+            try {
+                const { data, error } = await supabase.functions.invoke('ai-query-enhancement', {
+                    body: {
+                        query: query,
+                        userHistory: ['trafik kazası', 'iş hukuku']
+                    }
+                });
+                
+                if (error) {
+                    resultDiv.innerHTML = `<span style="color: red;">❌ LLM API Error: ${error.message}</span>`;
+                    resultDiv.parentElement.className = 'test-section error';
+                } else {
+                    resultDiv.innerHTML = `<span style="color: green;">✅ LLM API Working</span><br>
+                        <strong>Enhanced Query Result:</strong><br>
+                        ${JSON.stringify(data, null, 2)}`;
+                    resultDiv.parentElement.className = 'test-section success';
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<span style="color: red;">❌ LLM Test Failed: ${err.message}</span>`;
+                resultDiv.parentElement.className = 'test-section error';
+            }
+        }
+
+        async function testAuth() {
+            const resultDiv = document.getElementById('auth-result');
+            const email = document.getElementById('email-input').value;
+            const password = document.getElementById('password-input').value;
+            resultDiv.innerHTML = 'Testing authentication...';
+            
+            try {
+                // Try to sign in with test credentials
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    // Try to sign up if login fails
+                    const { data: signupData, error: signupError } = await supabase.auth.signUp({
+                        email: email,
+                        password: password
+                    });
+                    
+                    if (signupError) {
+                        resultDiv.innerHTML = `<span style="color: orange;">⚠️ Auth Issue: ${signupError.message}</span><br>
+                            <em>User may need to be created manually or email verification required</em>`;
+                        resultDiv.parentElement.className = 'test-section info';
+                    } else {
+                        resultDiv.innerHTML = `<span style="color: green;">✅ Signup Successful</span><br>
+                            User ID: ${signupData.user?.id}<br>
+                            Email: ${signupData.user?.email}`;
+                        resultDiv.parentElement.className = 'test-section success';
+                    }
+                } else {
+                    resultDiv.innerHTML = `<span style="color: green;">✅ Login Successful</span><br>
+                        User ID: ${data.user?.id}<br>
+                        Email: ${data.user?.email}`;
+                    resultDiv.parentElement.className = 'test-section success';
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<span style="color: red;">❌ Auth Test Failed: ${err.message}</span>`;
+                resultDiv.parentElement.className = 'test-section error';
+            }
+        }
+
+        async function testLegalCases() {
+            const resultDiv = document.getElementById('cases-result');
+            resultDiv.innerHTML = 'Testing legal cases data...';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('legal_cases')
+                    .select('title, court, summary, keywords')
+                    .limit(3);
+                
+                if (error) {
+                    resultDiv.innerHTML = `<span style="color: red;">❌ Legal Cases Error: ${error.message}</span>`;
+                    resultDiv.parentElement.className = 'test-section error';
+                } else {
+                    resultDiv.innerHTML = `<span style="color: green;">✅ Legal Cases Data OK</span><br>
+                        <strong>Sample Cases (${data.length} found):</strong><br>
+                        ${data.map(case => `• ${case.title} (${case.court})`).join('<br>')}`;
+                    resultDiv.parentElement.className = 'test-section success';
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<span style="color: red;">❌ Cases Test Failed: ${err.message}</span>`;
+                resultDiv.parentElement.className = 'test-section error';
+            }
+        }
+
+        async function testSearchHistory() {
+            const resultDiv = document.getElementById('history-result');
+            resultDiv.innerHTML = 'Testing search history...';
+            
+            try {
+                // First check if user is authenticated
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (!user) {
+                    resultDiv.innerHTML = `<span style="color: orange;">⚠️ User not authenticated. Login first to test search history.</span>`;
+                    resultDiv.parentElement.className = 'test-section info';
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('user_searches')
+                    .select('query, results_count, search_date')
+                    .eq('user_id', user.id)
+                    .limit(5);
+                
+                if (error) {
+                    resultDiv.innerHTML = `<span style="color: red;">❌ Search History Error: ${error.message}</span>`;
+                    resultDiv.parentElement.className = 'test-section error';
+                } else {
+                    resultDiv.innerHTML = `<span style="color: green;">✅ Search History OK</span><br>
+                        <strong>Recent Searches (${data.length} found):</strong><br>
+                        ${data.map(search => `• "${search.query}" - ${search.results_count} results`).join('<br>') || 'No search history yet'}`;
+                    resultDiv.parentElement.className = 'test-section success';
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<span style="color: red;">❌ History Test Failed: ${err.message}</span>`;
+                resultDiv.parentElement.className = 'test-section error';
+            }
+        }
+
+        // Auto-run database test on page load
+        window.onload = function() {
+            testDatabase();
+        };
+    </script>
+</body>
+</html>
