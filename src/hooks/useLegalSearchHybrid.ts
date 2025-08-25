@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { legalApi, searchHelpers } from '@/services/legalApiService';
 
 interface SearchResult {
   id: string;
@@ -22,10 +23,6 @@ interface SearchState {
 }
 
 const DATA_SOURCES = {
-  api: {
-    yargi: 'https://yargi-mcp-of8a.onrender.com/webhook/yargitay-search',
-    mevzuat: 'https://mevzuat-mcp-2z26.onrender.com/webhook/search'
-  },
   github: {
     yargi: 'https://raw.githubusercontent.com/botfusions/yargi-mcp/main/public/yargitay-data.json',
     mevzuat: 'https://raw.githubusercontent.com/botfusions/mevzuat-mcp/main/public/mevzuat-data.json'
@@ -153,39 +150,49 @@ export const useLegalSearchHybrid = () => {
     setSearchState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      // 2. Live API denemesi (8 saniye timeout)
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      // 2. Live API denemesi - yeni legalApiService kullanımı
+      let apiResults: SearchResult[] = [];
       
-      const apiPayload = category === 'yargi' 
-        ? { andKelimeler: query, page_size: 10 }
-        : { query, page_size: 10 };
-
-      const response = await fetch(DATA_SOURCES.api[category], {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(apiPayload),
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        const data = await response.json();
-        const results = mapAPIResponse(data, category);
-        
-        // Cache'e kaydet
-        setCachedResult(cacheKey, results);
-        
-        setSearchState({
-          results,
-          loading: false,
-          error: null,
-          dataSource: 'api',
-          responseTime: Date.now() - startTime
-        });
-        return;
+      if (category === 'yargi') {
+        const response = await searchHelpers.searchAllCourts(query);
+        apiResults = response.results.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          summary: item.summary,
+          court: item.court,
+          date: item.date,
+          url: item.url || '#',
+          status: 'live_api',
+          type: item.documentType || 'karar',
+          esas_no: item.caseNumber || '',
+          karar_no: item.decisionNumber || ''
+        }));
+      } else {
+        const response = await searchHelpers.searchLegislation(query, 'name');
+        apiResults = (response.results || response).map((item: any) => ({
+          id: item.id || `mevzuat-${Math.random()}`,
+          title: item.mevzuat_adi || item.title,
+          summary: item.summary || 'Mevzuat özeti',
+          court: item.mevzuat_turu || 'Kanun',
+          date: item.resmi_gazete_tarihi || item.date || 'Tarih yok',
+          url: item.url || '#',
+          status: 'live_api',
+          type: item.mevzuat_turu || 'kanun'
+        }));
       }
+      
+      // Cache'e kaydet
+      setCachedResult(cacheKey, apiResults);
+      
+      setSearchState({
+        results: apiResults,
+        loading: false,
+        error: null,
+        dataSource: 'api',
+        responseTime: Date.now() - startTime
+      });
+      return;
+      
     } catch (error) {
       console.warn(`Live API ${category} failed:`, error);
     }

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // API Base URL - can be configured via environment variables
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.PROD ? 'https://your-backend-domain.com' : 'http://localhost:8001');
+  (import.meta.env.PROD ? 'https://yargi-mcp.botfusions.com' : 'http://localhost:8001');
 
 // Response schemas
 const SearchResultSchema = z.object({
