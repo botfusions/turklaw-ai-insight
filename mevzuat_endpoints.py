@@ -11,6 +11,13 @@ import json
 import tempfile
 import os
 
+# Import direct scraping client
+try:
+    from direct_mevzuat import direct_client
+    DIRECT_MODE = True
+except ImportError:
+    DIRECT_MODE = False
+
 router = APIRouter(prefix="/api/mevzuat", tags=["Mevzuat MCP Tools"])
 
 # Pydantic models for request/response validation

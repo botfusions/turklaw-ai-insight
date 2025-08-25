@@ -8,7 +8,8 @@ from datetime import datetime
 
 # Import MCP endpoint routers
 from yargi_endpoints import router as yargi_router
-from mevzuat_endpoints import router as mevzuat_router
+# from mevzuat_endpoints import router as mevzuat_router  # Commented out - using direct fix
+from quick_mevzuat_fix import router as mevzuat_router
 
 # Import error handlers
 from error_handlers import setup_error_handlers
