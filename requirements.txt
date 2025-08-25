@@ -8,6 +8,10 @@ lxml==4.9.3
 requests==2.31.0
 aiohttp==3.8.6
 
+# MCP framework and CLI
+mcp==1.0.0
+anthropic-mcp==0.1.0
+
 # MCP server dependencies from GitHub
 git+https://github.com/saidsurucu/mevzuat-mcp.git
 git+https://github.com/botfusions/yargi-mcp.git
