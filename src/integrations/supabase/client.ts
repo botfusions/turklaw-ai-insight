@@ -3,8 +3,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://wdowdibcidirhizpqiki.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indkb3dkaWJjaWRpcmhpenBxaWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIzMjI3OTYsImV4cCI6MjA2Nzg5ODc5Nn0.qV5gMR-bkAbRXpDu18PmgOziCQ0PEf3y6FWFet09FfU";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://supabase.turklawai.com";
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc1NjY1MTM4MCwiZXhwIjo0OTEyMzI0OTgwLCJyb2xlIjoiYW5vbiJ9.tDEh7l2zecY6zLl19zVT3U_e7seWAiuBMcdnCcq2Jxo";
 
 // Enhanced browser environment check
 const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
