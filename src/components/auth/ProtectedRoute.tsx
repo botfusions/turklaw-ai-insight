@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useSimpleAuth } from '@/contexts/SimpleAuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { RouteProtectionLevel } from '@/types/routes';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
@@ -18,12 +18,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const location = useLocation();
 
-  const { user, initialized, loading } = useSimpleAuth();
+  const { user, initialized, authLoading } = useAuth();
   
   console.log('🛡️ ProtectedRoute: Auth state for', location.pathname, ':', { 
     hasUser: !!user, 
     initialized, 
-    loading,
+    authLoading,
     protection
   });
 

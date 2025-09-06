@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSimpleAuth } from "@/contexts/SimpleAuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -20,7 +20,7 @@ import {
 
 // Fixed: Complete Dashboard component with proper default export for lazy loading
 const Dashboard: React.FC = () => {
-  const { user, initialized } = useSimpleAuth();
+  const { user, initialized } = useAuth();
   const navigate = useNavigate(); // subscription button için gerekli
   const isMobile = useIsMobile();
 

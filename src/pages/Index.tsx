@@ -1,16 +1,16 @@
 import React, { useEffect } from 'react';
-import { useSimpleAuth } from "@/contexts/SimpleAuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { LandingPage } from "@/components/landing";
 
 const Index = () => {
-  const { user, initialized, loading } = useSimpleAuth();
+  const { user, initialized, authLoading } = useAuth();
   const navigate = useNavigate();
 
   console.log('🏠 Index: Auth state:', {
     hasUser: !!user,
     initialized,
-    loading
+    authLoading
   });
 
   // Otomatik yönlendirme kaldırıldı - kullanıcı ana sayfayı görebilmeli
