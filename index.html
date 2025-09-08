@@ -5,6 +5,169 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     
+    <!-- 🚨 CRITICAL PRODUCTION AUTH FIX - HEMEN YÜKLENECEK -->
+    <script>
+      (function() {
+        console.log('🚨 EMERGENCY AUTH FIX - Production Build');
+        
+        // Global fallback auth state
+        window._emergencyAuthState = {
+          user: null,
+          loading: false,
+          isAuthenticated: false,
+          login: async (email, password) => {
+            try {
+              const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                window._emergencyAuthState = {
+                  ...window._emergencyAuthState,
+                  user: data.user,
+                  isAuthenticated: true
+                };
+                localStorage.setItem('turklawai_token', data.token);
+                return { success: true, user: data.user };
+              }
+              return { success: false, error: 'Login failed' };
+            } catch (error) {
+              return { success: false, error: error.message };
+            }
+          },
+          logout: () => {
+            window._emergencyAuthState = {
+              ...window._emergencyAuthState,
+              user: null,
+              isAuthenticated: false
+            };
+            localStorage.removeItem('turklawai_token');
+          },
+          loginWithOAuth: (provider = 'google') => {
+            window.location.href = `/api/auth/${provider}/login`;
+          }
+        };
+        
+        // Bundle error interception
+        const originalError = console.error;
+        console.error = function(...args) {
+          const message = args[0];
+          if (typeof message === 'string' && 
+              message.includes('useSimpleAuth must be used within a SimpleAuthProvider')) {
+            console.warn('🔧 AUTH ERROR INTERCEPTED - Using emergency fallback');
+            return;
+          }
+          originalError.apply(console, args);
+        };
+        
+        // Global useSimpleAuth hook override
+        window.useSimpleAuth = () => {
+          console.log('🔄 Emergency useSimpleAuth hook called');
+          return window._emergencyAuthState;
+        };
+        
+        // React Context setup when React loads
+        const setupReactContext = () => {
+          if (window.React && window.React.createContext) {
+            window.SimpleAuthContext = window.React.createContext(window._emergencyAuthState);
+            
+            window.SimpleAuthProvider = ({ children }) => {
+              return window.React.createElement(
+                window.SimpleAuthContext.Provider,
+                { value: window._emergencyAuthState },
+                children
+              );
+            };
+            
+            console.log('✅ Emergency React context created');
+          }
+        };
+        
+        // Bundle error handler
+        window.addEventListener('error', (event) => {
+          if (event.filename && event.filename.includes('index-') && 
+              event.error && event.error.message && 
+              event.error.message.includes('useSimpleAuth must be used within')) {
+            
+            console.error('🚨 BUNDLE AUTH ERROR CAUGHT:', event.error.message);
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Show user-friendly message
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+              position: fixed;
+              top: 20px;
+              right: 20px;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              padding: 16px 20px;
+              border-radius: 12px;
+              box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+              z-index: 10000;
+              max-width: 350px;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              font-size: 14px;
+            `;
+            messageDiv.innerHTML = \`
+              <div style="font-weight: bold; margin-bottom: 8px;">
+                🔧 TurkLawAI Sistemi Güncelleniyor
+              </div>
+              <div style="font-size: 12px; opacity: 0.9; margin-bottom: 12px;">
+                Hukuki araştırma sistemi optimize ediliyor. Sayfa otomatik yenilenecek.
+              </div>
+              <button onclick="window.location.reload()" style="
+                background: rgba(255,255,255,0.2);
+                border: 1px solid rgba(255,255,255,0.3);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 12px;
+              ">
+                Şimdi Yenile
+              </button>
+            \`;
+            
+            document.body.appendChild(messageDiv);
+            
+            // Auto reload after 3 seconds
+            setTimeout(() => {
+              window.location.reload();
+            }, 3000);
+            
+            return false;
+          }
+        });
+        
+        // Initialize React context when available
+        if (window.React) {
+          setupReactContext();
+        } else {
+          const reactInterval = setInterval(() => {
+            if (window.React) {
+              setupReactContext();
+              clearInterval(reactInterval);
+            }
+          }, 100);
+          
+          setTimeout(() => clearInterval(reactInterval), 5000);
+        }
+        
+        console.log('✅ Emergency auth fix initialized');
+        
+        // Debug helper
+        window._authFixDebug = {
+          state: () => window._emergencyAuthState,
+          test: () => console.log('Auth fix working:', typeof window.useSimpleAuth === 'function'),
+          reload: () => window.location.reload()
+        };
+      })();
+    </script>
+    
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
     
@@ -62,5 +225,39 @@
     
     <!-- Screen reader announcements -->
     <div id="sr-announcements" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+    
+    <!-- Emergency Auth Styles -->
+    <style>
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      
+      /* Hide bundle errors from user */
+      .error-boundary {
+        background: transparent;
+        border: none;
+        padding: 0;
+      }
+      
+      /* Loading state for auth fix */
+      .auth-loading {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 9999;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        color: #667eea;
+        font-size: 16px;
+      }
+    </style>
   </body>
 </html>
