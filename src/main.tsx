@@ -32,44 +32,52 @@ createRoot(rootElement).render(
   </StrictMode>
 );
 
-// Service Worker Registration - Fixed for production
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('SW registered: ', registration);
-        
-        // Update service worker when new version is available
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New content is available, show refresh notification
-                if (confirm('Yeni sürüm mevcut! Sayfayı yenilemek ister misiniz?')) {
-                  window.location.reload();
-                }
-              }
-            });
-          }
-        });
-      })
-      .catch((error) => {
-        console.log('SW registration failed: ', error);
-      });
-  });
-}
+// Service Worker Registration - DISABLED for development
+// if ('serviceWorker' in navigator && import.meta.env.PROD) {
+//   window.addEventListener('load', () => {
+//     navigator.serviceWorker.register('/sw.js')
+//       .then((registration) => {
+//         console.log('SW registered: ', registration);
+//         
+//         // Update service worker when new version is available
+//         registration.addEventListener('updatefound', () => {
+//           const newWorker = registration.installing;
+//           if (newWorker) {
+//             newWorker.addEventListener('statechange', () => {
+//               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+//                 // New content is available, show refresh notification
+//                 if (confirm('Yeni sürüm mevcut! Sayfayı yenilemek ister misiniz?')) {
+//                   window.location.reload();
+//                 }
+//               }
+//             });
+//           }
+//         });
+//       })
+//       .catch((error) => {
+//         console.log('SW registration failed: ', error);
+//       });
+//   });
+// }
 
-// Clear problematic caches on startup
-if ('caches' in window) {
+// Clear all caches on development startup
+if ('caches' in window && import.meta.env.DEV) {
   caches.keys().then((cacheNames) => {
     cacheNames.forEach((cacheName) => {
-      if (cacheName.includes('v1')) {
-        console.log('Clearing old cache:', cacheName);
-        caches.delete(cacheName);
-      }
+      console.log('Clearing cache:', cacheName);
+      caches.delete(cacheName);
     });
   });
+  
+  // Also unregister any existing service workers in development
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => {
+        console.log('Unregistering service worker:', registration.scope);
+        registration.unregister();
+      });
+    });
+  }
 }
 
 // Debug utilities for console (only in development)
