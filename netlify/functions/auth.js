@@ -6,55 +6,87 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const sqlite3 = require('sqlite3').verbose();
-const { open } = require('sqlite');
 const path = require('path');
 
 // JWT Configuration
 const JWT_SECRET = process.env.JWT_SECRET_KEY || 'turklawai-super-secret-jwt-key-2025-production-ready-authentication-system-v2';
 const JWT_EXPIRES_IN = '24h';
 
-// Database path
-const DB_PATH = path.join(process.cwd(), 'turklawai_production.db');
+// Database path - Use /tmp for Netlify Functions
+const DB_PATH = process.env.NETLIFY ? '/tmp/turklawai.db' : path.join(process.cwd(), 'turklawai_production.db');
 
-// Initialize database
+// Database instance
 let db = null;
 
-const initDB = async () => {
-  if (db) return db;
-  
-  db = await open({
-    filename: DB_PATH,
-    driver: sqlite3.Database
+const initDB = () => {
+  return new Promise((resolve, reject) => {
+    if (db) return resolve(db);
+    
+    db = new sqlite3.Database(DB_PATH, (err) => {
+      if (err) {
+        console.error('❌ Database connection error:', err);
+        return reject(err);
+      }
+      
+      console.log('✅ Database connected:', DB_PATH);
+      
+      // Create users table if not exists
+      db.serialize(() => {
+        db.run(`
+          CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            full_name TEXT DEFAULT '',
+            plan TEXT DEFAULT 'free',
+            status TEXT DEFAULT 'active',
+            requests_used INTEGER DEFAULT 0,
+            requests_limit INTEGER DEFAULT 100,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `, (err) => {
+          if (err) {
+            console.error('❌ Table creation error:', err);
+            return reject(err);
+          }
+          
+          // Check if admin user exists
+          db.get('SELECT id FROM users WHERE email = ?', 'admin@turklawai.com', async (err, row) => {
+            if (err) {
+              console.error('❌ Admin check error:', err);
+              return reject(err);
+            }
+            
+            if (!row) {
+              // Create admin user
+              try {
+                const adminPasswordHash = await bcrypt.hash('TurkLawAI2025!', 10);
+                db.run(
+                  'INSERT INTO users (email, password_hash, full_name, plan) VALUES (?, ?, ?, ?)',
+                  'admin@turklawai.com', adminPasswordHash, 'TurkLawAI Admin', 'premium',
+                  (err) => {
+                    if (err) {
+                      console.error('❌ Admin creation error:', err);
+                      return reject(err);
+                    }
+                    console.log('✅ Admin user created');
+                    resolve(db);
+                  }
+                );
+              } catch (hashError) {
+                console.error('❌ Password hash error:', hashError);
+                reject(hashError);
+              }
+            } else {
+              console.log('✅ Admin user exists');
+              resolve(db);
+            }
+          });
+        });
+      });
+    });
   });
-  
-  // Create users table if not exists
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      full_name TEXT DEFAULT '',
-      plan TEXT DEFAULT 'free',
-      status TEXT DEFAULT 'active',
-      requests_used INTEGER DEFAULT 0,
-      requests_limit INTEGER DEFAULT 100,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  
-  // Create admin user if not exists
-  const adminExists = await db.get('SELECT id FROM users WHERE email = ?', 'admin@turklawai.com');
-  if (!adminExists) {
-    const adminPasswordHash = await bcrypt.hash('TurkLawAI2025!', 10);
-    await db.run(
-      'INSERT INTO users (email, password_hash, full_name, plan) VALUES (?, ?, ?, ?)',
-      'admin@turklawai.com', adminPasswordHash, 'TurkLawAI Admin', 'premium'
-    );
-    console.log('✅ Admin user created');
-  }
-  
-  return db;
 };
 
 // Helper functions
@@ -142,55 +174,80 @@ exports.handler = async (event, context) => {
 };
 
 // Auth handlers
-const handleLogin = async ({ email, password }) => {
-  try {
-    if (!email || !password) {
-      return {
-        statusCode: 400,
-        headers: corsHeaders,
-        body: JSON.stringify({ success: false, message: 'Email and password required' })
-      };
-    }
+const handleLogin = ({ email, password }) => {
+  return new Promise((resolve) => {
+    try {
+      if (!email || !password) {
+        return resolve({
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ success: false, message: 'Email and password required' })
+        });
+      }
 
-    const user = await db.get('SELECT * FROM users WHERE email = ? AND status = ?', email, 'active');
-    
-    if (!user) {
-      return {
-        statusCode: 401,
-        headers: corsHeaders,
-        body: JSON.stringify({ success: false, message: 'Invalid credentials' })
-      };
-    }
+      db.get('SELECT * FROM users WHERE email = ? AND status = ?', email, 'active', async (err, user) => {
+        if (err) {
+          console.error('❌ Login database error:', err);
+          return resolve({
+            statusCode: 500,
+            headers: corsHeaders,
+            body: JSON.stringify({ success: false, message: 'Database error' })
+          });
+        }
+        
+        if (!user) {
+          return resolve({
+            statusCode: 401,
+            headers: corsHeaders,
+            body: JSON.stringify({ success: false, message: 'Invalid credentials' })
+          });
+        }
 
-    const validPassword = await bcrypt.compare(password, user.password_hash);
-    if (!validPassword) {
-      return {
-        statusCode: 401,
-        headers: corsHeaders,
-        body: JSON.stringify({ success: false, message: 'Invalid credentials' })
-      };
-    }
+        try {
+          const validPassword = await bcrypt.compare(password, user.password_hash);
+          if (!validPassword) {
+            return resolve({
+              statusCode: 401,
+              headers: corsHeaders,
+              body: JSON.stringify({ success: false, message: 'Invalid credentials' })
+            });
+          }
 
-    const token = createToken(user);
-    
-    return {
-      statusCode: 200,
-      headers: corsHeaders,
-      body: JSON.stringify({
-        success: true,
-        message: 'Login successful',
-        user: {
-          id: user.id,
-          email: user.email,
-          full_name: user.full_name,
-          plan: user.plan
-        },
-        token
-      })
-    };
-  } catch (error) {
-    throw error;
-  }
+          const token = createToken(user);
+          
+          return resolve({
+            statusCode: 200,
+            headers: corsHeaders,
+            body: JSON.stringify({
+              success: true,
+              message: 'Login successful',
+              user: {
+                id: user.id,
+                email: user.email,
+                full_name: user.full_name,
+                plan: user.plan
+              },
+              token
+            })
+          });
+        } catch (bcryptError) {
+          console.error('❌ Password verification error:', bcryptError);
+          return resolve({
+            statusCode: 500,
+            headers: corsHeaders,
+            body: JSON.stringify({ success: false, message: 'Authentication error' })
+          });
+        }
+      });
+    } catch (error) {
+      console.error('❌ Login handler error:', error);
+      return resolve({
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({ success: false, message: 'Internal error' })
+      });
+    }
+  });
 };
 
 const handleRegister = async ({ email, password, full_name = '' }) => {
