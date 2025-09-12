@@ -28,7 +28,7 @@ class TurkLawAIAuth {
   }
 
   private async apiRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
-    const url = `${this.baseUrl}/.netlify/functions/auth/${endpoint}`;
+    const url = `${this.baseUrl}/api/auth/${endpoint}`;
     
     const config: RequestInit = {
       headers: {
@@ -54,7 +54,7 @@ class TurkLawAIAuth {
   }
 
   // Authentication methods
-  async signUp(email: string, password: string, fullName?: string): Promise<AuthResponse> {
+  async signUp(email: string, password: string, fullName?: string): Promise<{ data?: any, error?: any }> {
     try {
       const response = await this.apiRequest('register', {
         method: 'POST',
@@ -65,15 +65,16 @@ class TurkLawAIAuth {
         this.token = response.token;
         localStorage.setItem('turklawai_token', this.token);
         this.notifyAuthChange();
+        return { data: { user: response.user }, error: null };
       }
 
-      return response;
+      return { data: null, error: { message: response.error || 'Sign up failed' } };
     } catch (error: any) {
-      return { success: false, error: error.message };
+      return { data: null, error: { message: error.message } };
     }
   }
 
-  async signInWithPassword(email: string, password: string): Promise<AuthResponse> {
+  async signInWithPassword(email: string, password: string): Promise<{ data?: any, error?: any }> {
     try {
       const response = await this.apiRequest('login', {
         method: 'POST',
@@ -84,11 +85,12 @@ class TurkLawAIAuth {
         this.token = response.token;
         localStorage.setItem('turklawai_token', this.token);
         this.notifyAuthChange();
+        return { data: { user: response.user }, error: null };
       }
 
-      return response;
+      return { data: null, error: { message: response.error || 'Login failed' } };
     } catch (error: any) {
-      return { success: false, error: error.message };
+      return { data: null, error: { message: error.message } };
     }
   }
 
@@ -114,10 +116,15 @@ class TurkLawAIAuth {
     }
   }
 
-  // Session management
-  getSession(): { user: User | null } {
-    // This is synchronous for compatibility, actual user data fetched separately
-    return { user: null };
+  // Session management - ASYNC for compatibility
+  async getSession(): Promise<{ user: User | null; error?: any }> {
+    try {
+      const user = await this.getUser();
+      return { user, error: null };
+    } catch (error: any) {
+      console.error('🚨 getSession failed:', error);
+      return { user: null, error };
+    }
   }
 
   onAuthStateChange(callback: (event: string, session: any) => void): { data: { subscription: { unsubscribe: () => void } } } {
@@ -163,8 +170,10 @@ class TurkLawAIAuth {
   // Health check
   async health(): Promise<any> {
     try {
-      return await this.apiRequest('health', { method: 'GET' });
-    } catch (error) {
+      const url = `${this.baseUrl}/api/health`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (error: any) {
       return { status: 'error', error: error.message };
     }
   }
