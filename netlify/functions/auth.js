@@ -132,7 +132,24 @@ exports.handler = async (event, context) => {
     await initDB();
     
     const { httpMethod, path: requestPath, body, headers } = event;
-    const parsedBody = body ? JSON.parse(body) : {};
+    let parsedBody = {};
+    
+    if (body) {
+      try {
+        parsedBody = JSON.parse(body);
+      } catch (jsonError) {
+        console.error('❌ JSON Parse Error:', jsonError.message, 'Body:', body);
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ 
+            success: false, 
+            message: 'Invalid JSON in request body',
+            error: jsonError.message
+          })
+        };
+      }
+    }
     
     // Extract endpoint from path
     const endpoint = requestPath.replace('/.netlify/functions/auth/', '');
