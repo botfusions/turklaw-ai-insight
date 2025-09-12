@@ -227,10 +227,20 @@ export const supabase = {
   
   // Placeholder for other Supabase methods
   from: (table: string) => ({
-    select: () => Promise.resolve({ data: [], error: null }),
-    insert: () => Promise.resolve({ data: [], error: null }),
-    update: () => Promise.resolve({ data: [], error: null }),
-    delete: () => Promise.resolve({ data: [], error: null }),
+    select: (columns = '*') => ({
+      eq: (column: string, value: any) => Promise.resolve({ data: [], error: null }),
+      neq: (column: string, value: any) => Promise.resolve({ data: [], error: null }),
+      gt: (column: string, value: any) => Promise.resolve({ data: [], error: null }),
+      lt: (column: string, value: any) => Promise.resolve({ data: [], error: null }),
+      single: () => Promise.resolve({ data: null, error: null }),
+    }),
+    insert: (data: any) => Promise.resolve({ data: [], error: null }),
+    update: (data: any) => ({
+      eq: (column: string, value: any) => Promise.resolve({ data: [], error: null }),
+    }),
+    delete: () => ({
+      eq: (column: string, value: any) => Promise.resolve({ data: [], error: null }),
+    }),
   }),
 };
 
