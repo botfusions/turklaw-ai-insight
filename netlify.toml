@@ -1,18 +1,31 @@
 [build]
   publish = "dist"
   command = "npm run build"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "18"
+  JWT_SECRET_KEY = "turklawai-super-secret-jwt-key-2025-production-ready-authentication-system-v2"
 
+# API routes to Netlify Functions
+[[redirects]]
+  from = "/api/auth/*"
+  to = "/.netlify/functions/auth/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/health"
+  to = "/.netlify/functions/auth/health"
+  status = 200
+  force = true
+
+# SPA fallback (must be last)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# API proxy configuration (if backend is deployed separately)
-[[redirects]]
-  from = "/api/*"
-  to = "https://your-backend-domain.com/api/:splat"
-  status = 200
-  force = true
+[functions]
+  # Enable function bundling
+  node_bundler = "esbuild"

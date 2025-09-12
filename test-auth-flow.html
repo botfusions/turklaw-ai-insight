@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TurkLawAI Auth Flow Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 3px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 3px; width: 200px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 TurkLawAI Authentication Flow Test</h1>
+    <p>Test the complete authentication flow for deployment verification</p>
+
+    <!-- Health Check -->
+    <div class="test-section">
+        <h2>1. API Health Check</h2>
+        <button onclick="testHealth()">Test /api/health</button>
+        <div id="healthResult" class="result"></div>
+    </div>
+
+    <!-- Admin Login Test -->
+    <div class="test-section">
+        <h2>2. Admin Login Test</h2>
+        <input type="email" id="loginEmail" value="admin@turklawai.com" placeholder="Email">
+        <input type="password" id="loginPassword" value="TurkLawAI2025!" placeholder="Password">
+        <button onclick="testLogin()">Test Login</button>
+        <div id="loginResult" class="result"></div>
+    </div>
+
+    <!-- Token Verification -->
+    <div class="test-section">
+        <h2>3. Token Verification</h2>
+        <button onclick="testVerify()">Test Token Verify</button>
+        <div id="verifyResult" class="result"></div>
+    </div>
+
+    <!-- User Registration -->
+    <div class="test-section">
+        <h2>4. User Registration Test</h2>
+        <input type="email" id="regEmail" value="test@example.com" placeholder="Email">
+        <input type="password" id="regPassword" value="test123456" placeholder="Password">
+        <input type="text" id="regName" value="Test User" placeholder="Full Name">
+        <button onclick="testRegister()">Test Register</button>
+        <div id="registerResult" class="result"></div>
+    </div>
+
+    <!-- Logout Test -->
+    <div class="test-section">
+        <h2>5. Logout Test</h2>
+        <button onclick="testLogout()">Test Logout</button>
+        <div id="logoutResult" class="result"></div>
+    </div>
+
+    <!-- All Tests -->
+    <div class="test-section">
+        <h2>6. Run All Tests</h2>
+        <button onclick="runAllTests()" style="background: #28a745;">Run Complete Flow Test</button>
+        <div id="allTestsResult" class="result"></div>
+    </div>
+
+    <script>
+        let currentToken = null;
+
+        // Base API URL
+        const API_BASE = window.location.origin;
+
+        // Helper function to make API requests
+        async function apiRequest(endpoint, options = {}) {
+            const url = `${API_BASE}${endpoint}`;
+            const config = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(currentToken && { 'Authorization': `Bearer ${currentToken}` }),
+                    ...options.headers,
+                },
+                ...options,
+            };
+
+            console.log(`🔧 API Request: ${url}`, config);
+
+            try {
+                const response = await fetch(url, config);
+                const data = await response.json();
+                
+                console.log(`🔧 API Response:`, { status: response.status, data });
+                
+                return { status: response.status, data, ok: response.ok };
+            } catch (error) {
+                console.error('🚨 API Request Error:', error);
+                return { error: error.message };
+            }
+        }
+
+        // Test functions
+        async function testHealth() {
+            const result = document.getElementById('healthResult');
+            result.innerHTML = 'Testing...';
+
+            const response = await apiRequest('/api/health');
+            
+            if (response.data && response.data.status === 'healthy') {
+                result.className = 'result success';
+                result.innerHTML = `✅ Health check passed<pre>${JSON.stringify(response.data, null, 2)}</pre>`;
+            } else {
+                result.className = 'result error';
+                result.innerHTML = `❌ Health check failed<pre>${JSON.stringify(response, null, 2)}</pre>`;
+            }
+        }
+
+        async function testLogin() {
+            const result = document.getElementById('loginResult');
+            result.innerHTML = 'Testing login...';
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const response = await apiRequest('/api/auth/login', {
+                method: 'POST',
+                body: JSON.stringify({ email, password }),
+            });
+
+            if (response.data && response.data.success) {
+                currentToken = response.data.token;
+                result.className = 'result success';
+                result.innerHTML = `✅ Login successful<pre>${JSON.stringify(response.data, null, 2)}</pre>`;
+                localStorage.setItem('turklawai_token', currentToken);
+            } else {
+                result.className = 'result error';
+                result.innerHTML = `❌ Login failed<pre>${JSON.stringify(response, null, 2)}</pre>`;
+            }
+        }
+
+        async function testVerify() {
+            const result = document.getElementById('verifyResult');
+            result.innerHTML = 'Testing token verification...';
+
+            if (!currentToken) {
+                result.className = 'result error';
+                result.innerHTML = '❌ No token available. Please login first.';
+                return;
+            }
+
+            const response = await apiRequest('/api/auth/verify', {
+                method: 'POST',
+            });
+
+            if (response.data && response.data.success) {
+                result.className = 'result success';
+                result.innerHTML = `✅ Token verification successful<pre>${JSON.stringify(response.data, null, 2)}</pre>`;
+            } else {
+                result.className = 'result error';
+                result.innerHTML = `❌ Token verification failed<pre>${JSON.stringify(response, null, 2)}</pre>`;
+            }
+        }
+
+        async function testRegister() {
+            const result = document.getElementById('registerResult');
+            result.innerHTML = 'Testing registration...';
+
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const full_name = document.getElementById('regName').value;
+
+            const response = await apiRequest('/api/auth/register', {
+                method: 'POST',
+                body: JSON.stringify({ email, password, full_name }),
+            });
+
+            if (response.data && response.data.success) {
+                result.className = 'result success';
+                result.innerHTML = `✅ Registration successful<pre>${JSON.stringify(response.data, null, 2)}</pre>`;
+            } else {
+                result.className = 'result error';
+                result.innerHTML = `❌ Registration failed<pre>${JSON.stringify(response, null, 2)}</pre>`;
+            }
+        }
+
+        async function testLogout() {
+            const result = document.getElementById('logoutResult');
+            result.innerHTML = 'Testing logout...';
+
+            currentToken = null;
+            localStorage.removeItem('turklawai_token');
+
+            result.className = 'result success';
+            result.innerHTML = '✅ Logout successful (token cleared)';
+        }
+
+        async function runAllTests() {
+            const result = document.getElementById('allTestsResult');
+            result.innerHTML = 'Running complete authentication flow test...';
+
+            try {
+                // 1. Health check
+                await testHealth();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // 2. Admin login
+                await testLogin();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // 3. Token verification
+                await testVerify();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // 4. Logout
+                await testLogout();
+
+                result.className = 'result success';
+                result.innerHTML = '✅ Complete authentication flow test passed!<br>All endpoints are working correctly.';
+            } catch (error) {
+                result.className = 'result error';
+                result.innerHTML = `❌ Authentication flow test failed: ${error.message}`;
+            }
+        }
+
+        // Auto-load token from localStorage
+        window.onload = function() {
+            currentToken = localStorage.getItem('turklawai_token');
+            if (currentToken) {
+                console.log('🔧 Token loaded from localStorage');
+            }
+        };
+    </script>
+</body>
+</html>

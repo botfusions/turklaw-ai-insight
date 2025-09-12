@@ -7,11 +7,13 @@
     "dev": "vite",
     "dev:backend": "cd backend && python main.py",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\"",
-    "build": "vite build",
+    "build": "npm run init-db && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "install:backend": "cd backend && pip install -r requirements.txt"
+    "install:backend": "cd backend && pip install -r requirements.txt",
+    "init-db": "node init-db.js",
+    "functions:install": "cd netlify/functions && npm install"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -75,7 +77,10 @@
     "vaul": "^0.9.3",
     "vitest": "^3.2.4",
     "zod": "^3.23.8",
-    "concurrently": "^7.6.0"
+    "concurrently": "^7.6.0",
+    "sqlite3": "^5.1.6",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

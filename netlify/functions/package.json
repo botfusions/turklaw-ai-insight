@@ -1,0 +1,12 @@
+{
+  "name": "turklawai-netlify-functions",
+  "version": "1.0.0",
+  "description": "TurkLawAI Netlify Functions for authentication",
+  "main": "auth.js",
+  "dependencies": {
+    "jsonwebtoken": "^9.0.0",
+    "bcryptjs": "^2.4.3",
+    "sqlite3": "^5.1.6",
+    "sqlite": "^5.0.1"
+  }
+}
