@@ -93,8 +93,8 @@ exports.handler = async (event, context) => {
         };
       }
 
-      // Check hardcoded admin
-      if (email === 'admin@turklawai.com' && password === 'TurkLawAI2025!') {
+      // Check hardcoded admin - multiple password options for testing
+      if (email === 'admin@turklawai.com' && (password === 'TurkLawAI2025!' || password === 'admin123' || password === 'TurkLawAI2025')) {
         const user = {
           id: 1,
           email: 'admin@turklawai.com',
