@@ -7,16 +7,16 @@
   NODE_VERSION = "18"
   JWT_SECRET_KEY = "turklawai-super-secret-jwt-key-2025-production-ready-authentication-system-v2"
 
-# API routes to Netlify Functions
+# API routes to Simple Auth Function (temporary)
 [[redirects]]
   from = "/api/auth/*"
-  to = "/.netlify/functions/auth/:splat"
+  to = "/.netlify/functions/auth-simple/:splat"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/health"
-  to = "/.netlify/functions/auth/health"
+  to = "/.netlify/functions/auth-simple/health"
   status = 200
   force = true
 
