@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "install:backend": "cd backend && pip install -r requirements.txt",
-    "init-db": "node init-db.js",
+    "init-db": "node init-db.cjs",
     "functions:install": "cd netlify/functions && npm install"
   },
   "dependencies": {
@@ -51,13 +51,16 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
+    "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
+    "concurrently": "^7.6.0",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.3.0",
     "framer-motion": "^12.23.6",
     "input-otp": "^1.2.4",
+    "jsonwebtoken": "^9.0.0",
     "jspdf": "^3.0.1",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
@@ -72,15 +75,12 @@
     "recharts": "^3.1.0",
     "remark-gfm": "^4.0.0",
     "sonner": "^1.5.0",
+    "sqlite3": "^5.1.7",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
     "vitest": "^3.2.4",
-    "zod": "^3.23.8",
-    "concurrently": "^7.6.0",
-    "sqlite3": "^5.1.6",
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.0"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
