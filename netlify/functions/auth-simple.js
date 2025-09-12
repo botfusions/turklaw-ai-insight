@@ -82,6 +82,43 @@ exports.handler = async (event, context) => {
       };
     }
 
+    if (httpMethod === 'POST' && endpoint === 'verify') {
+      const authHeader = event.headers.authorization || event.headers.Authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return {
+          statusCode: 401,
+          headers: corsHeaders,
+          body: JSON.stringify({ success: false, message: 'No token provided' })
+        };
+      }
+
+      const token = authHeader.substring(7);
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const user = {
+          id: decoded.user_id,
+          email: decoded.email,
+          full_name: 'TurkLawAI Admin',
+          plan: 'premium'
+        };
+
+        return {
+          statusCode: 200,
+          headers: corsHeaders,
+          body: JSON.stringify({
+            success: true,
+            user: user
+          })
+        };
+      } catch (error) {
+        return {
+          statusCode: 401,
+          headers: corsHeaders,
+          body: JSON.stringify({ success: false, message: 'Invalid token' })
+        };
+      }
+    }
+
     if (httpMethod === 'POST' && endpoint === 'login') {
       const { email, password } = parsedBody;
       
