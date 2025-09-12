@@ -64,7 +64,7 @@ class TurkLawAIAuth {
       if (response.success && response.token) {
         this.token = response.token;
         localStorage.setItem('turklawai_token', this.token);
-        this.notifyAuthChange();
+        setTimeout(() => this.notifyAuthChange(), 0); // Async call
         return { data: { user: response.user }, error: null };
       }
 
@@ -84,7 +84,7 @@ class TurkLawAIAuth {
       if (response.success && response.token) {
         this.token = response.token;
         localStorage.setItem('turklawai_token', this.token);
-        this.notifyAuthChange();
+        setTimeout(() => this.notifyAuthChange(), 0); // Async call
         return { data: { user: response.user }, error: null };
       }
 
@@ -97,7 +97,7 @@ class TurkLawAIAuth {
   async signOut(): Promise<void> {
     this.token = null;
     localStorage.removeItem('turklawai_token');
-    this.notifyAuthChange();
+    setTimeout(() => this.notifyAuthChange(), 0); // Async call
   }
 
   async getUser(): Promise<User | null> {
@@ -111,19 +111,29 @@ class TurkLawAIAuth {
       return response.success ? response.user : null;
     } catch (error) {
       console.error('🚨 Failed to verify token:', error);
-      this.signOut(); // Clear invalid token
+      await this.signOut(); // Clear invalid token
       return null;
     }
   }
 
-  // Session management - ASYNC for compatibility
-  async getSession(): Promise<{ user: User | null; error?: any }> {
+  // Session management - ASYNC for compatibility with proper format
+  async getSession(): Promise<{ data: { session: any } | null; error?: any }> {
     try {
       const user = await this.getUser();
-      return { user, error: null };
+      const session = user ? { 
+        user,
+        access_token: this.token,
+        token_type: 'bearer',
+        expires_in: 3600
+      } : null;
+      
+      return { 
+        data: { session }, 
+        error: null 
+      };
     } catch (error: any) {
       console.error('🚨 getSession failed:', error);
-      return { user: null, error };
+      return { data: { session: null }, error };
     }
   }
 
@@ -143,13 +153,21 @@ class TurkLawAIAuth {
     };
   }
 
-  private notifyAuthChange() {
-    // Notify all registered callbacks
+  private async notifyAuthChange() {
+    // Notify all registered callbacks with proper session format
+    const user = this.token ? await this.getUser() : null;
+    const session = user ? {
+      user,
+      access_token: this.token,
+      token_type: 'bearer',
+      expires_in: 3600
+    } : null;
+    
     Object.keys(window).forEach(key => {
       if (key.startsWith('auth_callback_')) {
         const callback = (window as any)[key];
         if (typeof callback === 'function') {
-          callback(this.token ? 'SIGNED_IN' : 'SIGNED_OUT', { user: null });
+          callback(this.token ? 'SIGNED_IN' : 'SIGNED_OUT', session);
         }
       }
     });
