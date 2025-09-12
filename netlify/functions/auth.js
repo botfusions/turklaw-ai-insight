@@ -22,6 +22,8 @@ const initDB = () => {
   return new Promise((resolve, reject) => {
     if (db) return resolve(db);
     
+    console.log('🔧 Initializing database:', DB_PATH);
+    
     db = new sqlite3.Database(DB_PATH, (err) => {
       if (err) {
         console.error('❌ Database connection error:', err);
@@ -45,39 +47,42 @@ const initDB = () => {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
-        `, (err) => {
-          if (err) {
-            console.error('❌ Table creation error:', err);
-            return reject(err);
+        `, (tableErr) => {
+          if (tableErr) {
+            console.error('❌ Table creation error:', tableErr);
+            return reject(tableErr);
           }
           
+          console.log('✅ Users table ready');
+          
           // Check if admin user exists
-          db.get('SELECT id FROM users WHERE email = ?', 'admin@turklawai.com', async (err, row) => {
-            if (err) {
-              console.error('❌ Admin check error:', err);
-              return reject(err);
+          db.get('SELECT id FROM users WHERE email = ?', 'admin@turklawai.com', (checkErr, row) => {
+            if (checkErr) {
+              console.error('❌ Admin check error:', checkErr);
+              // Continue anyway for now
             }
             
             if (!row) {
               // Create admin user
-              try {
-                const adminPasswordHash = await bcrypt.hash('TurkLawAI2025!', 10);
+              bcrypt.hash('TurkLawAI2025!', 10, (hashErr, hash) => {
+                if (hashErr) {
+                  console.error('❌ Hash error:', hashErr);
+                  return resolve(db); // Continue even if admin creation fails
+                }
+                
                 db.run(
                   'INSERT INTO users (email, password_hash, full_name, plan) VALUES (?, ?, ?, ?)',
-                  'admin@turklawai.com', adminPasswordHash, 'TurkLawAI Admin', 'premium',
-                  (err) => {
-                    if (err) {
-                      console.error('❌ Admin creation error:', err);
-                      return reject(err);
+                  'admin@turklawai.com', hash, 'TurkLawAI Admin', 'premium',
+                  (insertErr) => {
+                    if (insertErr) {
+                      console.error('❌ Admin creation error:', insertErr);
+                    } else {
+                      console.log('✅ Admin user created');
                     }
-                    console.log('✅ Admin user created');
                     resolve(db);
                   }
                 );
-              } catch (hashError) {
-                console.error('❌ Password hash error:', hashError);
-                reject(hashError);
-              }
+              });
             } else {
               console.log('✅ Admin user exists');
               resolve(db);
