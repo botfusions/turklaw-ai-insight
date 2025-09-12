@@ -151,8 +151,18 @@ exports.handler = async (event, context) => {
       }
     }
     
-    // Extract endpoint from path
-    const endpoint = requestPath.replace('/.netlify/functions/auth/', '');
+    // Extract endpoint from path - handle both direct and redirect patterns
+    let endpoint = requestPath.replace('/.netlify/functions/auth/', '');
+    
+    // Handle /api/auth/* redirects
+    if (requestPath.startsWith('/api/auth/')) {
+      endpoint = requestPath.replace('/api/auth/', '');
+    }
+    
+    // Handle /api/health redirect
+    if (requestPath === '/api/health') {
+      endpoint = 'health';
+    }
     
     console.log(`🔧 Auth API: ${httpMethod} ${endpoint}`, { body: parsedBody });
 
@@ -370,18 +380,34 @@ const handleVerify = async (headers) => {
   }
 };
 
-const handleHealth = async () => {
-  const userCount = await db.get('SELECT COUNT(*) as count FROM users');
-  
-  return {
-    statusCode: 200,
-    headers: corsHeaders,
-    body: JSON.stringify({
-      status: 'healthy',
-      service: 'turklawai-auth',
-      database: 'connected',
-      users: userCount.count,
-      timestamp: new Date().toISOString()
-    })
-  };
+const handleHealth = () => {
+  return new Promise((resolve) => {
+    if (!db) {
+      return resolve({
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          status: 'unhealthy',
+          service: 'turklawai-auth',
+          database: 'disconnected',
+          timestamp: new Date().toISOString()
+        })
+      });
+    }
+    
+    db.get('SELECT COUNT(*) as count FROM users', (err, userCount) => {
+      resolve({
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          status: 'healthy',
+          service: 'turklawai-auth',
+          database: 'connected',
+          users: err ? 'unknown' : userCount.count,
+          timestamp: new Date().toISOString(),
+          version: '1.0.0'
+        })
+      });
+    });
+  });
 };
